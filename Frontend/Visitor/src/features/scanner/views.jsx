@@ -2,119 +2,63 @@ import React, {useEffect, useRef, useState} from 'react';
 import {BackButton} from '../../components/ui.jsx';
 import './scanner.css';
 
-const DEMO_SEQUENCE = ['0', '0', '2', '0', '1'];
-const IDLE_MS       = 5000;
-const DEMO_ON_MS    = 340;
-const DEMO_OFF_MS   = 130;
-
-/* ---- Secret code entry view ---- */
+/* Code entry supports the on-screen keypad, keyboard and clipboard. */
 export function SecretCodeView({data, navigate, actions}) {
-  const [digits, setDigits]   = useState(['', '', '', '', '']);
-  const [error, setError]     = useState(false);
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [demoKey, setDemoKey] = useState(null);
+  const inputRef = useRef(null);
+  const submittingRef = useRef(false);
 
-  const idleRef  = useRef(null);
-  const demoRef  = useRef(null);
-  const aliveRef = useRef(true);
+  const museum = data.museumDetail;
+  const digits = Array.from({length: 5}, (_, i) => code[i] || '');
+  const isComplete = code.length === 5;
 
-  const museum         = data.museumDetail;
-  const activeArtifact = museum?.artifacts?.find((a) => a.id === data.activeArtifactId);
-  const filledCount    = digits.filter((d) => d !== '').length;
-  const isComplete     = filledCount === 5;
-
-  /* ── Demo playback ── */
-  const stopDemo = () => {
-    clearTimeout(demoRef.current);
-    setDemoKey(null);
+  const updateCode = (value) => {
+    if (submittingRef.current) return;
+    setCode(value.replace(/[^0-9]/g, '').slice(0, 5));
+    setError('');
   };
 
-  const playDemo = () => {
-    if (!aliveRef.current) return;
-    let i = 0;
-    const step = () => {
-      if (!aliveRef.current) return;
-      if (i >= DEMO_SEQUENCE.length) {
-        setDemoKey(null);
-        demoRef.current = setTimeout(playDemo, 1200);
-        return;
-      }
-      setDemoKey(DEMO_SEQUENCE[i]);
-      demoRef.current = setTimeout(() => {
-        setDemoKey(null);
-        i++;
-        demoRef.current = setTimeout(step, DEMO_OFF_MS);
-      }, DEMO_ON_MS);
-    };
-    step();
-  };
-
-  const resetIdle = () => {
-    clearTimeout(idleRef.current);
-    stopDemo();
-    idleRef.current = setTimeout(playDemo, IDLE_MS);
-  };
-
-  useEffect(() => {
-    aliveRef.current = true;
-    resetIdle();
-    return () => {
-      aliveRef.current = false;
-      clearTimeout(idleRef.current);
-      clearTimeout(demoRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  /* ── Handlers ── */
-  const handleKey = (key) => {
-    resetIdle();
-    if (filledCount >= 5) return;
-    setError(false);
-    const next = [...digits];
-    next[filledCount] = key;
-    setDigits(next);
-  };
-
-  const handleBackspace = () => {
-    resetIdle();
-    if (filledCount === 0) return;
-    setError(false);
-    const next = [...digits];
-    next[filledCount - 1] = '';
-    setDigits(next);
-  };
-
+  const handleKey = (key) => updateCode(code + key);
+  const handleBackspace = () => updateCode(code.slice(0, -1));
   const handleReset = () => {
-    resetIdle();
-    setDigits(['', '', '', '', '']);
-    setError(false);
+    updateCode('');
+    inputRef.current?.focus();
   };
 
-  const handleSubmit = async () => {
-    if (!isComplete || loading) return;
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!isComplete || submittingRef.current) return;
+    submittingRef.current = true;
     setLoading(true);
-    const result = await actions.enterSecretCode(digits.join(''));
-    if (!result.success) {
-      setError(true);
+    setError('');
+    try {
+      const result = await actions.enterSecretCode(code);
+      if (!result.success) {
+        setError('Код не найден в этом музее. Проверьте цифры на этикетке.');
+        inputRef.current?.focus();
+      }
+    } catch {
+      setError('Не удалось открыть историю. Проверьте соединение и попробуйте ещё раз.');
+    } finally {
+      submittingRef.current = false;
       setLoading(false);
-      setDigits(['', '', '', '', '']);
-      resetIdle();
     }
   };
 
   return (
     <section className="app-view app-shell secret-code-view is-active" aria-label="Ввод кода экспоната">
-      <div className="sc-screen">
+      <form className="sc-screen" onSubmit={handleSubmit} aria-busy={loading}>
 
         {/* Top bar */}
         <header className="sc-header">
           <BackButton onClick={() => navigate('museumDetail')} label="Назад" />
           <div className="sc-header-title">
-            {activeArtifact && <span className="sc-header-artifact">{activeArtifact.title}</span>}
+            <span className="sc-header-artifact">Открыть историю</span>
             {museum?.name  && <span className="sc-header-museum">{museum.name}</span>}
           </div>
-          <button className="sc-reset-btn" type="button" aria-label="Сбросить код" onClick={handleReset}>
+          <button className="sc-reset-btn" type="button" aria-label="Сбросить код" disabled={loading || !code} onClick={handleReset}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M3 3v5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -125,27 +69,33 @@ export function SecretCodeView({data, navigate, actions}) {
         {/* Middle: display + keypad */}
         <div className="sc-middle">
 
-          {/* Display — tap anywhere to erase last digit */}
           <div className="sc-code-section">
-            <span className="sc-code-label">ВВЕДЁННЫЙ КОД</span>
-            <div
-              className={`sc-inputs${error ? ' is-error' : ''}`}
-              role="button"
-              tabIndex={0}
-              aria-label="Удалить последнюю цифру"
-              onClick={handleBackspace}
-              onKeyDown={(e) => { if (e.key === 'Backspace' || e.key === 'Delete') handleBackspace(); }}
-            >
-              {digits.map((d, i) => (
-                <div
-                  key={i}
-                  className={`sc-digit${d ? ' is-filled' : ''}${error ? ' is-error' : ''}`}
-                >
-                  {d}
+            <label className="sc-code-label" htmlFor="exhibit-code">КОД ЭКСПОНАТА</label>
+            <div className={`sc-inputs${error ? ' is-error' : ''}`}>
+              <input
+                ref={inputRef}
+                id="exhibit-code"
+                className="sc-code-input"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={code}
+                readOnly={loading}
+                onChange={(event) => updateCode(event.target.value)}
+                onPaste={(event) => {
+                  event.preventDefault();
+                  updateCode(event.clipboardData.getData('text'));
+                }}
+                aria-describedby={`code-hint${error ? ' code-error' : ''}`}
+                aria-invalid={Boolean(error)}
+              />
+              {digits.map((digit, i) => (
+                <div key={i} aria-hidden="true" className={`sc-digit${digit ? ' is-filled' : ''}${error ? ' is-error' : ''}`}>
+                  {digit}
                 </div>
               ))}
             </div>
-            {error && <p className="sc-error" role="alert">Неверный код. Проверьте ярлык экспоната.</p>}
+            {error && <p id="code-error" className="sc-error" role="alert">{error}</p>}
           </div>
 
           {/* Functional keypad */}
@@ -155,7 +105,7 @@ export function SecretCodeView({data, navigate, actions}) {
                 <button
                   key={n}
                   type="button"
-                  className={`sc-key${demoKey === String(n) ? ' sc-key--demo' : ''}`}
+                  className="sc-key" disabled={loading || isComplete}
                   onClick={() => handleKey(String(n))}
                   aria-label={String(n)}
                 >
@@ -166,7 +116,7 @@ export function SecretCodeView({data, navigate, actions}) {
               <div className="sc-key-spacer" aria-hidden="true" />
               <button
                 type="button"
-                className={`sc-key${demoKey === '0' ? ' sc-key--demo' : ''}`}
+                className="sc-key" disabled={loading || isComplete}
                 onClick={() => handleKey('0')}
                 aria-label="0"
               >
@@ -175,6 +125,7 @@ export function SecretCodeView({data, navigate, actions}) {
               <button
                 type="button"
                 className="sc-key sc-key-del"
+                disabled={loading || !code}
                 onClick={handleBackspace}
                 aria-label="Удалить"
               >
@@ -192,14 +143,13 @@ export function SecretCodeView({data, navigate, actions}) {
         <div className="sc-bottom">
           <div className="sc-prompt">
             <h2 className="sc-prompt-title">Введите код с этикетки</h2>
-            <p className="sc-prompt-text">5-значный код нанесён на ярлык рядом с экспонатом</p>
+            <p id="code-hint" className="sc-prompt-text">5-значный код нанесён на ярлык рядом с экспонатом</p>
           </div>
           <div className="sc-actions">
             <button
               className="sc-submit"
-              type="button"
+              type="submit"
               disabled={!isComplete || loading}
-              onClick={handleSubmit}
             >
               {loading ? 'Проверяем…' : 'Открыть историю'}
             </button>
@@ -209,7 +159,7 @@ export function SecretCodeView({data, navigate, actions}) {
           </div>
         </div>
 
-      </div>
+      </form>
     </section>
   );
 }
@@ -218,6 +168,9 @@ export function QrScannerView({navigate, actions}) {
   const videoRef = useRef(null);
   const {resolveQrResult} = actions;
   const [phase, setPhase] = useState('priming');
+  const [attempt, setAttempt] = useState(0);
+  const [canRetry, setCanRetry] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [status, setStatus] = useState({
     title: 'Наведите камеру на QR-код',
     text: 'Держите код внутри рамки 1–2 секунды. После распознавания история откроется автоматически.',
@@ -241,9 +194,11 @@ export function QrScannerView({navigate, actions}) {
 
     async function start() {
       if (!navigator.mediaDevices?.getUserMedia) {
-        setStatus({title: 'Камера недоступна', text: 'В этом браузере нельзя открыть камеру. Можно продолжить вручную, чтобы проверить сценарий.'});
+        setStatus({title: 'Камера недоступна', text: 'Откройте сайт в браузере с доступом к камере или введите код с этикетки экспоната.'});
         return;
       }
+      setCanRetry(false);
+      setStatus({title: 'Подключаем камеру…', text: 'Если браузер запросит разрешение, разрешите доступ к камере.'});
       try {
         stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal: 'environment'}}, audio: false});
         if (!active) {
@@ -255,22 +210,30 @@ export function QrScannerView({navigate, actions}) {
           await videoRef.current.play();
         }
       } catch {
-        setStatus({title: 'Не удалось открыть камеру', text: 'Проверьте разрешение на доступ к камере. Для прототипа можно продолжить вручную.'});
+        stopStream();
+        if (!active) return;
+        setCanRetry(true);
+        setStatus({title: 'Не удалось открыть камеру', text: 'Разрешите доступ к камере в настройках браузера и повторите попытку. Или введите код с этикетки.'});
         return;
       }
 
+      if (!active) { stopStream(); return; }
       if (!('BarcodeDetector' in window)) {
-        setStatus({title: 'Камера включена', text: 'Автораспознавание QR не поддерживается в этом браузере. Для демо можно продолжить вручную.'});
+        stopStream();
+        setStatus({title: 'Введите код с этикетки', text: 'Этот браузер не поддерживает распознавание QR. Введите 5-значный код с этикетки экспоната.'});
         return;
       }
       try {
         detector = new window.BarcodeDetector({formats: ['qr_code']});
       } catch {
-        setStatus({title: 'Камера включена', text: 'Распознавание QR здесь недоступно. Для демо можно продолжить вручную.'});
+        stopStream();
+        setStatus({title: 'Введите код с этикетки', text: 'Введите 5-значный код с этикетки экспоната, чтобы открыть историю.'});
         return;
       }
 
+      setStatus({title: 'Наведите камеру на QR-код', text: 'Держите код внутри рамки. После распознавания откроется экспонат.'});
       const scanFrame = async () => {
+        if (!active) return;
         const video = videoRef.current;
         if (locked || !detector || !video || video.readyState < 2) {
           raf = requestAnimationFrame(scanFrame);
@@ -278,16 +241,25 @@ export function QrScannerView({navigate, actions}) {
         }
         try {
           const codes = await detector.detect(video);
+          if (!active) return;
           if (codes.length) {
             locked = true;
-            setStatus({title: 'QR-код считан', text: 'Экспонат найден. Переходим к экрану артефакта.'});
-            setTimeout(() => {
-              if (active) resolveQrResult(codes[0].rawValue || '');
-            }, 420);
+            setStatus({title: 'Проверяем QR-код…', text: 'Ищем экспонат.'});
+            const result = await resolveQrResult(codes[0].rawValue || '');
+            if (!active) return;
+            if (!result?.success) {
+              stopStream();
+              setCanRetry(true);
+              setStatus({title: 'Экспонат не найден', text: 'Отсканируйте QR-код рядом с экспонатом или введите код с его этикетки.'});
+            }
             return;
           }
         } catch {
-          setStatus({title: 'Камера включена', text: 'Сканирование работает нестабильно в этом браузере. Можно продолжить вручную.'});
+          if (!active) return;
+          stopStream();
+          setCanRetry(true);
+          setStatus({title: 'Не удалось прочитать код', text: 'Попробуйте ещё раз при хорошем освещении или введите код с этикетки.'});
+          return;
         }
         raf = requestAnimationFrame(scanFrame);
       };
@@ -304,7 +276,7 @@ export function QrScannerView({navigate, actions}) {
         videoElement.srcObject = null;
       }
     };
-  }, [resolveQrResult, phase]);
+  }, [resolveQrResult, phase, attempt]);
 
   if (phase === 'priming') {
     return (
@@ -330,8 +302,11 @@ export function QrScannerView({navigate, actions}) {
           <button className="primary-button app-cta" type="button" onClick={() => setPhase('scanning')}>
             Разрешить доступ к камере
           </button>
+          <button className="text-button" type="button" onClick={() => navigate('secretCode')}>
+            Ввести код с этикетки
+          </button>
           <button className="text-button" type="button" onClick={() => navigate('museumDetail')}>
-            Пропустить
+            Вернуться к экспонатам
           </button>
         </div>
       </section>
@@ -354,7 +329,7 @@ export function QrScannerView({navigate, actions}) {
                 <path d="m15 5-7 7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-            <button className="icon-button" type="button" aria-label="Подсказка по сканированию">
+            <button className="icon-button" type="button" aria-label="Подсказка по сканированию" aria-expanded={showHelp} aria-controls="qr-help" onClick={() => setShowHelp((value) => !value)}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M12 17v-6M12 8h.01" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
                 <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
@@ -363,12 +338,14 @@ export function QrScannerView({navigate, actions}) {
           </div>
 
           <div className="qr-bottom">
-            <div className="qr-status-card">
+            {showHelp && <div id="qr-help" className="qr-status-card"><p>Поместите QR-код целиком в рамку, держите телефон неподвижно и избегайте бликов на этикетке.</p></div>}
+            <div className="qr-status-card" role="status" aria-live="polite">
               <h2>{status.title}</h2>
               <p>{status.text}</p>
             </div>
-            <button className="tech-button" type="button" onClick={() => resolveQrResult('')}>
-              Открыть найденный артефакт вручную
+            {canRetry && <button className="tech-button" type="button" onClick={() => setAttempt((value) => value + 1)}>Попробовать снова</button>}
+            <button className="tech-button" type="button" onClick={() => navigate('secretCode')}>
+              Ввести код с этикетки
             </button>
           </div>
         </div>

@@ -10,6 +10,9 @@ export const MUSEUM_LIST = {
   searchLabel: 'Поиск музея',
   searchPlaceholder: 'Поиск музея',
   clearSearch: 'Очистить поиск',
+  noMuseums: 'Музеи пока недоступны. Попробуйте обновить список.',
+  resetSearch: 'Показать все музеи',
+  refresh: 'Обновить список',
   emptySearch: (query) => `Ничего не найдено по запросу «${query}»`,
 };
 

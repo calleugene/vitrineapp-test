@@ -47,10 +47,13 @@ export function MuseumSelectView({data, actions}) {
     list = <SkeletonCards count={3} />;
   } else if (!filtered.length) {
     list = (
-      <div className="museum-empty-search">
+      <div className="museum-empty-search" role="status">
         <Text as="p" variant="body-1" color="secondary">
-          {MUSEUM_LIST.emptySearch(query)}
+          {query.trim() ? MUSEUM_LIST.emptySearch(query) : MUSEUM_LIST.noMuseums}
         </Text>
+        <button className="text-button" type="button" onClick={query.trim() ? clear : actions.bootstrap}>
+          {query.trim() ? MUSEUM_LIST.resetSearch : MUSEUM_LIST.refresh}
+        </button>
       </div>
     );
   } else {

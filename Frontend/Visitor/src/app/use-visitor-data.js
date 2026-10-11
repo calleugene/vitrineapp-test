@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {createApiClient, createVisitorAuthApi} from './api-client.js';
 import {appConfig} from './config.js';
+import {findArtifactBySecretCode, readQrArtifactId} from '../features/scanner/code-utils.js';
 import {useToast} from '../components/Toast.jsx';
 import {createAnalyticsEvents} from './analytics-events.js';
 
@@ -244,26 +245,16 @@ export function useVisitorData() {
 
   const resolveQrResult = useCallback(
     async (qrValue = '') => {
-      // Extract artifact ID from a URL like /a/front-letter or a bare ID
-      let artifactId = qrValue;
-      const urlMatch = qrValue.match(/\/a\/([^/?#]+)/);
-      if (urlMatch) artifactId = decodeURIComponent(urlMatch[1]);
-
-      if (artifactId) {
-        const allMuseums = get().museums;
-        const targetMuseum = allMuseums.find((m) => m.artifacts?.some((a) => a.id === artifactId));
-        if (targetMuseum) {
-          await refreshMuseumDetail(targetMuseum.id);
-          patch({activeArtifactId: artifactId, view: 'secretCode'});
-          return;
-        }
-      }
-
-      // Fallback: use currently active artifact and open secret code entry
-      const current = activeArtifact();
-      if (current) patch({view: 'secretCode'});
+      const artifactId = readQrArtifactId(qrValue);
+      if (!artifactId) return {success: false};
+      const museums = [selectedDetail(), ...get().museums].filter(Boolean);
+      const targetMuseum = museums.find((museum) => museum.artifacts?.some((artifact) => artifact.id === artifactId));
+      if (!targetMuseum) return {success: false};
+      await refreshMuseumDetail(targetMuseum.id);
+      patch({activeArtifactId: artifactId, view: 'secretCode'});
+      return {success: true};
     },
-    [patch, refreshMuseumDetail, activeArtifact],
+    [patch, refreshMuseumDetail, selectedDetail],
   );
 
   const toggleFavorite = useCallback(async () => {
@@ -309,14 +300,16 @@ export function useVisitorData() {
 
   const enterSecretCode = useCallback(
     async (code) => {
-      const artifact = activeArtifact();
+      const museum = selectedDetail();
+      const artifact = findArtifactBySecretCode(museum, code);
       if (!artifact) return {success: false};
-      const validCode = String(artifact.secretCode || artifact.secret_code || '');
-      if (!validCode || code !== validCode) return {success: false};
-      await openStory();
+      // Preserve the current selection if loading the story fails.
+      await loadStory(museum.route_id, artifact.id);
+      analytics.track('scene_view', {route_id: museum.route_id, artifact_id: artifact.id});
+      patch({activeArtifactId: artifact.id, view: 'storyExperience'});
       return {success: true};
     },
-    [activeArtifact, openStory],
+    [selectedDetail, loadStory, patch],
   );
 
   // ---- bootstrap ----

@@ -976,3 +976,5 @@
 }
 
 .info-inline-link:hover { text-decoration: underline; }
+
+.coll-card:focus-visible { outline: 3px solid #695bff; outline-offset: 3px; }
