@@ -1,0 +1,242 @@
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.stats-grid.compact {
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+}
+
+.stats-tabs {
+  margin-top: -6px;
+}
+
+.stats-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.stats-overview-title,
+.stats-overview-note,
+.feedback-total,
+.feedback-thread-copy span,
+.feedback-thread-copy small,
+.feedback-detail-author span,
+.feedback-detail-author small,
+.feedback-meta-item span,
+.stats-footnote {
+  color: #7b8196;
+}
+
+.stats-overview-title {
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.stats-overview-value-row,
+.stat-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.stats-summary-card {
+  min-height: 136px;
+}
+
+.stats-summary-card .stat-title {
+  max-width: 240px;
+}
+
+.stats-overview-delta,
+.stats-summary-delta,
+.stats-ranked-delta {
+  color: #29a55a;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.stats-summary-note {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #7b8196;
+}
+
+.stats-dashboard-grid,
+.stats-lower-grid,
+.feedback-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.stats-dashboard-grid {
+  grid-template-columns: minmax(0, 1.55fr) minmax(420px, 0.95fr);
+}
+
+.stats-lower-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stats-side-panel {
+  min-height: 360px;
+}
+
+.stats-sources-layout {
+  align-items: flex-start;
+  gap: 22px;
+  padding: 8px 4px 0;
+}
+
+.stats-source-row strong,
+.stats-ranked-main strong,
+.feedback-thread-copy strong,
+.feedback-detail-author strong,
+.feedback-meta-item strong,
+.stats-device-row strong {
+  color: #222530;
+}
+
+.stats-ranked-list,
+.stats-device-list,
+.feedback-conversation-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-ranked-list {
+  gap: 0;
+}
+
+.stats-ranked-row,
+.stats-device-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(24, 24, 27, 0.06);
+}
+
+.stats-ranked-row:last-child,
+.stats-device-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.stats-ranked-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.stats-ranked-index {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(24, 24, 27, 0.06);
+  color: #7f8599;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.stats-ranked-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(110, 84, 62, 0.92), rgba(198, 166, 136, 0.78)),
+    radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.2), transparent 20%);
+}
+
+.stats-ranked-thumb.is-story {
+  filter: grayscale(1);
+}
+
+.stats-ranked-meta {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 15px;
+}
+
+.stats-ranked-delta.is-negative {
+  color: #e04444;
+}
+
+.stats-device-list {
+  gap: 0;
+}
+
+.stats-device-row {
+  padding: 12px 0;
+}
+
+.stats-device-name {
+  width: 150px;
+  color: #2a2d38;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.stats-device-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(93, 95, 239, 0.12);
+  overflow: hidden;
+}
+
+.stats-device-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--color-accent), #7357ff);
+}
+
+.stats-footnote {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.stats-side-panel .panel-header {
+  margin-bottom: 12px;
+}
+
+.stats-side-panel .visitors-donut-shell {
+  width: 184px;
+  height: 184px;
+}
+
+.stats-side-panel .visitors-sources-list {
+  gap: 12px;
+}
+
+.stats-side-panel .visitors-source-row {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.stats-side-panel .visitors-source-row:last-child {
+  border-bottom: 0;
+}
+
+.stats-side-panel .visitors-source-label {
+  color: var(--text-secondary);
+}
+
+.stats-side-panel .visitors-source-row strong {
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.stats-dashboard-grid .g-segmented-radio-group,
+.stats-dashboard-grid .yg-segmented-radio-group {
+  --g-color-line-brand: rgba(30, 64, 175, 0.18);
+  --g-color-base-selection: rgba(30, 64, 175, 0.08);
+  --g-color-text-brand-heavy: var(--accent);
+  --g-color-line-misc: rgba(30, 64, 175, 0.28);
+}

@@ -1,0 +1,203 @@
+services:
+  # ─── Databases ───────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: viralabs-postgres
+    environment:
+      POSTGRES_USER: viralabs
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: viralabs
+      POSTGRES_MULTIPLE_DATABASES: "viralabs_auth viralabs_museum viralabs_artifacts viralabs_route viralabs_dashboard viralabs_analytics viralabs_feedback viralabs_notification viralabs_visitor"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-multiple-databases.sh:/docker-entrypoint-initdb.d/10-multiple-databases.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U viralabs"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Auth Service ────────────────────────────────────────────────────────
+  auth-service:
+    build:
+      context: ./Backend/auth-service
+      dockerfile: Dockerfile
+    container_name: viralabs-auth
+    environment:
+      AUTH_DB_DSN: "postgresql://viralabs:dev_password@postgres:5432/viralabs_auth"
+      AUTH_HTTP_ADDR: ":8080"
+      AUTH_TOKEN_SECRET: "${AUTH_TOKEN_SECRET:?set AUTH_TOKEN_SECRET in .env}"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Museum Service ──────────────────────────────────────────────────────
+  museum-service:
+    build:
+      context: ./Backend/museum-service
+      dockerfile: Dockerfile
+    container_name: viralabs-museum
+    environment:
+      MUSEUM_DB_DSN: "postgresql://viralabs:dev_password@postgres:5432/viralabs_museum"
+      MUSEUM_HTTP_ADDR: ":8082"
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Artifacts Service ───────────────────────────────────────────────────
+  artifacts-service:
+    build:
+      context: ./Backend/artifacts-service
+      dockerfile: Dockerfile
+    container_name: viralabs-artifacts
+    environment:
+      ARTIFACTS_DB_DSN: "postgresql://viralabs:dev_password@postgres:5432/viralabs_artifacts"
+      ARTIFACTS_HTTP_ADDR: ":8081"
+      ARTIFACTS_ASSET_DIR: "/data/assets"
+      ARTIFACTS_ASSET_PUBLIC_URL: "http://localhost:8081/assets"
+      ARTIFACTS_PUBLIC_BASE_URL: "${ARTIFACTS_PUBLIC_BASE_URL:?set ARTIFACTS_PUBLIC_BASE_URL in .env}"
+      ARTIFACTS_TOKEN_SECRET: "${AUTH_TOKEN_SECRET:?set AUTH_TOKEN_SECRET in .env}"
+    ports:
+      - "8081:8081"
+    volumes:
+      - artifacts_service_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Route Service ───────────────────────────────────────────────────────
+  route-service:
+    build:
+      context: ./Backend/route-service
+      dockerfile: Dockerfile
+    container_name: viralabs-route
+    environment:
+      ROUTE_DB_DSN: "postgresql://viralabs:dev_password@postgres:5432/viralabs_route"
+      ROUTE_HTTP_ADDR: ":8083"
+      ROUTE_SERVICE_DATA: "/data/route-service-data.json"
+    ports:
+      - "8083:8083"
+    volumes:
+      - route_service_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Dashboard Service ───────────────────────────────────────────────────
+  dashboard-service:
+    build:
+      context: ./Backend/dashboard-service
+      dockerfile: Dockerfile
+    container_name: viralabs-dashboard
+    environment:
+      DASHBOARD_DB_DSN: "postgresql://viralabs:dev_password@postgres:5432/viralabs_dashboard"
+      DASHBOARD_HTTP_ADDR: ":8084"
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Analytics Service ───────────────────────────────────────────────────
+  analytics-service:
+    build:
+      context: ./Backend/analytics-service
+      dockerfile: Dockerfile
+    container_name: viralabs-analytics
+    environment:
+      ANALYTICS_DB_DSN: "postgresql://viralabs:dev_password@postgres:5432/viralabs_analytics"
+      ANALYTICS_HTTP_ADDR: ":8085"
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Feedback Service ────────────────────────────────────────────────────
+  feedback-service:
+    build:
+      context: ./Backend/feedback-service
+      dockerfile: Dockerfile
+    container_name: viralabs-feedback
+    environment:
+      FEEDBACK_DB_DSN: "postgresql://viralabs:dev_password@postgres:5432/viralabs_feedback"
+      FEEDBACK_HTTP_ADDR: ":8086"
+    ports:
+      - "8086:8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Notification Service ────────────────────────────────────────────────
+  notification-service:
+    build:
+      context: ./Backend/notification-service
+      dockerfile: Dockerfile
+    container_name: viralabs-notification
+    environment:
+      NOTIFICATION_DB_DSN: "postgresql://viralabs:dev_password@postgres:5432/viralabs_notification"
+      NOTIFICATION_HTTP_ADDR: ":8087"
+    ports:
+      - "8087:8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Visitor Service ─────────────────────────────────────────────────────
+  visitor-service:
+    build:
+      context: ./Backend/visitor-service
+      dockerfile: Dockerfile
+    container_name: viralabs-visitor
+    environment:
+      DB_DRIVER: postgres
+      DB_DSN: "postgresql://viralabs:dev_password@postgres:5432/viralabs_visitor"
+      PORT: "8088"
+      MUSEUM_API_URL: "http://museum-service:8082"
+      ARTIFACTS_API_URL: "http://artifacts-service:8081"
+      ROUTE_API_URL: "http://route-service:8083"
+      AUTH_SERVICE_URL: "http://auth-service:8080/api/v1"
+      VISITOR_CORS_ORIGINS: "${VISITOR_CORS_ORIGINS:-}"
+      MUSEUM_IDS: "mus_001,mus_002"
+    ports:
+      - "8088:8088"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      museum-service:
+        condition: service_started
+      artifacts-service:
+        condition: service_started
+      route-service:
+        condition: service_started
+      auth-service:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  route_service_data:
+  artifacts_service_data:
+
+networks:
+  default:
+    name: viralabs-network

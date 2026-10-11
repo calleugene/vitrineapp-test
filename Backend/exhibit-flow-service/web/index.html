@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Сведения об экспонате</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <main class="selector" id="selectorView" aria-live="polite">
+    <header class="topbar"><h1>Выберите экспонат</h1><button id="createExhibit" class="button primary" type="button">Добавить экспонат</button></header>
+    <section class="card selector-card"><div id="exhibitList" class="exhibit-list"></div><div id="noExhibits" class="state"><p>Экспонатов пока нет.</p><p>Добавьте первый, чтобы создать его экраны.</p></div></section>
+  </main>
+  <main class="page hidden" id="editorApp" aria-live="polite">
+    <header class="topbar">
+      <div class="title-with-back">
+        <button class="back-button" id="backToExhibits" type="button" aria-label="Вернуться ко всем экспонатам" title="К экспонатам">←</button>
+        <h1 id="pageTitle">Сведения об экспонате</h1>
+      </div>
+      <div class="top-actions" id="topActions">
+        <button class="button primary" id="primaryAction" type="button">Опубликовать</button>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Разделы экспоната">
+      <button class="tab active" type="button" data-tab="basic">Основная информация</button>
+      <button class="tab" type="button" data-tab="content">Контент</button>
+      <button class="tab" type="button" data-tab="publication" disabled title="Станет доступна после публикации">Публикация</button>
+    </nav>
+
+    <section class="card" id="basicView">
+      <div class="two-columns">
+        <div class="form-column">
+          <h2>Расскажите об экспонате</h2>
+          <label for="title">Название</label>
+          <input id="title" maxlength="160" autocomplete="off">
+          <label for="description">Краткое описание <span>(до 250 символов)</span></label>
+          <textarea id="description" maxlength="250"></textarea>
+          <p class="counter"><span id="counter">0</span>/250</p>
+        </div>
+        <div class="cover-column">
+          <h2>Обложка</h2>
+          <div id="coverEmpty" class="upload-cover">
+            <p>JPG, PNG<br>или WebP до 10 МБ</p>
+            <label class="file-button" for="coverFile">Загрузите обложку</label>
+            <input id="coverFile" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          </div>
+          <div id="coverPresent" class="cover-present hidden">
+            <img id="coverPreview" alt="Обложка экспоната">
+            <div class="cover-actions">
+              <button id="deleteCover" type="button">Удалить</button>
+              <label for="coverReplace">Заменить</label>
+              <input id="coverReplace" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card hidden" id="contentView">
+      <div class="section-head"><h2 id="contentHeading">Контент</h2><button id="addScreen" class="button primary" type="button">Добавить</button></div>
+      <div id="contentError" class="state hidden"><p>Сейчас контент недоступен.</p><p>Попробуйте обновить страницу или зайти позднее.</p></div>
+      <div id="contentEmpty" class="state hidden"><p>Сейчас контент отсутствует.</p><p>Хотите создать первый экран?</p><button id="addFirstScreen" class="button primary" type="button">Добавить</button></div>
+      <div id="screenList" class="screen-list hidden"></div>
+    </section>
+
+    <section class="card hidden" id="publicationView">
+      <div class="two-columns publication-layout">
+        <div class="publication-copy">
+          <h2 id="publicationTitle"></h2>
+          <p id="publicationText"></p>
+          <h3>Ссылка на экспонат</h3>
+          <div class="public-link"><span id="publicURL"></span><button id="copyLink" type="button" aria-label="Скопировать ссылку">⧉</button></div>
+        </div>
+        <div class="qr-column"><h2>QR-код</h2><div class="qr"><img id="qr" alt="QR-код ссылки на экспонат"></div><p id="qrStatus" class="qr-status" role="status" aria-live="polite">Генерируем QR-код…</p><a id="downloadQR" class="qr-download" download="qr-exhibit.png">Скачать PNG</a></div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="addDialog">
+    <h2>Добавить экран</h2>
+    <button class="option" id="chooseText" type="button"><strong>Текст</strong><span>Расскажите историю с помощью текста и изображений.</span></button>
+    <div class="option disabled"><strong>Тест <em>[В следующем обновлении]</em></strong><span>Задайте вопрос посетителю и предложите варианты ответов.</span></div>
+    <div class="option disabled"><strong>3D-модель <em>[В следующем обновлении]</em></strong><span>Покажите интерактивную трёхмерную модель.</span></div>
+    <button class="cancel-link" id="closeDialog" type="button">Отменить</button>
+  </dialog>
+
+  <section class="editor hidden" id="editorView">
+    <header class="topbar"><h1>Контент</h1><div class="top-actions"><button class="button secondary" id="cancelEditor" type="button">Отменить</button><button class="button primary" id="saveScreen" type="button">Сохранить</button></div></header>
+    <p class="breadcrumb">Текст <span>/</span> Редактирование экрана</p>
+    <div class="card two-columns"><div class="form-column"><h2>Расскажите об экспонате</h2><label for="screenTitle">Заголовок</label><input id="screenTitle" maxlength="160"><label for="screenText">Текст</label><textarea id="screenText"></textarea><label>Изображение</label><div class="small-upload"><span>JPG, PNG<br>или WebP до 10 МБ</span><label for="screenImage">Выбрать файл</label><input id="screenImage" type="file" accept="image/jpeg,image/png,image/webp" hidden></div></div><div class="preview-column"><h2>Как увидит посетитель:</h2><article class="phone"><img id="screenPreviewImage" alt="" class="hidden"><div class="phone-gradient"><h3 id="previewTitle">Заголовок</h3><p id="previewText">Текст</p></div></article></div></div>
+  </section>
+
+  <div class="toast hidden" id="toast" role="status"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

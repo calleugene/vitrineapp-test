@@ -1,0 +1,668 @@
+openapi: 3.1.0
+info:
+  title: Artifacts & Scene Editor API
+  version: 0.1.0
+  description: API for artifacts, screens, drafts, media, and 3D models.
+servers:
+  - url: http://localhost:8081/api/v1
+tags:
+  - name: Artifacts
+  - name: Screens
+  - name: Drafts
+  - name: Media
+  - name: Models
+paths:
+  /artifacts:
+    get:
+      tags: [Artifacts]
+      summary: List artifacts
+      responses:
+        '200':
+          description: Artifact list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactListResponse'
+    post:
+      tags: [Artifacts]
+      summary: Create artifact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateArtifactRequest'
+      responses:
+        '201':
+          description: Artifact created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /artifacts/{artifactId}:
+    get:
+      tags: [Artifacts]
+      summary: Get artifact
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+      responses:
+        '200':
+          description: Artifact found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Artifacts]
+      summary: Update artifact
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateArtifactRequest'
+      responses:
+        '200':
+          description: Artifact updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Artifacts]
+      summary: Delete artifact
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+      responses:
+        '204':
+          description: Artifact deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /artifacts/{artifactId}/archive:
+    post:
+      tags: [Artifacts]
+      summary: Archive artifact
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+      responses:
+        '200':
+          description: Artifact archived
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactResponse'
+  /artifacts/{artifactId}/restore:
+    post:
+      tags: [Artifacts]
+      summary: Restore artifact
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+      responses:
+        '200':
+          description: Artifact restored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactResponse'
+  /artifacts/{artifactId}/duplicate:
+    post:
+      tags: [Artifacts]
+      summary: Duplicate artifact
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+      responses:
+        '201':
+          description: Artifact duplicated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactResponse'
+  /artifacts/{artifactId}/screens:
+    get:
+      tags: [Screens]
+      summary: List screens
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+      responses:
+        '200':
+          description: Screen list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreensResponse'
+    post:
+      tags: [Screens]
+      summary: Create screen
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScreenRequest'
+      responses:
+        '201':
+          description: Screen created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreenResponse'
+  /artifacts/{artifactId}/screens/{screenId}:
+    get:
+      tags: [Screens]
+      summary: Get screen
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+        - $ref: '#/components/parameters/ScreenID'
+      responses:
+        '200':
+          description: Screen found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreenResponse'
+    patch:
+      tags: [Screens]
+      summary: Update screen
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+        - $ref: '#/components/parameters/ScreenID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateScreenRequest'
+      responses:
+        '200':
+          description: Screen updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreenResponse'
+    delete:
+      tags: [Screens]
+      summary: Delete screen
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+        - $ref: '#/components/parameters/ScreenID'
+      responses:
+        '204':
+          description: Screen deleted
+  /artifacts/{artifactId}/screens/reorder:
+    put:
+      tags: [Screens]
+      summary: Reorder screens
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderScreensRequest'
+      responses:
+        '200':
+          description: Screens reordered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+  /artifacts/{artifactId}/drafts:
+    get:
+      tags: [Drafts]
+      summary: List drafts
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+      responses:
+        '200':
+          description: Draft list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftsResponse'
+    post:
+      tags: [Drafts]
+      summary: Create draft
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDraftRequest'
+      responses:
+        '201':
+          description: Draft created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftResponse'
+  /artifacts/{artifactId}/drafts/{draftId}:
+    get:
+      tags: [Drafts]
+      summary: Get draft
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+        - $ref: '#/components/parameters/DraftID'
+      responses:
+        '200':
+          description: Draft found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftResponse'
+    patch:
+      tags: [Drafts]
+      summary: Update draft
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+        - $ref: '#/components/parameters/DraftID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDraftRequest'
+      responses:
+        '200':
+          description: Draft updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftResponse'
+  /artifacts/{artifactId}/drafts/{draftId}/publish-ready:
+    post:
+      tags: [Drafts]
+      summary: Mark draft as publish-ready
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+        - $ref: '#/components/parameters/DraftID'
+      responses:
+        '200':
+          description: Draft updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftResponse'
+  /artifacts/{artifactId}/drafts/{draftId}/discard:
+    post:
+      tags: [Drafts]
+      summary: Discard draft
+      parameters:
+        - $ref: '#/components/parameters/ArtifactID'
+        - $ref: '#/components/parameters/DraftID'
+      responses:
+        '200':
+          description: Draft discarded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftResponse'
+  /media/upload:
+    post:
+      tags: [Media]
+      summary: Upload media metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadMediaRequest'
+      responses:
+        '201':
+          description: Media created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaResponse'
+  /media/{mediaId}:
+    get:
+      tags: [Media]
+      summary: Get media
+      parameters:
+        - $ref: '#/components/parameters/MediaID'
+      responses:
+        '200':
+          description: Media found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaResponse'
+    delete:
+      tags: [Media]
+      summary: Delete media
+      parameters:
+        - $ref: '#/components/parameters/MediaID'
+      responses:
+        '204':
+          description: Media deleted
+  /models/upload:
+    post:
+      tags: [Models]
+      summary: Upload model metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadModelRequest'
+      responses:
+        '201':
+          description: Model created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelResponse'
+  /models/{modelId}:
+    get:
+      tags: [Models]
+      summary: Get model
+      parameters:
+        - $ref: '#/components/parameters/ModelID'
+      responses:
+        '200':
+          description: Model found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelResponse'
+  /models/{modelId}/process:
+    post:
+      tags: [Models]
+      summary: Trigger model processing
+      parameters:
+        - $ref: '#/components/parameters/ModelID'
+      responses:
+        '200':
+          description: Model processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelResponse'
+  /models/{modelId}/status:
+    get:
+      tags: [Models]
+      summary: Get model processing status
+      parameters:
+        - $ref: '#/components/parameters/ModelID'
+      responses:
+        '200':
+          description: Model status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelResponse'
+components:
+  parameters:
+    ArtifactID:
+      name: artifactId
+      in: path
+      required: true
+      schema:
+        type: string
+    ScreenID:
+      name: screenId
+      in: path
+      required: true
+      schema:
+        type: string
+    DraftID:
+      name: draftId
+      in: path
+      required: true
+      schema:
+        type: string
+    MediaID:
+      name: mediaId
+      in: path
+      required: true
+      schema:
+        type: string
+    ModelID:
+      name: modelId
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    CreateArtifactRequest:
+      type: object
+      required: [title, category]
+      properties:
+        title: {type: string}
+        description: {type: string}
+        category: {type: string}
+    UpdateArtifactRequest:
+      type: object
+      properties:
+        title: {type: string}
+        description: {type: string}
+        category: {type: string}
+        status: {type: string}
+    Artifact:
+      type: object
+      required: [id, title, description, category, status, created_at, updated_at]
+      properties:
+        id: {type: string}
+        title: {type: string}
+        description: {type: string}
+        category: {type: string}
+        status: {type: string}
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ArtifactResponse:
+      type: object
+      required: [artifact]
+      properties:
+        artifact:
+          $ref: '#/components/schemas/Artifact'
+    ArtifactListResponse:
+      type: object
+      required: [artifacts]
+      properties:
+        artifacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Artifact'
+    CreateScreenRequest:
+      type: object
+      required: [type, title]
+      properties:
+        type: {type: string}
+        title: {type: string}
+        payload: {type: string}
+    UpdateScreenRequest:
+      type: object
+      properties:
+        title: {type: string}
+        payload: {type: string}
+    ReorderScreensRequest:
+      type: object
+      required: [screen_ids]
+      properties:
+        screen_ids:
+          type: array
+          items: {type: string}
+    Screen:
+      type: object
+      required: [id, artifact_id, type, title, payload, position, created_at, updated_at]
+      properties:
+        id: {type: string}
+        artifact_id: {type: string}
+        type: {type: string}
+        title: {type: string}
+        payload: {type: string}
+        position: {type: integer}
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ScreensResponse:
+      type: object
+      required: [screens]
+      properties:
+        screens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Screen'
+    ScreenResponse:
+      type: object
+      required: [screen]
+      properties:
+        screen:
+          $ref: '#/components/schemas/Screen'
+    CreateDraftRequest:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+        content: {type: string}
+    UpdateDraftRequest:
+      type: object
+      properties:
+        name: {type: string}
+        content: {type: string}
+    Draft:
+      type: object
+      required: [id, artifact_id, name, content, status, version, created_at, updated_at]
+      properties:
+        id: {type: string}
+        artifact_id: {type: string}
+        name: {type: string}
+        content: {type: string}
+        status: {type: string}
+        version: {type: integer}
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    DraftsResponse:
+      type: object
+      required: [drafts]
+      properties:
+        drafts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Draft'
+    DraftResponse:
+      type: object
+      required: [draft]
+      properties:
+        draft:
+          $ref: '#/components/schemas/Draft'
+    UploadMediaRequest:
+      type: object
+      required: [file_name, mime_type, url, size_bytes]
+      properties:
+        artifact_id:
+          type: string
+          nullable: true
+        file_name: {type: string}
+        mime_type: {type: string}
+        url: {type: string}
+        size_bytes:
+          type: integer
+          format: int64
+    Media:
+      type: object
+      required: [id, file_name, mime_type, url, size_bytes, created_at]
+      properties:
+        id: {type: string}
+        artifact_id:
+          type: string
+          nullable: true
+        file_name: {type: string}
+        mime_type: {type: string}
+        url: {type: string}
+        size_bytes:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+    MediaResponse:
+      type: object
+      required: [media]
+      properties:
+        media:
+          $ref: '#/components/schemas/Media'
+    UploadModelRequest:
+      type: object
+      required: [file_name, format, storage_url]
+      properties:
+        artifact_id:
+          type: string
+          nullable: true
+        file_name: {type: string}
+        format: {type: string}
+        storage_url: {type: string}
+    Model:
+      type: object
+      required: [id, file_name, format, storage_url, processing_status, created_at, updated_at]
+      properties:
+        id: {type: string}
+        artifact_id:
+          type: string
+          nullable: true
+        file_name: {type: string}
+        format: {type: string}
+        storage_url: {type: string}
+        processing_status: {type: string}
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ModelResponse:
+      type: object
+      required: [model]
+      properties:
+        model:
+          $ref: '#/components/schemas/Model'
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string}
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error: {type: string}

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artifacts Service Test UI</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Витрина · сервис экспонатов</p>
+        <h1>Artifacts & Scene Editor Playground</h1>
+        <p class="subhead">
+          Test artifact CRUD, screens, drafts, media uploads, and 3D model processing flows.
+        </p>
+      </div>
+      <div class="result-card compact">
+        <h2>Quick IDs</h2>
+        <label>Artifact ID<input id="artifactId" type="text" value="art_1"></label>
+        <label>Screen ID<input id="screenId" type="text" value="scr_1"></label>
+        <label>Draft ID<input id="draftId" type="text" value="drf_1"></label>
+        <label>Media ID<input id="mediaId" type="text" value="med_1"></label>
+        <label>Model ID<input id="modelId" type="text" value="mdl_1"></label>
+      </div>
+    </section>
+
+    <section class="grid">
+      <form class="card" id="artifactForm">
+        <h2>Create artifact</h2>
+        <label>Title<input name="title" value="New Artifact"></label>
+        <label>Description<input name="description" value="Story details"></label>
+        <label>Category<input name="category" value="letters"></label>
+        <button type="submit">POST /artifacts</button>
+      </form>
+
+      <div class="card actions">
+        <h2>Artifact actions</h2>
+        <button type="button" data-action="GET" data-path="/artifacts/{artifactId}">GET artifact</button>
+        <button type="button" data-action="POST" data-path="/artifacts/{artifactId}" data-body='{"title":"Updated Artifact"}'>POST update</button>
+        <button type="button" data-action="POST" data-path="/artifacts/{artifactId}/archive" data-body="{}">Archive</button>
+        <button type="button" data-action="POST" data-path="/artifacts/{artifactId}/restore" data-body="{}">Restore</button>
+        <button type="button" data-action="POST" data-path="/artifacts/{artifactId}/duplicate" data-body="{}">Duplicate</button>
+        <button type="button" data-action="DELETE" data-path="/artifacts/{artifactId}">Delete</button>
+      </div>
+
+      <form class="card" id="screenForm">
+        <h2>Create screen</h2>
+        <label>Type<input name="type" value="text-photo"></label>
+        <label>Title<input name="title" value="Intro screen"></label>
+        <label>Payload<textarea name="payload" rows="4">{"text":"Hello"}</textarea></label>
+        <button type="submit">POST /artifacts/{artifactId}/screens</button>
+      </form>
+
+      <div class="card actions">
+        <h2>Screen actions</h2>
+        <button type="button" data-action="GET" data-path="/artifacts/{artifactId}/screens">List screens</button>
+        <button type="button" data-action="GET" data-path="/artifacts/{artifactId}/screens/{screenId}">Get screen</button>
+        <button type="button" data-action="PATCH" data-path="/artifacts/{artifactId}/screens/{screenId}" data-body='{"title":"Retitled screen"}'>Patch screen</button>
+        <button type="button" data-action="POST" data-path="/artifacts/{artifactId}/screens/reorder" data-body='{"screen_ids":["scr_1","scr_2"]}'>Reorder screens</button>
+        <button type="button" data-action="DELETE" data-path="/artifacts/{artifactId}/screens/{screenId}">Delete screen</button>
+      </div>
+
+      <form class="card" id="draftForm">
+        <h2>Create draft</h2>
+        <label>Name<input name="name" value="Draft from UI"></label>
+        <label>Content<textarea name="content" rows="4">{"screens":2}</textarea></label>
+        <button type="submit">POST /artifacts/{artifactId}/drafts</button>
+      </form>
+
+      <div class="card actions">
+        <h2>Draft actions</h2>
+        <button type="button" data-action="GET" data-path="/artifacts/{artifactId}/drafts">List drafts</button>
+        <button type="button" data-action="GET" data-path="/artifacts/{artifactId}/drafts/{draftId}">Get draft</button>
+        <button type="button" data-action="PATCH" data-path="/artifacts/{artifactId}/drafts/{draftId}" data-body='{"name":"Edited draft"}'>Patch draft</button>
+        <button type="button" data-action="POST" data-path="/artifacts/{artifactId}/drafts/{draftId}/publish-ready" data-body="{}">Publish-ready</button>
+        <button type="button" data-action="POST" data-path="/artifacts/{artifactId}/drafts/{draftId}/discard" data-body="{}">Discard</button>
+      </div>
+
+      <form class="card" id="mediaForm">
+        <h2>Upload media metadata</h2>
+        <label>File name<input name="file_name" value="photo.png"></label>
+        <label>MIME type<input name="mime_type" value="image/png"></label>
+        <label>URL<input name="url" value="https://cdn.local/photo.png"></label>
+        <label>Size bytes<input name="size_bytes" type="number" value="2048"></label>
+        <button type="submit">POST /media/upload</button>
+      </form>
+
+      <div class="card actions">
+        <h2>Media actions</h2>
+        <button type="button" data-action="GET" data-path="/media/{mediaId}">Get media</button>
+        <button type="button" data-action="DELETE" data-path="/media/{mediaId}">Delete media</button>
+      </div>
+
+      <form class="card" id="modelForm">
+        <h2>Upload model metadata</h2>
+        <label>File name<input name="file_name" value="object.glb"></label>
+        <label>Format<input name="format" value="glb"></label>
+        <label>Storage URL<input name="storage_url" value="https://cdn.local/object.glb"></label>
+        <button type="submit">POST /models/upload</button>
+      </form>
+
+      <div class="card actions">
+        <h2>Model actions</h2>
+        <button type="button" data-action="GET" data-path="/models/{modelId}">Get model</button>
+        <button type="button" data-action="POST" data-path="/models/{modelId}/process" data-body="{}">Process model</button>
+        <button type="button" data-action="GET" data-path="/models/{modelId}/status">Get status</button>
+      </div>
+    </section>
+
+    <section class="results">
+      <div class="result-card">
+        <div class="result-head">
+          <h2>Latest response</h2>
+          <button id="clearLogButton" type="button">Clear</button>
+        </div>
+        <pre id="responseLog">No requests yet.</pre>
+      </div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

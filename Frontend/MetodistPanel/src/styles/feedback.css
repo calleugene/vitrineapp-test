@@ -1,0 +1,226 @@
+
+.feedback-layout {
+  grid-template-columns: 330px minmax(0, 1fr);
+  align-items: start;
+}
+
+.feedback-sidebar-panel,
+.feedback-detail-panel {
+  min-height: 760px;
+}
+
+.feedback-filter-row,
+.feedback-thread-top,
+.feedback-detail-head,
+.feedback-detail-actions,
+.feedback-reply-title,
+.feedback-compose-actions,
+.feedback-compose-icons {
+  display: flex;
+  align-items: center;
+}
+
+.feedback-filter-row,
+.feedback-detail-head,
+.feedback-compose-actions {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.feedback-total {
+  margin: 16px 0 14px;
+  font-size: 14px;
+}
+
+.feedback-conversation-list {
+  gap: 0;
+  margin-bottom: 10px;
+}
+
+.feedback-thread-card {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 14px;
+  width: 100%;
+  padding: 16px 14px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.feedback-thread-card.is-active {
+  background: linear-gradient(180deg, rgba(93, 95, 239, 0.06), rgba(93, 95, 239, 0.03));
+}
+
+.feedback-thread-avatar {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.feedback-thread-avatar.tone-violet {
+  background: rgba(93, 95, 239, 0.12);
+  color: var(--color-accent);
+}
+
+.feedback-thread-avatar.tone-green {
+  background: rgba(77, 182, 104, 0.12);
+  color: #3c9d58;
+}
+
+.feedback-thread-avatar.tone-mint {
+  background: rgba(116, 212, 169, 0.16);
+  color: #279f6f;
+}
+
+.feedback-thread-avatar.tone-orange {
+  background: rgba(255, 176, 31, 0.16);
+  color: #d98800;
+}
+
+.feedback-thread-copy {
+  min-width: 0;
+}
+
+.feedback-thread-top {
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.feedback-thread-copy p,
+.feedback-detail-body p,
+.feedback-reply-card p {
+  margin: 8px 0 0;
+  color: #3a3f51;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.feedback-thread-copy span,
+.feedback-thread-copy small,
+.feedback-detail-author span,
+.feedback-detail-author small {
+  display: block;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.feedback-thread-copy small {
+  margin-top: 8px;
+}
+
+.feedback-detail-head {
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(24, 24, 27, 0.06);
+}
+
+.feedback-detail-author {
+  gap: 14px;
+}
+
+.feedback-detail-body {
+  padding: 22px 0 26px;
+}
+
+.feedback-detail-body h3,
+.feedback-reply-title h3 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+.feedback-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 28px;
+  padding: 0 0 24px;
+  border-bottom: 1px solid rgba(24, 24, 27, 0.06);
+}
+
+.feedback-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.feedback-reply-section {
+  padding-top: 22px;
+}
+
+.feedback-reply-card {
+  margin-top: 14px;
+  padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(114, 210, 166, 0.12), rgba(114, 210, 166, 0.08));
+}
+
+.feedback-reply-card strong,
+.feedback-reply-card small {
+  display: block;
+  margin-top: 12px;
+}
+
+.feedback-reply-card small {
+  color: #7f8599;
+  font-size: 13px;
+}
+
+.feedback-compose-box {
+  border: 1px solid rgba(24, 24, 27, 0.08);
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.feedback-compose-box .g-text-area,
+.feedback-compose-box .yg-text-area {
+  border: 0;
+}
+
+.feedback-compose-actions {
+  padding: 12px 14px 14px;
+}
+
+.feedback-compose-icons {
+  gap: 8px;
+}
+
+.feedback-inline-action {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(24, 24, 27, 0.04);
+  color: #757d92;
+  cursor: pointer;
+}
+
+.feedback-feed-copy small {
+  font-size: 12px;
+}
+
+.feedback-expand-button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(24, 24, 27, 0.08);
+  border-radius: 12px;
+  background: rgba(246, 247, 252, 0.9);
+  color: #80879b;
+  cursor: pointer;
+  flex: 0 0 34px;
+}
+
+.feedback-expand-button svg {
+  width: 16px;
+  height: 16px;
+}

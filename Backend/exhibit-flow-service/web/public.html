@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Экспонат</title>
+  <link rel="stylesheet" href="/public.css">
+</head>
+<body>
+  <main class="stories" aria-label="Просмотр экспоната">
+    <section class="story-shell" id="storyShell">
+      <div class="progress" id="progress" aria-label="Прогресс экранов"></div>
+      <header class="story-header"><div><strong id="exhibitName">Экспонат</strong><span>Витрина</span></div><button class="close" type="button" onclick="history.back()" aria-label="Закрыть просмотр">×</button></header>
+      <article class="story-slide" id="slide">
+        <img id="storyImage" class="hidden" alt="">
+        <div class="story-copy"><h1 id="storyTitle"></h1><p id="storyText"></p></div>
+      </article>
+      <button class="tap previous" id="previous" type="button" aria-label="Предыдущий экран"></button>
+      <button class="tap next" id="nextStory" type="button" aria-label="Следующий экран"></button>
+      <div id="emptyStory" class="empty hidden">Для этого экспоната пока нет экранов.</div>
+    </section>
+  </main>
+  <script src="/public.js"></script>
+</body>
+</html>

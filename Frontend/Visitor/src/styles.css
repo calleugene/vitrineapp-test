@@ -1,0 +1,450 @@
+/* Base visual language (ported verbatim from the original Visitor monolith —
+   includes the light browse reskin and the dark immersive story/scanner). */
+@import '../../shared/design-system.css';
+@import './styles/base.css';
+/* Trust & feedback components (skeletons, empty states, route progress).
+   Toasts are now handled by Gravity UI's Toaster. */
+@import './styles/enhancements.css';
+/* Redesigned artifact view */
+@import './features/artifact/artifact.css';
+
+/* Light theme for browse views (override dark monolith CSS) */
+.app-shell {
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+}
+
+.app-shell .app-screen {
+  background: transparent !important;
+  color: #1a1a1a !important;
+}
+
+/* Suppress the old dark-theme CSS archway art on light backgrounds */
+.app-shell .museum-thumb::before,
+.app-shell .museum-thumb::after,
+.app-shell .route-thumb::before,
+.app-shell .route-thumb::after,
+.app-shell .museum-hero::before,
+.app-shell .museum-hero::after,
+.app-shell .museum-hero-photo::before,
+.app-shell .museum-hero-photo::after {
+  display: none !important;
+}
+
+/* Route card thumbnail: same brand-tinted square as museum-thumb */
+.app-shell .route-thumb {
+  background:
+    radial-gradient(circle at 38% 30%, rgba(105, 91, 255, 0.14), transparent 68%),
+    linear-gradient(145deg, #eef0ff, #e8ebff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #695bff;
+}
+
+/* Museum + artifact thumbnails: brand-tinted square, centered SVG */
+.app-shell .museum-thumb {
+  background:
+    radial-gradient(circle at 38% 30%, rgba(105, 91, 255, 0.14), transparent 68%),
+    linear-gradient(145deg, #eef0ff, #e8ebff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #695bff;
+}
+
+.app-shell .artifact-thumb {
+  background:
+    radial-gradient(circle at 38% 30%, rgba(105, 91, 255, 0.1), transparent 68%),
+    linear-gradient(145deg, #f3f4ff, #eaedff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(105, 91, 255, 0.5);
+}
+
+.app-shell .artifact-thumb.is-found {
+  background:
+    radial-gradient(circle at 38% 30%, rgba(47, 168, 102, 0.12), transparent 68%),
+    linear-gradient(145deg, #f0fdf6, #e6faf0);
+  color: #2fa866;
+}
+
+/* Collection card media: same visual language */
+.collection-card-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 38% 30%, rgba(105, 91, 255, 0.12), transparent 68%),
+    linear-gradient(145deg, #eef0ff, #e8ebff);
+}
+
+.collection-card-icon {
+  color: rgba(105, 91, 255, 0.55);
+}
+
+/* Museum hero icon centred in the hero */
+.app-shell .museum-hero-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #695bff;
+  opacity: 0.45;
+  z-index: 1;
+}
+
+/* Museum hero: light branded placeholder, replaces the dark CSS art */
+.app-shell .museum-hero {
+  background:
+    radial-gradient(circle at 28% 22%, rgba(105, 91, 255, 0.18), transparent 55%),
+    radial-gradient(circle at 82% 78%, rgba(143, 116, 255, 0.12), transparent 50%),
+    linear-gradient(155deg, #eef0ff 0%, #e8ebff 55%, #f3f0ff 100%);
+  border: 1px solid rgba(105, 91, 255, 0.12);
+}
+
+.app-shell .museum-hero-photo {
+  background: none;
+  filter: none;
+  opacity: 1;
+}
+
+.app-shell .museum-hero-scrim {
+  background: linear-gradient(180deg, transparent 50%, rgba(238, 240, 255, 0.9) 100%);
+}
+
+.app-shell .hero-caption {
+  color: #5b4bd8;
+  font-weight: 680;
+}
+
+/* Avatar badge: brand SVG icon in a tinted disc */
+.app-shell .avatar-badge {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 40% 35%, rgba(105, 91, 255, 0.2), transparent 60%),
+    linear-gradient(145deg, #eef0ff, #e4e8ff);
+  border: 2px solid rgba(105, 91, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #695bff;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(105, 91, 255, 0.16);
+}
+
+/* Museum + artifact cards: white surface, dark text */
+.app-shell .museum-card,
+.app-shell .artifact-row {
+  background: #ffffff;
+  border: 1px solid rgba(24, 24, 27, 0.08);
+  box-shadow: 0 2px 12px rgba(37, 44, 97, 0.06);
+  color: #1a1a1a;
+}
+
+.app-shell .museum-card h2,
+.app-shell .artifact-row h2 {
+  color: #1a1a1a;
+}
+
+/* Muted text: dark secondary instead of cream */
+.app-shell .museum-card p,
+.app-shell .artifact-row p,
+.app-shell .artifact-body p,
+.app-shell .artifact-status,
+.app-shell .progress-copy,
+.app-shell .hero-caption,
+.app-shell .helper-note {
+  color: #707684;
+}
+
+/* "Found" badge in artifact list — use brand green */
+.app-shell .artifact-status.found {
+  color: #2fa866;
+  font-weight: 780;
+}
+
+/* Found row border: use brand color instead of warm amber */
+.app-shell .artifact-row.is-found {
+  border-color: rgba(105, 91, 255, 0.22);
+  box-shadow: 0 2px 12px rgba(105, 91, 255, 0.08);
+}
+
+/* Icon buttons: white on light theme */
+.app-shell .icon-button {
+  background: rgba(24, 24, 27, 0.06);
+  border-color: rgba(24, 24, 27, 0.1);
+  color: #1a1a1a;
+}
+
+/* Tech / debug button: light dashed */
+.app-shell .tech-button {
+  background: rgba(105, 91, 255, 0.04);
+  border-color: rgba(105, 91, 255, 0.22);
+  color: #695bff;
+}
+
+/* Text button: brand violet */
+.app-shell .text-button {
+  color: #695bff;
+}
+
+/* Helper note: subtle brand tint */
+.app-shell .helper-note {
+  background: rgba(105, 91, 255, 0.04);
+  border-color: rgba(105, 91, 255, 0.1);
+  color: #707684;
+}
+
+/* Status chip: brand violet (all variants) */
+.app-shell .status-chip {
+  background: rgba(105, 91, 255, 0.1);
+  color: #695bff;
+}
+
+/* Warm chip → still use brand, not amber */
+.app-shell .status-chip.is-warm {
+  background: rgba(105, 91, 255, 0.1);
+  color: #695bff;
+}
+
+/* Celebration disc: white with brand glow */
+.app-shell .artifact-celebration {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 1), transparent 60%),
+    linear-gradient(180deg, rgba(105, 91, 255, 0.14), rgba(105, 91, 255, 0.04));
+  border: 1.5px solid rgba(105, 91, 255, 0.15);
+  box-shadow: 0 12px 32px rgba(105, 91, 255, 0.14);
+}
+
+/* Filter tab count badge */
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(105, 91, 255, 0.18);
+  color: #695bff;
+  font-size: 11px;
+  font-weight: 760;
+  margin-left: 4px;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.app-shell .seg-button .tab-badge {
+  background: rgba(105, 91, 255, 0.12);
+  color: #695bff;
+}
+
+.app-shell .seg-button.is-active .tab-badge {
+  background: rgba(105, 91, 255, 0.22);
+}
+
+/* Collection grouped by museum */
+.collection-group {
+  margin-bottom: 24px;
+}
+
+.collection-group-heading {
+  font-size: 13px;
+  font-weight: 760;
+  color: #707684;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 12px;
+}
+
+/* Found/received layout text on light bg */
+.app-shell .found-layout h1,
+.app-shell .received-layout h1 {
+  color: #1a1a1a;
+}
+
+.app-shell .found-layout p,
+.app-shell .received-layout p {
+  color: #707684;
+}
+
+/* =====================================================
+   Yandex-style browse UI improvements
+   ===================================================== */
+
+/* Cleaner page background — neutral light gray */
+.app-view.app-shell {
+  background: #f2f3f8 !important;
+}
+.app-view.app-shell::before,
+.app-view.app-shell::after {
+  display: none !important;
+}
+
+/* Bolder screen titles */
+.app-title {
+  font-size: 30px;
+  font-weight: 820;
+  letter-spacing: -0.025em;
+  color: #18181b;
+  line-height: 1.1;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.app-subtitle {
+  font-size: 14px;
+  color: #8a8f9e;
+  line-height: 1.4;
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+/* Page header: bolder title */
+.page-header-title {
+  font-size: 17px !important;
+  font-weight: 720 !important;
+}
+
+/* ---- Tab bar: clean floating card, color-only active state ---- */
+.app-tabbar {
+  left: 12px !important;
+  right: 12px !important;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  border-radius: 26px !important;
+  border: none !important;
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow:
+    0 4px 24px rgba(37, 44, 97, 0.12),
+    0 1px 4px rgba(37, 44, 97, 0.06) !important;
+  padding: 4px 8px !important;
+  gap: 0 !important;
+}
+
+/* All tabs: same layout always */
+.app-tabbar .tab-button {
+  flex: 1 !important;
+  min-height: 58px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #b0b6c6 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  position: relative !important;
+  -webkit-tap-highlight-color: transparent !important;
+  transition: color 0.15s ease !important;
+  box-shadow: none !important;
+}
+
+.app-tabbar .tab-button::before {
+  display: none !important;
+}
+
+.app-tabbar .tab-button .tab-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 30px;
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.app-tabbar .tab-button .tab-label {
+  display: block;
+  line-height: 1;
+}
+
+/* Active: brand color only — no backgrounds, no pills */
+.app-tabbar .tab-button.is-active {
+  color: #695bff !important;
+  font-weight: 640 !important;
+  box-shadow: none !important;
+}
+
+/* Press: icon bounces */
+.app-tabbar .tab-button:active .tab-icon-wrap {
+  transform: scale(0.86);
+}
+
+/* ---- Sticky scan CTA: lift above floating tab bar ---- */
+.museum-sticky-scan {
+  bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* ---- Museum cards: stronger visual on gray bg ---- */
+.app-shell .museum-card {
+  border: none !important;
+  box-shadow:
+    0 2px 12px rgba(37, 44, 97, 0.07),
+    0 1px 3px rgba(37, 44, 97, 0.06) !important;
+  border-radius: 20px !important;
+  padding: 16px !important;
+}
+
+/* Larger thumbnail area */
+.app-shell .museum-card,
+.app-shell .museum-thumb {
+  /* align-items: center is set in base.css */
+}
+
+/* ---- Artifact items: borderless on gray ---- */
+.artifact-item {
+  border: none !important;
+  box-shadow:
+    0 2px 10px rgba(37, 44, 97, 0.07),
+    0 1px 3px rgba(37, 44, 97, 0.05) !important;
+}
+
+/* ---- Collection cards: borderless ---- */
+.app-shell .collection-card {
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(37, 44, 97, 0.07) !important;
+}
+
+/* ---- Gravity UI collection card ---- */
+.collection-card-gu {
+  display: flex;
+  flex-direction: column;
+  min-height: 170px;
+  padding: 0;
+  border-color: rgba(24, 24, 27, 0.06) !important;
+  box-shadow:
+    0 2px 12px rgba(37, 44, 97, 0.07),
+    0 1px 3px rgba(37, 44, 97, 0.04) !important;
+  overflow: hidden;
+  text-align: left;
+}
+
+.collection-card-gu .collection-card-media {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 38% 30%, rgba(105, 91, 255, 0.12), transparent 68%),
+    linear-gradient(145deg, #eef0ff, #e8ebff);
+}
+
+.collection-card-gu .collection-card-title {
+  margin: 8px 10px 2px;
+  line-height: 1.25;
+}
+
+.collection-card-gu .collection-card-meta {
+  margin: 0 10px 10px;
+  line-height: 1.35;
+}
+
+/* ---- Toast stack: adjust for full-width tab bar ---- */

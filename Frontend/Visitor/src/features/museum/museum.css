@@ -1,0 +1,833 @@
+/* ==================
+   Museum feature styles
+   ================== */
+
+/* Gravity UI Card layout for museum list items */
+.museum-gcard {
+  width: 100%;
+  box-shadow:
+    0 2px 12px rgba(37, 44, 97, 0.07),
+    0 1px 3px rgba(37, 44, 97, 0.05) !important;
+  border-color: rgba(24, 24, 27, 0.06) !important;
+}
+
+.museum-gcard-inner {
+  display: grid;
+  grid-template-columns: 72px 1fr 18px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  min-height: 84px;
+}
+
+.museum-gcard h2 {
+  margin: 0;
+  line-height: 1.25;
+}
+
+.museum-gcard-chevron {
+  color: var(--g-color-text-hint);
+  flex-shrink: 0;
+}
+
+/* Gravity UI Card layout for artifact items */
+.artifact-gcard {
+  width: 100%;
+  box-shadow:
+    0 2px 10px rgba(37, 44, 97, 0.07),
+    0 1px 3px rgba(37, 44, 97, 0.05) !important;
+  border-color: rgba(24, 24, 27, 0.06) !important;
+}
+
+.artifact-gcard.is-found {
+  border-color: rgba(34, 197, 94, 0.18) !important;
+  background: rgba(34, 197, 94, 0.02) !important;
+}
+
+.artifact-gcard-inner {
+  display: grid;
+  grid-template-columns: 56px 1fr 18px;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 18px 16px;
+  min-height: 80px;
+  text-align: left;
+}
+
+.artifact-gcard-chevron {
+  color: var(--g-color-text-hint);
+  flex-shrink: 0;
+  margin-top: 14px;
+}
+
+/* Frosted glass "О музее" overlay button in hero */
+.museum-info-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 11px 0 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  color: #5246c9;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 680;
+  letter-spacing: 0;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(37, 44, 97, 0.1);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.museum-info-btn:active {
+  transform: scale(0.96);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+/* Premium gradient scan CTA */
+.museum-scan-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  height: 64px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #695bff 0%, #7d6dff 100%);
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border: none;
+  cursor: pointer;
+  box-shadow:
+    0 12px 40px rgba(105, 91, 255, 0.46),
+    0 4px 12px rgba(105, 91, 255, 0.24),
+    inset 0 1px rgba(255, 255, 255, 0.2);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.museum-scan-cta:active {
+  transform: scale(0.97);
+  box-shadow: 0 4px 18px rgba(105, 91, 255, 0.32);
+}
+
+/* Search empty state */
+.museum-empty-search {
+  padding: 40px 0;
+  text-align: center;
+}
+
+/* Status label margin */
+.museum-status-label,
+.artifact-status-label {
+  margin-top: 4px;
+}
+
+/* ---- Search ---- */
+
+.museum-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ecedf3;
+  border: none;
+  border-radius: 14px;
+  padding: 0 16px;
+  height: 50px;
+  color: #9ca3af;
+  box-shadow: none;
+  margin-top: 16px;
+  margin-bottom: 20px;
+  transition: background 0.15s ease;
+}
+
+.museum-search:focus-within {
+  background: #e6e7ee;
+}
+
+.museum-search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font: inherit;
+  font-size: 15px;
+  color: #18181b;
+  padding: 0;
+}
+
+.museum-search-input::placeholder {
+  color: #9ca3af;
+}
+
+/* ---- Museum card status states ---- */
+
+.museum-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.museum-card-meta {
+  font-size: 12px;
+  color: #8a8f9e;
+  margin: 0;
+  line-height: 1.3;
+  font-weight: 500;
+}
+
+.museum-card-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.museum-card-mini-progress {
+  flex: 1;
+  height: 3px;
+  background: rgba(105, 91, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.museum-card-progress-label {
+  font-size: 11px;
+  font-weight: 720;
+  color: #695bff;
+  flex-shrink: 0;
+}
+
+.museum-thumb-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.museum-thumb-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  object-fit: cover;
+  object-position: center 42%;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+}
+
+.museum-thumb-check {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- Mission banner ---- */
+
+.museum-mission-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(105, 91, 255, 0.06);
+  border: 1px solid rgba(105, 91, 255, 0.12);
+  margin-bottom: 16px;
+}
+
+.museum-mission-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(105, 91, 255, 0.1);
+  color: #695bff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.museum-mission-text {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #4c4f6b;
+  font-weight: 500;
+  padding-top: 6px;
+}
+
+/* ---- Progress card ---- */
+
+.museum-progress-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 16px 18px 14px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(37, 44, 97, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.museum-progress-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.museum-progress-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.museum-progress-big {
+  font-size: 32px;
+  font-weight: 800;
+  color: #695bff;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.museum-progress-of {
+  font-size: 15px;
+  font-weight: 600;
+  color: #a0a5b8;
+  letter-spacing: -0.01em;
+}
+
+.museum-progress-word {
+  font-size: 13px;
+  font-weight: 500;
+  color: #707684;
+}
+
+.museum-progress-time {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #707684;
+  padding-bottom: 4px;
+}
+
+.museum-progress-time svg {
+  color: #b0b6c6;
+}
+
+.museum-progress-track {
+  height: 6px;
+  background: rgba(105, 91, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.museum-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #695bff, #8b7dff);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+  min-width: 6px;
+}
+
+.museum-progress-hint {
+  font-size: 12px;
+  color: #a0a5b8;
+  font-weight: 500;
+  margin-top: -2px;
+}
+
+/* ---- Museum detail hero ---- */
+
+.museum-hero-large {
+  position: relative;
+  height: 230px;
+  margin: 16px 0 20px;
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(105, 91, 255, 0.28), transparent 55%),
+    radial-gradient(ellipse at 85% 80%, rgba(109, 76, 242, 0.2), transparent 45%),
+    radial-gradient(ellipse at 60% 10%, rgba(143, 116, 255, 0.15), transparent 40%),
+    linear-gradient(145deg, #e8eaff 0%, #dde0ff 60%, #e2deff 100%);
+  border: none;
+  overflow: hidden;
+  box-shadow:
+    0 12px 40px rgba(105, 91, 255, 0.18),
+    0 4px 12px rgba(105, 91, 255, 0.12);
+}
+
+.museum-hero-large-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(105, 91, 255, 0.28);
+}
+
+.museum-hero-large-caption {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
+  font-size: 12px;
+  color: rgba(105, 91, 255, 0.6);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* Photo hero variant */
+.museum-hero-large--photo {
+  background: #0f1923;
+  height: 272px;
+  margin-top: 12px;
+}
+
+.museum-hero-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+}
+
+/* Two-layer Meta-style gradient: top scrim for button + bottom for name */
+.museum-hero-large--photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.30) 0%, transparent 32%),
+    linear-gradient(0deg,   rgba(0, 0, 0, 0.68) 0%, transparent 52%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Name + city overlay inside the photo */
+.museum-hero-overlay {
+  position: absolute;
+  left: 16px;
+  right: 80px;
+  bottom: 16px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.museum-hero-overlay-name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.museum-hero-overlay-city {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.82);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Ensure О музее button sits above the gradient */
+.museum-hero-large--photo .museum-info-btn {
+  z-index: 2;
+}
+
+/* ---- Artifact list items ---- */
+
+.artifact-item-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.artifact-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.artifact-item-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 3px;
+  line-height: 1.25;
+}
+
+.artifact-item-desc {
+  font-size: 12px;
+  color: #707684;
+  margin: 0 0 6px;
+  line-height: 1.35;
+}
+
+.artifact-list-new {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---- Sticky scan CTA ---- */
+
+.museum-sticky-scan {
+  position: absolute;
+  bottom: calc(88px + var(--safe-bottom, 0px));
+  left: 12px;
+  right: 12px;
+  z-index: 35;
+}
+
+/* ==================
+   Museum info modal — Meta-style bottom sheet
+   ================== */
+
+.museum-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(10, 10, 18, 0.52);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  animation: modal-fade-in 0.2s ease;
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.museum-modal {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 24px 24px 0 0;
+  overflow: hidden;
+  animation: modal-slide-up 0.26s cubic-bezier(0.32, 0.72, 0, 1);
+  max-height: 86dvh;
+  overflow-y: auto;
+}
+
+@keyframes modal-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+/* Drag handle — default (no-photo variant, normal flow) */
+.museum-modal-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(24, 24, 27, 0.16);
+  margin: 10px auto 0;
+}
+
+/* Handle inside cover photo: floats centered at top */
+.museum-modal-cover .museum-modal-handle {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+/* ---- Cover photo ---- */
+.museum-modal-cover {
+  position: relative;
+  height: 250px;
+  overflow: hidden;
+}
+
+.museum-modal-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+}
+
+/* Dark gradient top (close btn) + strong dark at bottom (text readability) */
+.museum-modal-cover-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.32) 0%, transparent 38%),
+    linear-gradient(0deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0) 62%);
+}
+
+/* White text over dark gradient — Meta/Instagram pattern */
+.museum-modal-cover-text {
+  position: absolute;
+  left: 20px;
+  right: 60px;
+  bottom: 52px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.museum-modal-cover-name {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.35);
+}
+
+.museum-modal-cover-cat {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.16);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.26);
+  border-radius: 999px;
+  padding: 3px 10px;
+  letter-spacing: 0.01em;
+}
+
+/* Close button variants */
+.museum-modal-close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(22, 22, 29, 0.1);
+  background: rgba(24, 24, 27, 0.05);
+  color: #707684;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.14s ease;
+}
+
+.museum-modal-close:active { background: rgba(24, 24, 27, 0.1); }
+
+.museum-modal-close--on-photo {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.32);
+  color: #ffffff;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.museum-modal-close--on-photo:active { background: rgba(0, 0, 0, 0.5); }
+
+/* No-photo fallback header */
+.museum-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 12px;
+}
+
+.museum-modal-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.25;
+}
+
+/* ---- Modal body — white card lifts over photo bottom (AirBnB/Meta pattern) ---- */
+.museum-modal-body {
+  position: relative;
+  z-index: 3;
+  margin-top: -24px;
+  border-radius: 20px 20px 0 0;
+  background: #ffffff;
+  padding: 20px 20px calc(32px + var(--safe-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Category pill (no-photo variant) */
+.museum-modal-category-pill {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 600;
+  color: #695bff;
+  background: rgba(105, 91, 255, 0.08);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+/* About text */
+.museum-modal-about {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #4c4f6b;
+  margin: 0;
+}
+
+/* Info rows */
+.museum-modal-rows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(24, 24, 27, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.museum-modal-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(24, 24, 27, 0.06);
+}
+
+.museum-modal-row:last-child { border-bottom: none; }
+
+.museum-modal-row-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: rgba(105, 91, 255, 0.08);
+  color: #695bff;
+  display: grid;
+  place-items: center;
+  margin-top: 1px;
+}
+
+.museum-modal-row-text {
+  font-size: 14px;
+  color: #1a1a1a;
+  line-height: 1.5;
+  padding-top: 6px;
+}
+
+/* Website CTA */
+.museum-modal-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 50px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #695bff, #7d6dff);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: -0.01em;
+  box-shadow:
+    0 6px 20px rgba(105, 91, 255, 0.34),
+    inset 0 1px rgba(255, 255, 255, 0.18);
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.14s ease, transform 0.12s ease;
+}
+
+.museum-modal-cta:active {
+  opacity: 0.88;
+  transform: scale(0.98);
+}
+
+
+/* ---- Строка поиска: скрываем системную кнопку очистки WebKit,
+   чтобы не дублировалась с кастомной справа ---- */
+.museum-search-input::-webkit-search-cancel-button,
+.museum-search-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.museum-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---- Экран музея: место под липкую кнопку сканирования ---- */
+.museum-detail-screen {
+  padding-bottom: calc(160px + var(--safe-bottom, 0px));
+}
+
+.museum-detail-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.museum-detail-loading-text {
+  margin: 0;
+  color: var(--g-color-text-secondary, #8a8f9e);
+}
+
+/* Спиннер живёт в CSS фичи: не зависит от @keyframes,
+   объявленного внутри LoadingScreen в App.jsx. */
+.museum-spinner {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+  border: 3px solid rgba(105, 91, 255, 0.15);
+  border-top-color: #695bff;
+  border-radius: 50%;
+  animation: museum-spin 0.7s linear infinite;
+}
+
+@keyframes museum-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

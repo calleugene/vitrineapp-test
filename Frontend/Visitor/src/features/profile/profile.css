@@ -1,0 +1,978 @@
+/* ==================
+   Profile feature styles
+   ================== */
+
+/* Logo header used in profile screens */
+.profile-logo-text {
+  font-size: 20px;
+  font-weight: 780;
+  color: #695bff;
+  letter-spacing: -0.02em;
+}
+
+/* Centered avatar + greeting hero */
+.profile-hero-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 0 24px;
+  gap: 10px;
+}
+
+.profile-greeting-text {
+  font-size: 24px;
+  font-weight: 820;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* О приложении */
+.about-rows {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid rgba(24, 24, 27, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(37, 44, 97, 0.05);
+}
+
+.about-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1a1a;
+  border-bottom: 1px solid rgba(24, 24, 27, 0.06);
+  cursor: pointer;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+
+.about-row:last-child {
+  border-bottom: none;
+}
+
+.about-row:active {
+  background: rgba(105, 91, 255, 0.04);
+}
+
+.about-row-chevron {
+  color: #aab0be;
+  flex-shrink: 0;
+}
+
+/* ==================
+   Guest lock panel (persistent, not dismissible — drives registration)
+   position: absolute so tabbar (z-index: 40) stays above it (z-index: 35)
+   ================== */
+
+/* Panel floats above the tabbar — bottom offset clears the tabbar height+gap */
+.guest-lock-panel {
+  position: absolute;
+  bottom: calc(88px + var(--safe-bottom, 0px));
+  left: 12px;
+  right: 12px;
+  z-index: 35;
+  pointer-events: auto;
+}
+
+.guest-lock-gradient {
+  height: 72px;
+  /* Stretch gradient edge-to-edge (negates parent padding) */
+  margin: 0 -12px;
+  background: linear-gradient(to bottom, rgba(247, 248, 252, 0), #fff);
+  pointer-events: none;
+  border-radius: 20px 20px 0 0;
+}
+
+.guest-lock-body {
+  background: #fff;
+  border-radius: 20px;
+  padding: 16px 20px 20px;
+  box-shadow:
+    0 8px 40px rgba(37, 44, 97, 0.14),
+    0 2px 8px rgba(37, 44, 97, 0.06),
+    0 0 0 1px rgba(24, 24, 27, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.guest-lock-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(105, 91, 255, 0.1);
+  color: #695bff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.guest-lock-title {
+  font-size: 17px;
+  font-weight: 760;
+  color: #1a1a1a;
+  margin: 0;
+  letter-spacing: -0.015em;
+}
+
+.guest-lock-perks {
+  list-style: none;
+  padding: 0;
+  margin: 2px 0 4px;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.guest-lock-perks li {
+  font-size: 13px;
+  color: #1a1a1a;
+  padding-left: 18px;
+  position: relative;
+  line-height: 1.4;
+}
+
+.guest-lock-perks li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #695bff;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.guest-lock-signin {
+  background: none;
+  border: none;
+  color: #707684;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 2px 0 0;
+  text-align: center;
+  width: 100%;
+}
+
+.guest-lock-signin strong {
+  color: #695bff;
+  font-weight: 600;
+}
+
+/* ==================
+   Collection locked state (guest)
+   ================== */
+
+.guest-collection-lock {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.guest-collection-lock-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 48px 0 0;
+  gap: 8px;
+}
+
+.guest-collection-lock-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(105, 91, 255, 0.08);
+  border: 1.5px solid rgba(105, 91, 255, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #695bff;
+  margin-bottom: 4px;
+}
+
+.guest-collection-lock-title {
+  font-size: 19px;
+  font-weight: 760;
+  color: #1a1a1a;
+  margin: 0;
+  letter-spacing: -0.015em;
+}
+
+.guest-collection-lock-text {
+  font-size: 14px;
+  color: #707684;
+  line-height: 1.45;
+  max-width: 260px;
+  margin: 0;
+}
+
+.guest-collection-lock-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+/* Ghost collection preview (locked content behind panel) */
+.guest-ghost-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.35;
+}
+
+.guest-ghost-tile {
+  height: 96px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #eef0ff 0%, #e4e8ff 100%);
+  border: 1px solid rgba(105, 91, 255, 0.1);
+}
+
+/* ==================
+   Settings view
+   ================== */
+
+.settings-profile-mini {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0 20px;
+  border-bottom: 1px solid rgba(24, 24, 27, 0.07);
+  margin-bottom: 24px;
+}
+
+.settings-profile-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 40% 35%, rgba(105, 91, 255, 0.2), transparent 60%),
+    linear-gradient(145deg, #eef0ff, #e4e8ff);
+  border: 2px solid rgba(105, 91, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #695bff;
+  flex-shrink: 0;
+}
+
+.settings-profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-profile-name {
+  font-size: 17px;
+  font-weight: 730;
+  color: #1a1a1a;
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.settings-profile-link {
+  font-size: 13px;
+  color: #695bff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* Settings sections */
+.settings-section {
+  margin-bottom: 28px;
+}
+
+.settings-section-label {
+  font-size: 12px;
+  font-weight: 720;
+  color: #aab0be;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 12px;
+}
+
+.settings-field {
+  margin-bottom: 14px;
+}
+
+.settings-field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 6px;
+}
+
+.email-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(253, 173, 46, 0.08);
+  border: 1px solid rgba(253, 173, 46, 0.28);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #8a6500;
+  line-height: 1.4;
+}
+
+.email-warning-text {
+  flex: 1;
+}
+
+.email-warning-link {
+  background: none;
+  border: none;
+  color: #695bff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: rgba(105, 91, 255, 0.3);
+  display: block;
+  margin-top: 3px;
+}
+
+/* ==================
+   Delete account
+   ================== */
+
+.delete-account-screen {
+  min-height: 100dvh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px 36px;
+}
+
+.delete-account-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.delete-avatar-ring {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #f3f3f6, #e8e8ed);
+  margin-bottom: 12px;
+}
+
+.delete-account-title {
+  font-size: 26px;
+  font-weight: 820;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.delete-account-text {
+  font-size: 15px;
+  color: #707684;
+  line-height: 1.5;
+  max-width: 260px;
+  margin: 0;
+}
+
+.delete-account-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+}
+
+/* ==================
+   Account deleted
+   ================== */
+
+.account-deleted-screen {
+  min-height: 100dvh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+
+.account-deleted-close {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.account-deleted-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0;
+}
+
+.account-deleted-title {
+  font-size: 26px;
+  font-weight: 820;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+}
+
+.account-deleted-text {
+  font-size: 15px;
+  color: #707684;
+  margin: 0 0 32px;
+}
+
+.account-deleted-footer {
+  padding-bottom: 8px;
+}
+
+/* ==================
+   Route empty CTA
+   ================== */
+
+.route-empty-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 28px 20px;
+  background: #fff;
+  border: 1.5px dashed rgba(105, 91, 255, 0.22);
+  border-radius: 14px;
+  gap: 10px;
+}
+
+.route-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #eef0ff, #e4e8ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #695bff;
+  margin-bottom: 2px;
+}
+
+.route-empty-text {
+  font-size: 14px;
+  color: #707684;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ==================
+   Email status rows
+   ================== */
+
+.email-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.email-status-sending {
+  background: rgba(24, 24, 27, 0.04);
+  color: #707684;
+}
+
+.email-status-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(105, 91, 255, 0.2);
+  border-top-color: #695bff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.email-status-sent {
+  background: rgba(56, 130, 246, 0.07);
+  border: 1px solid rgba(56, 130, 246, 0.2);
+  color: #1d4ed8;
+  align-items: flex-start;
+}
+
+.email-sent-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.email-resend-timer {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.email-resend-btn {
+  background: none;
+  border: none;
+  color: #695bff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: rgba(105, 91, 255, 0.3);
+  text-align: left;
+}
+
+.email-status-verified {
+  background: rgba(34, 197, 94, 0.07);
+  border: 1px solid rgba(34, 197, 94, 0.24);
+  color: #15803d;
+}
+
+/* ==================
+   Field error
+   ================== */
+
+.field-error-msg {
+  font-size: 12px;
+  color: #d9363e;
+  margin: 5px 0 0;
+  line-height: 1.3;
+}
+
+/* ==================
+   Settings logout row
+   ================== */
+
+.settings-logout-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid rgba(24, 24, 27, 0.08);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1a1a;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.12s;
+}
+
+.settings-logout-row:active {
+  background: rgba(24, 24, 27, 0.04);
+}
+
+/* ==================
+   Settings danger section
+   ================== */
+
+.settings-danger-section {
+  padding-top: 4px;
+}
+
+.settings-danger-section .settings-section-label {
+  color: rgba(217, 54, 62, 0.7);
+}
+
+/* ==================
+   Confirm checkbox
+   ================== */
+
+.confirm-check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: rgba(217, 54, 62, 0.04);
+  border: 1px solid rgba(217, 54, 62, 0.16);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  box-sizing: border-box;
+}
+
+.confirm-check-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.confirm-check-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid rgba(217, 54, 62, 0.5);
+  background: #fff;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+  margin-top: 1px;
+}
+
+.confirm-check-label:has(input:checked) .confirm-check-box {
+  background: #d9363e;
+  border-color: #d9363e;
+}
+
+.confirm-check-text {
+  font-size: 14px;
+  color: #1a1a1a;
+  line-height: 1.45;
+}
+
+/* ==================
+   Delete danger icon
+   ================== */
+
+.delete-danger-icon {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fff1f1, #ffe4e4);
+  border: 2px solid rgba(217, 54, 62, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d9363e;
+  margin-bottom: 12px;
+}
+
+/* ==================
+   Public profile
+   ================== */
+
+.public-profile-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 0 20px;
+  gap: 8px;
+}
+
+.public-profile-name {
+  font-size: 24px;
+  font-weight: 820;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.public-profile-link {
+  font-size: 14px;
+  color: #695bff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* ==================
+   Collection card — redesigned
+   ================== */
+
+.coll-card {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(24, 24, 27, 0.07);
+  box-shadow: 0 2px 12px rgba(37, 44, 97, 0.06);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.coll-card:active {
+  transform: scale(0.96);
+  box-shadow: 0 1px 4px rgba(37, 44, 97, 0.04);
+}
+
+.coll-card:focus-visible {
+  box-shadow: 0 0 0 2px #695bff, 0 2px 12px rgba(37, 44, 97, 0.06);
+}
+
+.coll-card-media {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.coll-card-body {
+  padding: 10px 12px 13px;
+  background: #fff;
+  flex: 1;
+}
+
+.coll-card-title {
+  font-size: 13px;
+  font-weight: 680;
+  color: #1a1a1a;
+  margin: 0 0 4px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.coll-card-meta {
+  font-size: 11px;
+  color: #aab0be;
+  margin: 0;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==================
+   Info bottom-sheet modal
+   ================== */
+
+.info-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: flex-end;
+  animation: info-backdrop-in 0.22s ease both;
+}
+
+@keyframes info-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.info-modal-sheet {
+  width: 100%;
+  max-height: 82dvh;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  animation: info-sheet-up 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+  box-shadow: 0 -8px 40px rgba(37, 44, 97, 0.14);
+}
+
+@keyframes info-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.info-modal-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(24, 24, 27, 0.12);
+  margin: 12px auto 4px;
+  flex-shrink: 0;
+}
+
+.info-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px 14px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(24, 24, 27, 0.06);
+}
+
+.info-modal-title {
+  font-size: 17px;
+  font-weight: 740;
+  color: #1a1a1a;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.info-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(24, 24, 27, 0.06);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #707684;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.12s;
+  font-family: inherit;
+}
+
+.info-modal-close:active {
+  background: rgba(24, 24, 27, 0.11);
+}
+
+.info-modal-body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  padding: 20px 20px 28px;
+  scrollbar-width: none;
+}
+
+.info-modal-body::-webkit-scrollbar { display: none; }
+
+.info-section {
+  margin-bottom: 24px;
+}
+
+.info-section:last-child {
+  margin-bottom: 0;
+}
+
+.info-section-title {
+  font-size: 11px;
+  font-weight: 720;
+  color: #aab0be;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 12px;
+}
+
+.info-faq-item {
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(24, 24, 27, 0.06);
+}
+
+.info-faq-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.info-faq-q {
+  font-size: 14px;
+  font-weight: 660;
+  color: #1a1a1a;
+  margin: 0 0 5px;
+  line-height: 1.3;
+}
+
+.info-faq-a {
+  font-size: 14px;
+  color: #707684;
+  margin: 0;
+  line-height: 1.55;
+}
+
+.info-contact-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: rgba(105, 91, 255, 0.05);
+  border: 1px solid rgba(105, 91, 255, 0.14);
+  border-radius: 14px;
+  color: #695bff;
+  font-size: 15px;
+  font-weight: 560;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+
+.info-contact-link:active {
+  background: rgba(105, 91, 255, 0.1);
+}
+
+.info-body-text {
+  font-size: 14px;
+  color: #707684;
+  line-height: 1.55;
+  margin: 0 0 8px;
+}
+
+.info-body-text:last-child { margin-bottom: 0; }
+
+.info-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.info-list li {
+  font-size: 14px;
+  color: #707684;
+  line-height: 1.45;
+  padding-left: 18px;
+  position: relative;
+}
+
+.info-list li::before {
+  content: '•';
+  position: absolute;
+  left: 4px;
+  color: #695bff;
+  font-weight: 700;
+}
+
+.info-inline-link {
+  color: #695bff;
+  text-decoration: none;
+  font-weight: 560;
+}
+
+.info-inline-link:hover { text-decoration: underline; }

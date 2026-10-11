@@ -1,0 +1,129 @@
+/* First-run onboarding — 3-slide intro (white, brand purple) */
+
+.onboarding-view {
+  background: #ffffff !important;
+  color: #18181b !important;
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.onboarding-body {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.onboarding-track {
+  display: flex;
+  height: 100%;
+  will-change: transform;
+  transition: transform 340ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.onboarding-slide {
+  flex: 0 0 100vw;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px 24px;
+  text-align: center;
+  gap: 18px;
+}
+
+.onboarding-icon {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  background: rgba(105, 91, 255, 0.1);
+  display: grid;
+  place-items: center;
+  color: #695bff;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.onboarding-title {
+  font-size: 26px;
+  font-weight: 820;
+  color: #18181b;
+  line-height: 1.2;
+  margin: 0;
+  white-space: pre-line;
+}
+
+.onboarding-text {
+  font-size: 15px;
+  color: #707684;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 300px;
+}
+
+.onboarding-footer {
+  padding: 20px 32px calc(44px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.onboarding-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.onboarding-dot {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(105, 91, 255, 0.2);
+  transition: all 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  width: 8px;
+}
+
+.onboarding-dot.is-active {
+  width: 28px;
+  background: #695bff;
+}
+
+.onboarding-cta {
+  width: 100%;
+  max-width: 360px;
+  min-height: 52px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #695bff, #6d4cf2);
+  color: #ffffff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 760;
+  cursor: pointer;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.onboarding-cta:active {
+  opacity: 0.82;
+  transform: scale(0.98);
+}
+
+.onboarding-skip {
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 14px;
+  color: #707684;
+  cursor: pointer;
+  padding: 4px 12px;
+  min-height: 36px;
+}
+
+.onboarding-skip:active {
+  color: #695bff;
+}

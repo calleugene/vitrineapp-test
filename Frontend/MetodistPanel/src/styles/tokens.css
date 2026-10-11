@@ -1,0 +1,6 @@
+/* Metodist-only layout tokens. Global color, type, spacing and elevation
+   tokens live in Frontend/shared/design-system.css. */
+:root {
+  --shadow-soft: var(--vl-shadow-float);
+  --content-side-column: 320px;
+}

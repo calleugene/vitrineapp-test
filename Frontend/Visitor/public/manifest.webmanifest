@@ -1,0 +1,10 @@
+{
+  "name": "ViraLabs Visitor",
+  "short_name": "ViraLabs",
+  "lang": "ru",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f2f3f8",
+  "theme_color": "#f2f3f8",
+  "icons": [{"src": "/pwa-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}]
+}

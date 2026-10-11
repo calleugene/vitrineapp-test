@@ -1,0 +1,92 @@
+/* ViraLabs shared design system.
+ * MetodistPanel is the visual source of truth; Visitor consumes the same
+ * primitives and may add feature-scoped overrides only when the experience
+ * requires it (for example, immersive XR screens).
+ */
+@layer vl.tokens, vl.reset, vl.utilities;
+
+@layer vl.tokens {
+  :root,
+  .g-root {
+    --vl-color-brand: #5d5fef;
+    --vl-color-brand-hover: #4f51d9;
+    --vl-color-brand-active: #4143b8;
+    --vl-color-brand-soft: rgba(93, 95, 239, .12);
+    --vl-color-text: #18181b;
+    --vl-color-text-muted: #707684;
+    --vl-color-bg: #f7f8fc;
+    --vl-color-bg-subtle: #f5f7fb;
+    --vl-color-surface: #ffffff;
+    --vl-color-line: rgba(24, 24, 27, .10);
+    --vl-color-success: #2fa866;
+    --vl-color-warning: #c2410c;
+    --vl-color-danger: #d64848;
+    --vl-radius-sm: 8px;
+    --vl-radius-md: 12px;
+    --vl-radius-lg: 18px;
+    --vl-radius-xl: 26px;
+    --vl-shadow-card: 0 12px 28px rgba(37, 44, 97, .08);
+    --vl-shadow-float: 0 18px 60px rgba(37, 44, 97, .14);
+    --vl-space-1: 4px;
+    --vl-space-2: 8px;
+    --vl-space-3: 12px;
+    --vl-space-4: 16px;
+    --vl-space-5: 20px;
+    --vl-space-6: 24px;
+    --vl-font-sans: var(--g-font-family-sans, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+    /* Compatibility aliases used by the existing feature CSS. */
+    --color-text: var(--vl-color-text);
+    --color-text-muted: var(--vl-color-text-muted);
+    --color-accent: var(--vl-color-brand);
+    --color-bg: var(--vl-color-bg);
+    --color-bg-subtle: var(--vl-color-bg-subtle);
+    --color-surface: var(--vl-color-surface);
+    --color-danger: var(--vl-color-danger);
+    --violet: var(--vl-color-brand);
+    --violet-2: #817fff;
+    --green: var(--vl-color-success);
+    --bg: var(--vl-color-bg);
+    --ink: var(--vl-color-text);
+    --muted: var(--vl-color-text-muted);
+    --panel: var(--vl-color-surface);
+    --panel-strong: var(--vl-color-surface);
+
+    --g-color-base-brand: var(--vl-color-brand);
+    --g-color-base-brand-hover: var(--vl-color-brand-hover);
+    --g-color-base-brand-active: var(--vl-color-brand-active);
+    --g-color-base-brand-selection: var(--vl-color-brand-soft);
+    --g-color-text-brand: var(--vl-color-brand);
+    --g-color-text-brand-heavy: var(--vl-color-brand-active);
+    --g-color-line-brand: var(--vl-color-brand);
+    --g-color-text-primary: var(--vl-color-text);
+    --g-color-text-secondary: var(--vl-color-text-muted);
+    --g-color-base-background: var(--vl-color-bg);
+    --g-color-base-float: var(--vl-color-surface);
+    --g-color-line-generic: var(--vl-color-line);
+    --g-color-positive: var(--vl-color-success);
+    --g-color-warning: var(--vl-color-warning);
+    --g-color-danger: var(--vl-color-danger);
+    --g-border-radius-m: var(--vl-radius-md);
+    --g-border-radius-l: var(--vl-radius-lg);
+    --g-border-radius-xl: 20px;
+    --g-shadow-card: var(--vl-shadow-card);
+    --g-shadow-float: var(--vl-shadow-float);
+  }
+}
+
+@layer vl.reset {
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { min-height: 100%; margin: 0; }
+  body { overflow-x: hidden; color: var(--vl-color-text); background: var(--vl-color-bg); font-family: var(--vl-font-sans); }
+  button, input, textarea, select { font: inherit; }
+  button { -webkit-tap-highlight-color: transparent; }
+  #root { min-height: 100vh; }
+}
+
+@layer vl.utilities {
+  .vl-focus-ring:focus-visible { outline: 3px solid color-mix(in srgb, var(--vl-color-brand) 45%, transparent); outline-offset: 2px; }
+  .vl-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+}

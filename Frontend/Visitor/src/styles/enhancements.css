@@ -1,0 +1,419 @@
+/* =====================================================================
+   Visitor app — "trust & feedback" enhancements
+   Gravity UI design-token layer + lightweight components (skeletons,
+   toasts, empty states, retry banner, route progress). Additive only;
+   scoped to the light browse screens so the immersive story / camera
+   scanner are unaffected.
+   ===================================================================== */
+
+/* ---------- Skeletons ---------- */
+.vl-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #eef0f8;
+  border-radius: var(--g-border-radius-m);
+}
+
+.vl-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0,
+    rgba(255, 255, 255, 0.65) 50%,
+    transparent 100%
+  );
+  animation: vl-shimmer 1.25s ease-in-out infinite;
+}
+
+@keyframes vl-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+.vl-skeleton-card {
+  min-height: 104px;
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border-radius: var(--g-border-radius-xl);
+  background: #ffffff;
+  border: 1px solid var(--g-color-line-generic);
+  box-shadow: var(--g-shadow-card);
+}
+
+.vl-skeleton-card .vl-skeleton {
+  height: 100%;
+}
+
+.vl-skeleton-thumb {
+  width: 68px;
+  aspect-ratio: 1;
+  border-radius: 14px;
+}
+
+.vl-skeleton-lines {
+  display: grid;
+  gap: 10px;
+}
+
+.vl-skeleton-line {
+  height: 12px;
+}
+
+.vl-skeleton-line.is-title {
+  height: 16px;
+  width: 65%;
+}
+
+.vl-skeleton-line.is-short {
+  width: 42%;
+}
+
+.vl-skeleton-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.vl-skeleton-tile {
+  min-height: 170px;
+  border-radius: var(--g-border-radius-l);
+}
+
+/* ---------- Empty states ---------- */
+.vl-empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--g-spacing-4);
+  padding: 28px 20px;
+  border-radius: var(--g-border-radius-xl);
+  background: #ffffff;
+  border: 1px solid var(--g-color-line-generic);
+  box-shadow: var(--g-shadow-card);
+  text-align: center;
+}
+
+.vl-empty-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(105, 91, 255, 0.12);
+  color: var(--g-color-base-brand);
+}
+
+.vl-empty-icon svg { width: 26px; height: 26px; }
+
+.vl-empty h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 820;
+  color: var(--g-color-text-primary);
+}
+
+.vl-empty p {
+  margin: 0;
+  max-width: 280px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--g-color-text-secondary);
+}
+
+.vl-cta-button {
+  appearance: none;
+  min-height: 44px;
+  margin-top: var(--g-spacing-2);
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--g-color-base-brand), #6d4cf2);
+  color: var(--g-color-text-light-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 780;
+  cursor: pointer;
+}
+
+.vl-cta-button:active { opacity: 0.82; }
+
+/* ---------- Retry / error banner ---------- */
+.vl-retry {
+  display: grid;
+  justify-items: center;
+  gap: var(--g-spacing-4);
+  padding: 26px 20px;
+  border-radius: var(--g-border-radius-xl);
+  background: #ffffff;
+  border: 1px solid rgba(214, 47, 60, 0.28);
+  box-shadow: var(--g-shadow-card);
+  text-align: center;
+}
+
+.vl-retry-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(214, 47, 60, 0.12);
+  color: var(--g-color-danger);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.vl-retry h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 820;
+  color: var(--g-color-text-primary);
+}
+
+.vl-retry p {
+  margin: 0;
+  max-width: 280px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--g-color-text-secondary);
+}
+
+/* ---------- Route progress ---------- */
+.vl-route-progress {
+  height: 8px;
+  margin: 12px 0 2px;
+  border-radius: 999px;
+  background: rgba(24, 24, 27, 0.08);
+  overflow: hidden;
+}
+
+.vl-route-progress-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--g-color-base-brand), #8f74ff);
+  transition: width 360ms ease;
+}
+
+/* ---------- Toasts ---------- */
+/* =====================================================================
+   Meta-style light notifications — white pill, centered content,
+   type icon + progress bar + dismiss. Spring enter, fade-scale exit.
+   ===================================================================== */
+
+.vl-toast-stack {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top, 16px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.vl-toast {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 40px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid rgba(24, 24, 27, 0.07);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.10),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  color: #18181b;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  overflow: hidden;
+  pointer-events: auto;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  animation: vl-toast-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.vl-toast.is-leaving {
+  animation: vl-toast-out 240ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
+}
+
+.vl-toast-body {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  justify-content: center;
+  min-width: 0;
+}
+
+.vl-toast-icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vl-toast-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #18181b;
+  line-height: 1.35;
+  text-align: center;
+  min-width: 0;
+}
+
+.vl-toast-close {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(24, 24, 27, 0.06);
+  color: #707684;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.14s ease, color 0.14s ease;
+  flex-shrink: 0;
+}
+
+.vl-toast-close:active {
+  background: rgba(24, 24, 27, 0.12);
+  color: #18181b;
+}
+
+/* Auto-dismiss progress bar */
+.vl-toast-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: rgba(24, 24, 27, 0.07);
+  transform-origin: left;
+  animation: vl-toast-bar var(--toast-dur, 3200ms) linear forwards;
+}
+
+.vl-toast--success .vl-toast-bar { background: rgba(22, 163, 74, 0.45); }
+.vl-toast--error   .vl-toast-bar { background: rgba(220, 38, 38, 0.45); }
+.vl-toast--info    .vl-toast-bar { background: rgba(105, 91, 255, 0.45); }
+.vl-toast--warning .vl-toast-bar { background: rgba(217, 119, 6, 0.45); }
+
+@keyframes vl-toast-in {
+  from { opacity: 0; transform: translateY(-14px) scale(0.92); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes vl-toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-8px) scale(0.96); }
+}
+
+@keyframes vl-toast-bar {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vl-skeleton::after,
+  .vl-toast,
+  .vl-toast.is-leaving,
+  .vl-toast-bar,
+  .vl-route-progress-fill {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---- Sticky page header (all browse views) ---- */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  margin: 0 0 20px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.page-header-back {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: none;
+  color: #695bff;
+  cursor: pointer;
+  border-radius: 10px;
+  -webkit-tap-highlight-color: transparent;
+  appearance: none;
+}
+
+.page-header-back:active {
+  background: rgba(105, 91, 255, 0.08);
+}
+
+.page-header-title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 650;
+  color: #1a1a1a;
+  text-align: center;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.page-header-logo {
+  font-size: 20px;
+  font-weight: 780;
+  color: #695bff;
+  letter-spacing: -0.02em;
+  padding-left: 4px;
+  flex: 1;
+}
+
+.page-header-right {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-header-right-btn {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: none;
+  color: #56575c;
+  cursor: pointer;
+  border-radius: 10px;
+  -webkit-tap-highlight-color: transparent;
+  appearance: none;
+}
+
+.page-header-right-btn:active {
+  background: rgba(0, 0, 0, 0.06);
+}

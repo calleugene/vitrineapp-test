@@ -1,0 +1,5 @@
+.git
+exhibit-flow.db
+exhibitflowservice
+.DS_Store
+*.test

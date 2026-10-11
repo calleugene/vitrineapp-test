@@ -1,0 +1,36 @@
+
+.route-builder {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(340px, 1.2fr);
+  gap: 20px;
+  min-width: 0;
+}
+
+.route-list,
+.route-order {
+  padding: 18px;
+  border-radius: 8px;
+  background: rgba(245, 247, 251, 0.9);
+  min-width: 0;
+}
+
+.route-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.route-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.route-order-row {
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  cursor: grab;
+}
+
+.route-order-row.is-dragging {
+  opacity: 0.58;
+}
