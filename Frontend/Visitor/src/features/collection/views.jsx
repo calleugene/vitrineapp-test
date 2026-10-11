@@ -26,7 +26,12 @@ export function CollectionCard({item, onOpen}) {
       onClick={() => onOpen(item.id)}
       role="button"
       tabIndex={0}
-      onKeyDown={e => e.key === 'Enter' && onOpen(item.id)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpen(item.id);
+        }
+      }}
       aria-label={item.title}
     >
       <div

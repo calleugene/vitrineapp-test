@@ -9,8 +9,8 @@
   --gc-bg:             #f2f3f8;
   --gc-surface:        #ffffff;
   --gc-text-primary:   #1a1c23;
-  --gc-text-secondary: #8e95a3;
-  --gc-text-tertiary:  #b8bdc8;
+  --gc-text-secondary: #626a78;
+  --gc-text-tertiary:  #626a78;
   --gc-border:         rgba(0, 0, 0, 0.08);
   --gc-shadow-s:       0 1px 4px rgba(0, 0, 0, 0.06);
   --gc-radius-s:       8px;
@@ -25,6 +25,7 @@
   flex-direction: column;
   height: 100%;
   min-height: 100%;
+  overflow-y: auto;
 }
 
 /* ── Top bar ── */
@@ -158,15 +159,6 @@
   box-shadow: 0 0 0 4px rgba(105, 91, 255, 0.1);
 }
 
-/* JS-driven demo highlight */
-.sc-key--demo {
-  background: var(--gc-brand-a12) !important;
-  border-color: var(--gc-brand) !important;
-  color: var(--gc-brand) !important;
-  transform: scale(0.93) !important;
-  box-shadow: 0 0 0 5px rgba(105, 91, 255, 0.12) !important;
-}
-
 /* Backspace key — subtler */
 .sc-key-del {
   color: var(--gc-text-secondary);
@@ -184,8 +176,9 @@
   .sc-key, .sc-key--demo { transition: none !important; transform: none !important; }
 }
 
-/* ── Code display (read-only divs, tap = backspace) ── */
+/* Native input overlays the visual digit slots. */
 .sc-inputs {
+  position: relative;
   display: flex;
   gap: 8px;
   cursor: pointer;
@@ -607,4 +600,38 @@
   .qr-status-card p {
     font-size: 13px;
   }
+}
+
+.sc-code-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  opacity: 0;
+  cursor: text;
+  font-size: 16px;
+}
+.sc-inputs:focus-within {
+  outline: 3px solid var(--gc-brand);
+  outline-offset: 5px;
+  border-radius: var(--gc-radius-s);
+}
+.sc-key:focus-visible, .sc-submit:focus-visible, .sc-reset-btn:focus-visible, .sc-skip:focus-visible {
+  outline: 3px solid var(--gc-brand);
+  outline-offset: 3px;
+}
+.sc-key:disabled, .sc-reset-btn:disabled { opacity: 0.45; cursor: default; }
+.qr-scanner-view .tech-button, .qr-scanner-view .text-button { min-height: 44px; }
+.qr-topbar { padding-top: env(safe-area-inset-top, 0px); height: calc(60px + env(safe-area-inset-top, 0px)); }
+.qr-bottom { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+@media (max-height: 740px) {
+  .sc-middle { padding-top: 12px; gap: 12px; }
+  .sc-keypad-grid { grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(4, 60px); gap: 8px; }
+  .sc-key, .sc-key-spacer { width: 60px; height: 60px; }
+  .sc-bottom { padding-top: 12px; }
+  .sc-prompt { margin-bottom: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-inputs.is-error, .qr-scanline { animation: none; }
 }
