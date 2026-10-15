@@ -14,6 +14,9 @@ export function useArtifactsData({
 
   const loadConnectedDataEvent = useEffectEvent(loadConnectedData);
   const onUnauthorizedEvent = useEffectEvent(onUnauthorized);
+  const refreshUserEvent = useEffectEvent((user) => onSessionRefresh({...session, user}));
+  const accessToken = session?.accessToken;
+  const isMock = session?.isMock;
 
   const loadArtifacts = async () => {
     setArtifactsLoading(true);
@@ -30,14 +33,14 @@ export function useArtifactsData({
   };
 
   useEffect(() => {
-    if (!isAuthenticated || !session?.accessToken) {
+    if (!isAuthenticated || !accessToken) {
       return undefined;
     }
 
     let cancelled = false;
 
     const bootstrap = async () => {
-      if (session?.isMock) {
+      if (isMock) {
         try {
           const [artifactsResponse] = await Promise.all([artifactsApi.list(), loadConnectedDataEvent()]);
 
@@ -63,7 +66,7 @@ export function useArtifactsData({
 
       try {
         const [meResponse, artifactsResponse] = await Promise.all([
-          authApi.me(session.accessToken),
+          authApi.me(accessToken),
           artifactsApi.list(),
         ]);
 
@@ -73,7 +76,7 @@ export function useArtifactsData({
           return;
         }
 
-        onSessionRefresh({...session, user: meResponse.user});
+        refreshUserEvent(meResponse.user);
         setArtifacts(artifactsResponse?.artifacts ?? []);
         setArtifactsError('');
       } catch (error) {
@@ -101,7 +104,7 @@ export function useArtifactsData({
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, onSessionRefresh, session]);
+  }, [isAuthenticated, accessToken, isMock]);
 
   return {
     artifacts,

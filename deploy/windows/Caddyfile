@@ -1,0 +1,44 @@
+{
+	admin 127.0.0.1:2019
+}
+
+{$SITE_ADDRESS: http://:80} {
+	encode zstd gzip
+	header X-Content-Type-Options nosniff
+	header Referrer-Policy strict-origin-when-cross-origin
+	header X-Robots-Tag "noindex, nofollow"
+
+	handle_path /api/auth/* {
+		reverse_proxy 127.0.0.1:18080
+	}
+	handle_path /api/artifacts/* {
+		request_body {
+			max_size 100MB
+		}
+		reverse_proxy 127.0.0.1:18081
+	}
+	handle_path /api/visitor/* {
+		reverse_proxy 127.0.0.1:18088
+	}
+	handle_path /media-files/* {
+		rewrite * /assets{uri}
+		reverse_proxy 127.0.0.1:18081
+	}
+	handle /api/* {
+		header Content-Type application/json
+		respond `{"error":"service_not_in_repository"}` 503
+	}
+	redir /methodist /methodist/ 308
+	handle_path /methodist/* {
+		root * Frontend/MetodistPanel/dist
+		try_files {path} /index.html
+		header Cache-Control "no-cache"
+		file_server
+	}
+	handle {
+		root * Frontend/Visitor/dist
+		try_files {path} /index.html
+		header Cache-Control "no-cache"
+		file_server
+	}
+}

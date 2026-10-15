@@ -6,8 +6,16 @@ import {
   normalizePathname,
 } from './routes';
 
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const appPathname = () => {
+  const pathname = window.location.pathname;
+  return basePath && (pathname === basePath || pathname.startsWith(`${basePath}/`))
+    ? pathname.slice(basePath.length) || '/'
+    : pathname;
+};
+
 export function useViewRouting({isAuthenticated}) {
-	const [route, setRoute] = useState(() => getRouteFromPathname(window.location.pathname));
+	const [route, setRoute] = useState(() => getRouteFromPathname(appPathname()));
 	const {view, artifactId} = route;
   const historyModeRef = useRef('replace');
 
@@ -19,7 +27,7 @@ export function useViewRouting({isAuthenticated}) {
   useEffect(() => {
     const handlePopState = () => {
       historyModeRef.current = 'replace';
-		setRoute(getRouteFromPathname(window.location.pathname));
+		setRoute(getRouteFromPathname(appPathname()));
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -34,11 +42,11 @@ export function useViewRouting({isAuthenticated}) {
     }
 
 		const nextPathname = getPathnameFromView(view, artifactId);
-    const currentPathname = normalizePathname(window.location.pathname);
+    const currentPathname = normalizePathname(appPathname());
 
     if (currentPathname !== nextPathname) {
       const historyMethod = historyModeRef.current === 'replace' ? 'replaceState' : 'pushState';
-      window.history[historyMethod]({}, '', nextPathname);
+      window.history[historyMethod]({}, '', `${basePath}${nextPathname}`);
     }
 
     historyModeRef.current = 'push';

@@ -5,6 +5,11 @@ const emptyDraft = {title: '', short_description: '', description: '', category:
 const payloadFor = (body, imageURL = '') => JSON.stringify({version: 1, content: {body, image_url: imageURL}, body, image_url: imageURL});
 
 function messageFor(error) {
+  if (error?.code === 'revision_conflict') return 'Экспонат изменился после загрузки. Откройте его заново, проверьте изменения и повторите публикацию.';
+  if (error?.code === 'no_unpublished_changes') return 'Все изменения уже опубликованы. Новая публикация не требуется.';
+  if (error?.code === 'cannot_publish_empty') return 'Добавьте хотя бы один экран в разделе «Контент» перед публикацией.';
+  if (error?.code === 'archived_artifact') return 'Сначала восстановите экспонат из архива.';
+  if (error?.status === 401) return 'Сессия истекла или нет доступа к музею. Войдите в аккаунт заново.';
   if (error?.code === 'service_unavailable') return 'Сервис экспонатов недоступен. Попробуйте ещё раз.';
   if (error?.status === 404) return 'Экспонат или экран уже не существует.';
   return 'Не удалось выполнить действие. Попробуйте ещё раз.';
@@ -31,8 +36,13 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate}) {
   }, [dirty]);
 
   const loadScreens = useCallback(async (artifactId) => {
-    const response = await artifactsApi.listScreens(artifactId);
+    // Screen mutations also advance the artifact revision used by publication.
+    const [response, latest] = await Promise.all([
+      artifactsApi.listScreens(artifactId),
+      artifactsApi.get(artifactId),
+    ]);
     setScreens((response?.screens || []).filter((screen) => !screen.is_system));
+    setArtifact((current) => current?.id === artifactId ? latest.artifact : current);
   }, []);
 
   const select = useCallback(async (artifactId, nextView = 'artifact-basic') => {
@@ -78,7 +88,7 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate}) {
     const item = artifact || await save();
     if (!item) return;
     setLoading(true); setError('');
-    try { const response = await artifactsApi.uploadCover(item.id, file); setArtifact((current) => ({...current, ...response.artifact, cover_url: response.cover_url || response.artifact?.cover_url || current.cover_url})); setNotice('Обложка загружена.'); await loadArtifacts(); }
+    try { await artifactsApi.uploadCover(item.id, file); const latest = await artifactsApi.get(item.id); setArtifact(latest.artifact); setNotice('Обложка загружена.'); await loadArtifacts(); }
     catch (nextError) { setError(messageFor(nextError)); }
     finally { setLoading(false); }
   }, [artifact, loadArtifacts, save]);
@@ -121,9 +131,9 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate}) {
   const reorder = useCallback(async (nextScreens) => {
     if (!artifact) return;
     const before = screens; setScreens(nextScreens);
-    try { await artifactsApi.reorderScreens(artifact.id, nextScreens.map((screen, index) => ({screenId: screen.id, order: index + 1}))); setNotice('Порядок экранов сохранён.'); }
+    try { await artifactsApi.reorderScreens(artifact.id, nextScreens.map((screen, index) => ({screenId: screen.id, order: index + 1}))); await loadScreens(artifact.id); setNotice('Порядок экранов сохранён.'); }
     catch (nextError) { setScreens(before); setError(messageFor(nextError)); }
-  }, [artifact, screens]);
+  }, [artifact, screens, loadScreens]);
   const duplicateArtifact = useCallback(async (artifactId) => { try { await artifactsApi.duplicate(artifactId); await loadArtifacts(); setNotice('Экспонат продублирован.'); } catch (nextError) { setError(messageFor(nextError)); } }, [loadArtifacts]);
 	const archiveArtifact = useCallback(async (artifactId) => { try { await artifactsApi.archive(artifactId); await loadArtifacts(); setNotice('Экспонат перенесён в архив.'); } catch (nextError) { setError(messageFor(nextError)); } }, [loadArtifacts]);
 	const restoreArtifact = useCallback(async (artifactId) => { try { await artifactsApi.restore(artifactId); await loadArtifacts(); setNotice('Экспонат восстановлен в черновики.'); } catch (nextError) { setError(messageFor(nextError)); } }, [loadArtifacts]);

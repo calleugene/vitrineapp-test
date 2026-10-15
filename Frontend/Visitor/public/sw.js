@@ -1,4 +1,4 @@
-const CACHE_NAME = 'viralabs-shell-v1';
+const CACHE_NAME = 'viralabs-shell-v2';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/pwa-icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -14,6 +14,9 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  // The methodist application and uploaded media share this origin.
+  // Never put their responses in the Visitor offline cache.
+  if (url.pathname === '/methodist' || url.pathname.startsWith('/methodist/') || url.pathname.startsWith('/media-files/')) return;
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(request).catch(() => caches.match(request)));
     return;

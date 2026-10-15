@@ -774,6 +774,10 @@ func writeServiceError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "no_unpublished_changes")
 	case errors.Is(err, ErrUnsupportedScreenType):
 		writeError(w, http.StatusUnprocessableEntity, "unsupported_screen_type")
+	case errors.Is(err, ErrCannotPublishEmpty):
+		writeError(w, http.StatusUnprocessableEntity, "cannot_publish_empty")
+	case errors.Is(err, ErrArchivedArtifact):
+		writeError(w, http.StatusConflict, "archived_artifact")
 	default:
 		log.Printf("artifacts handler internal error: %v", err)
 		writeError(w, http.StatusInternalServerError, "internal_error")

@@ -110,7 +110,7 @@ async function request(baseUrl, path, options = {}) {
       `HTTP ${response.status}`;
 
     throw new ApiError(message, {
-      code: typeof payload === 'object' ? payload?.code : null,
+      code: typeof payload === 'object' ? (payload?.code ?? payload?.error) : null,
       status: response.status,
       payload,
     });
