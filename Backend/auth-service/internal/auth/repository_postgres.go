@@ -8,14 +8,20 @@ import (
 
 type PostgresRepository struct {
 	db *sql.DB
+	*profileRepository
 }
 
 func NewPostgresRepository(db *sql.DB) *PostgresRepository {
-	return &PostgresRepository{db: db}
+	return &PostgresRepository{db: db, profileRepository: &profileRepository{db: db, postgres: true}}
 }
 
 func (r *PostgresRepository) CreateUser(ctx context.Context, user User, passwordHash string) error {
-	_, err := r.db.ExecContext(ctx, `
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = tx.ExecContext(ctx, `
 		INSERT INTO users (id, email, password_hash, full_name, role, museum_id, status,
 			phone, position, about, birth_date, gender,
 			timezone, interface_language, extra_languages, note, avatar_url,
@@ -28,7 +34,18 @@ func (r *PostgresRepository) CreateUser(ctx context.Context, user User, password
 		user.NotificationsEnabled, user.TwoFactorEnabled,
 		user.EmailVerifiedAt, user.RegisteredAt, user.LastLoginAt, ns(user.RegistrationSource),
 		user.CreatedAt, user.UpdatedAt)
-	return err
+	if err == nil && user.MuseumID != nil {
+		_, err = tx.ExecContext(ctx, r.query(`INSERT INTO museum_memberships(user_id,museum_id,role) VALUES(?,?,'owner') ON CONFLICT(user_id,museum_id) DO NOTHING`), user.ID, *user.MuseumID)
+	}
+	if err != nil {
+		return err
+	}
+	for _, c := range user.registrationConsents {
+		if _, err = tx.ExecContext(ctx, r.profileRepository.query(`INSERT INTO user_consents(id,user_id,consent_type,document_version,confirmed_at,accepted) VALUES(?,?,?,?,?,?)`), newID("cns"), user.ID, c.Type, c.Version, user.CreatedAt.Format(time.RFC3339Nano), c.Accepted); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func (r *PostgresRepository) FindUserByEmail(ctx context.Context, email string) (User, error) {
@@ -51,7 +68,7 @@ func (r *PostgresRepository) UpdateUser(ctx context.Context, user User) error {
 		UPDATE users SET full_name = $1, phone = $2, position = $3, about = $4, birth_date = $5,
 			gender = $6, timezone = $7, interface_language = $8, extra_languages = $9,
 			note = $10, notifications_enabled = $11, level = $12, is_guest = $13, locale = $14, updated_at = $15
-		WHERE id = $16`,
+		WHERE id = $16 AND LOWER(status)='active'`,
 		user.FullName, ns(user.Phone), ns(user.Position), ns(user.About), ns(user.BirthDate),
 		ns(user.Gender), ns(user.Timezone), ns(user.InterfaceLanguage), ns(user.ExtraLanguages),
 		ns(user.Note), user.NotificationsEnabled, user.Level, user.IsGuest, user.Locale, user.UpdatedAt, user.ID)
@@ -67,8 +84,11 @@ func (r *PostgresRepository) UpdateUserPassword(ctx context.Context, userID, pas
 }
 
 func (r *PostgresRepository) UpdateUserAvatar(ctx context.Context, userID, avatarURL string, now time.Time) error {
-	_, err := r.db.ExecContext(ctx, `UPDATE users SET avatar_url = $1, updated_at = $2 WHERE id = $3`, ns(avatarURL), now, userID)
-	return err
+	res, err := r.db.ExecContext(ctx, `UPDATE users SET avatar_url = $1, updated_at = $2 WHERE id = $3 AND LOWER(status)='active'`, ns(avatarURL), now, userID)
+	if err != nil {
+		return err
+	}
+	return ensureRows(res)
 }
 
 func (r *PostgresRepository) UpdateUserRole(ctx context.Context, userID, role string, now time.Time) error {
@@ -90,6 +110,21 @@ func (r *PostgresRepository) UpdateUserStatus(ctx context.Context, userID, statu
 func (r *PostgresRepository) UpdateLastLogin(ctx context.Context, userID string, now time.Time) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE users SET last_login_at = $1 WHERE id = $2`, now, userID)
 	return err
+}
+
+func (r *PostgresRepository) EnsureMuseumID(ctx context.Context, userID, museumID string, now time.Time) (User, error) {
+	_, err := r.db.ExecContext(ctx, `UPDATE users SET museum_id = $1, updated_at = $2 WHERE id = $3 AND role = 'methodist' AND museum_id IS NULL`, museumID, now, userID)
+	if err != nil {
+		return User{}, err
+	}
+	user, err := r.FindUserByID(ctx, userID)
+	if err != nil {
+		return User{}, err
+	}
+	if user.MuseumID != nil {
+		_, err = r.db.ExecContext(ctx, r.query(`INSERT INTO museum_memberships(user_id,museum_id,role) VALUES(?,?,'owner') ON CONFLICT(user_id,museum_id) DO NOTHING`), user.ID, *user.MuseumID)
+	}
+	return user, err
 }
 
 func (r *PostgresRepository) VerifyUserEmail(ctx context.Context, userID string, now time.Time) error {
@@ -261,10 +296,10 @@ var userSelectColumnsPG = `SELECT id, email, full_name, role, museum_id, status,
 	phone, position, about, birth_date, gender,
 	timezone, interface_language, extra_languages, note, avatar_url,
 	notifications_enabled, two_factor_enabled,
-	email_verified_at, registered_at, last_login_at, registration_source, created_at, updated_at, level, is_guest, locale FROM users`
+	email_verified_at, registered_at, last_login_at, registration_source, created_at, updated_at, level, is_guest, locale, deactivated_at, scheduled_deletion_at FROM users`
 
 var userSelectWithPasswordColumnsPG = `SELECT id, email, password_hash, full_name, role, museum_id, status,
 	phone, position, about, birth_date, gender,
 	timezone, interface_language, extra_languages, note, avatar_url,
 	notifications_enabled, two_factor_enabled,
-	email_verified_at, registered_at, last_login_at, registration_source, created_at, updated_at, level, is_guest, locale FROM users`
+	email_verified_at, registered_at, last_login_at, registration_source, created_at, updated_at, level, is_guest, locale, deactivated_at, scheduled_deletion_at FROM users`

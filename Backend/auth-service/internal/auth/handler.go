@@ -10,6 +10,8 @@ import (
 
 func NewHandler(service *Service) http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/v1/auth/legal-documents", legalHandler)
+	service.profileRoutes(mux)
 	requireTarget := func(next http.HandlerFunc, adminOnly bool) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			if err := service.AuthorizeTarget(r.Context(), bearerToken(r.Header.Get("Authorization")), r.PathValue("userId"), adminOnly); err != nil {
@@ -97,7 +99,27 @@ func NewHandler(service *Service) http.Handler {
 		}
 		writeJSON(w, http.StatusOK, resp)
 	}
+	museumContextHandler := func(w http.ResponseWriter, r *http.Request) {
+		resp, err := service.ProvisionMuseumContext(r.Context(), bearerToken(r.Header.Get("Authorization")))
+		if err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, resp)
+	}
 	forgotPasswordHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		ip := service.clientIP(r)
+		allowed, err := service.repo.AllowPasswordReset(r.Context(), "ip:"+tokenHashString(ip), service.config.now())
+		if err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		if !allowed {
+			w.Header().Set("Retry-After", "1800")
+			writeError(w, 429, "too_many_requests")
+			return
+		}
 		var req forgotPasswordRequest
 		if err := decodeJSON(r.Body, &req); err != nil {
 			writeError(w, http.StatusBadRequest, "invalid_json")
@@ -111,6 +133,17 @@ func NewHandler(service *Service) http.Handler {
 		writeJSON(w, http.StatusOK, resp)
 	}
 	resetPasswordHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		allowed, err := service.repo.AllowPasswordReset(r.Context(), "reset-ip:"+tokenHashString(service.clientIP(r)), service.config.now())
+		if err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		if !allowed {
+			w.Header().Set("Retry-After", "1800")
+			writeError(w, 429, "too_many_requests")
+			return
+		}
 		var req resetPasswordRequest
 		if err := decodeJSON(r.Body, &req); err != nil {
 			writeError(w, http.StatusBadRequest, "invalid_json")
@@ -164,7 +197,7 @@ func NewHandler(service *Service) http.Handler {
 		writeJSON(w, http.StatusOK, userResponse{User: user})
 	}
 	uploadAvatarHandler := func(w http.ResponseWriter, r *http.Request) {
-		writeError(w, http.StatusNotImplemented, "avatar_upload_unavailable")
+		service.uploadProfileAvatar(w, r)
 	}
 	getRolesHandler := func(w http.ResponseWriter, r *http.Request) {
 		resp, err := service.GetUserRoles(r.Context(), r.PathValue("userId"))
@@ -311,6 +344,8 @@ func NewHandler(service *Service) http.Handler {
 	mux.HandleFunc("POST /api/v1/auth/logout", logoutHandler)
 	mux.HandleFunc("POST /auth/refresh", refreshHandler)
 	mux.HandleFunc("POST /api/v1/auth/refresh", refreshHandler)
+	mux.HandleFunc("POST /auth/museum-context", museumContextHandler)
+	mux.HandleFunc("POST /api/v1/auth/museum-context", museumContextHandler)
 	mux.HandleFunc("POST /auth/forgot-password", forgotPasswordHandler)
 	mux.HandleFunc("POST /api/v1/auth/forgot-password", forgotPasswordHandler)
 	mux.HandleFunc("POST /auth/reset-password", resetPasswordHandler)
@@ -382,6 +417,19 @@ func writeError(w http.ResponseWriter, status int, code string) {
 
 func writeServiceError(w http.ResponseWriter, err error) {
 	switch {
+	case errors.Is(err, ErrCodeNotFound):
+		writeError(w, 404, "code_not_found")
+	case errors.Is(err, ErrCodeInvalid):
+		writeError(w, 410, "code_invalid")
+	case errors.Is(err, ErrAlreadyJoined):
+		writeError(w, 409, "already_joined")
+	case errors.Is(err, ErrJoinRateLimited):
+		w.Header().Set("Retry-After", "900")
+		writeError(w, 429, "join_rate_limited")
+	case errors.Is(err, ErrEmailConfirmationRequired):
+		writeError(w, 409, "email_confirmation_required")
+	case errors.Is(err, ErrServiceUnavailable):
+		writeError(w, 503, "service_unavailable")
 	case errors.Is(err, ErrBadRequest):
 		writeError(w, http.StatusBadRequest, "bad_request")
 	case errors.Is(err, ErrEmailAlreadyExists):

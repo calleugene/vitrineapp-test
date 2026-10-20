@@ -1,0 +1,28 @@
+.museum-setup-screen {
+  display: grid;
+  min-height: 100vh;
+  padding: var(--vl-space-6);
+  place-items: center;
+  background: var(--color-bg);
+}
+
+.museum-setup-card {
+  width: min(100%, 540px);
+  padding: clamp(var(--vl-space-7), 5vw, var(--vl-space-9));
+  border-radius: var(--radius-lg);
+  background: #fff;
+  box-shadow: var(--shadow-soft);
+}
+
+.museum-setup-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--vl-space-3);
+  margin-bottom: 32px;
+  font-weight: var(--vl-weight-bold);
+}
+
+.museum-setup-card h1 { margin: 0 0 16px; }
+.museum-setup-card p { line-height: 1.5; }
+.museum-setup-error { color: var(--color-danger, #a62a2a); }
+.museum-setup-actions { display: flex; flex-wrap: wrap; gap: var(--vl-space-3); margin-top: 28px; }

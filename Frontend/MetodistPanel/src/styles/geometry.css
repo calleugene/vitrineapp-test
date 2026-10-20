@@ -1,0 +1,147 @@
+/* Shared component geometry. Feature-specific media and previews keep their own sizes. */
+.page { gap: var(--vl-space-6); }
+.content-area { padding-top: var(--vl-space-4); }
+.page-heading { flex-wrap: wrap; gap: var(--vl-space-4); }
+.page-heading > div { min-width: 0; }
+.page-heading p { margin-top: var(--vl-space-2); }
+
+.panel,
+.panel-form,
+.stat-card,
+.dashboard-page .panel,
+.dashboard-page .dashboard-grid > .panel,
+.dashboard-welcome .stats-grid > .panel,
+.personal-card.g-card {
+  padding: var(--ui-card-padding);
+  border-radius: var(--ui-radius-card);
+  border: 1px solid var(--vl-color-line);
+  background: var(--vl-color-surface);
+  box-shadow: 0 4px 16px rgba(37, 44, 97, .04);
+  min-width: 0;
+}
+
+.dashboard-grid,
+.dashboard-page .dashboard-grid,
+.two-column,
+.content-layout,
+.three-column,
+.museum-profile-layout,
+.personal-layout,
+.personal-column { gap: var(--vl-space-6); align-items: start; }
+.field-grid,
+.personal-fields,
+.panel-form,
+.stack { gap: var(--vl-space-4); }
+
+.panel-header { margin-bottom: var(--vl-space-4); flex-wrap: wrap; }
+.panel-header h3,
+.panel-header h4 { margin: 0; }
+.panel-form > .panel-header { margin-bottom: 0; }
+.panel-header > *,
+.toolbar-row > *,
+.page-action-group > * { min-width: 0; }
+.toolbar-actions,
+.page-action-group,
+.page-action-bar,
+.museum-page-actions { flex-wrap: wrap; gap: var(--vl-space-3); }
+.page-action-bar,
+.museum-page-actions { padding: var(--vl-space-4) var(--ui-card-padding); }
+.page > .page-action-bar,
+.page > .museum-page-actions { margin-top: 0; }
+.page-action-bar .g-button,
+.page-action-bar .yg-button,
+.museum-page-actions .g-button,
+.museum-page-actions .yg-button { min-width: 0; }
+.toolbar-actions .g-button,
+.page-action-bar .g-button,
+.museum-page-actions .g-button,
+.server-flow-footer .g-button {
+  min-height: var(--ui-control-height);
+  border-radius: var(--ui-radius-control);
+  --g-button-border-radius: var(--ui-radius-control);
+}
+
+.panel-large { min-height: 0; }
+.dashboard-page .dashboard-grid > .panel { min-height: 0; }
+.dashboard-page .stats-grid > .panel { min-width: 0; }
+.dashboard-page .stats-grid { margin-bottom: 0; }
+.dashboard-welcome { margin-bottom: 0; }
+.personal-heading { margin-bottom: var(--vl-space-6); }
+
+.panel-header h3 svg,
+.dashboard-page .panel-header h3 svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+.widget-state { gap: var(--vl-space-3); padding-block: var(--vl-space-4); }
+.widget-state-icon { width: 48px; height: 48px; flex-shrink: 0; }
+.widget-state-icon svg { width: 24px; height: 24px; }
+.dashboard-page .stats-grid .widget-state { grid-template-columns: 48px minmax(0, 1fr); }
+.widget-state .g-button { border-radius: var(--ui-radius-control); }
+.g-button__icon { flex-shrink: 0; }
+.auth-input-wrap input { min-height: 44px; }
+.auth-centered .auth-form { border-radius: var(--ui-radius-card); }
+.auth-form-heading { margin-bottom: 0; }
+
+/* Match the information card to the complete, permission-dependent side column.
+   Let the description absorb the extra space instead of spreading field gaps. */
+@media (min-width: 1201px) {
+  .museum-profile-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+  .museum-profile-layout > .stack { align-self: stretch; min-width: 0; }
+  .museum-profile-layout .museum-logo-card { flex: 1; }
+  .museum-profile-layout .museum-logo-dropzone { flex: 1; }
+  .museum-main-info-card.panel-form {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+  }
+  .museum-main-info-card > h3 { margin-bottom: 0; }
+  .museum-main-info-card .field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .museum-main-info-card .field-grid > .field { min-width: 0; }
+  .museum-main-info-card > .field:has(.museum-textarea-shell) { flex: 1; }
+  .museum-main-info-card .museum-textarea-shell {
+    display: flex;
+    flex: 1;
+    min-height: 112px;
+  }
+  .museum-main-info-card .museum-textarea-shell .g-text-area { flex: 1; }
+  .museum-main-info-card .museum-textarea-shell .g-text-area__control { height: 100%; }
+}
+
+@media (max-width: 1200px) {
+  .two-column,
+  .artifacts-layout,
+  .editor-grid,
+  .museum-profile-layout,
+  .personal-layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .content-area { padding-top: var(--vl-space-4); }
+  .dashboard-grid,
+  .dashboard-page .dashboard-grid,
+  .two-column,
+  .content-layout,
+  .three-column { grid-template-columns: minmax(0, 1fr); }
+  .dashboard-welcome { padding-top: 0; }
+  .route-builder { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .workspace { padding: var(--vl-space-4) var(--vl-space-4) var(--vl-space-7); }
+  .page,
+  .dashboard-grid,
+  .dashboard-page .dashboard-grid,
+  .personal-layout,
+  .personal-column { gap: var(--vl-space-4); }
+  .field-grid { grid-template-columns: minmax(0, 1fr); }
+  .page-action-group { width: 100%; }
+  .page-action-bar .g-button,
+  .museum-page-actions .g-button { flex: 1 1 auto; min-height: var(--ui-control-height); }
+  .wizard { grid-template-columns: minmax(0, 1fr); }
+  .museum-logo-dropzone { min-height: 200px; }
+}

@@ -1,15 +1,30 @@
-import React from 'react';
-import {BellDot, CircleChevronRight} from '@gravity-ui/icons';
-import {Button} from '@gravity-ui/uikit';
-import {ARTIFACT_WIZARD_VIEWS, NAV_ITEMS, ROUTE_WIZARD_VIEWS} from './constants';
+import React, {useEffect, useRef, useState} from 'react';
+import {Lock, CircleChevronRight} from '@gravity-ui/icons';
+import {Tooltip} from '@gravity-ui/uikit';
+import {MuseumSwitcher} from './MuseumSwitcher';
+import {PRODUCT_CAPABILITIES} from './capabilities';
+import {ARTIFACT_WIZARD_VIEWS, NAV_ITEMS, ROUTE_WIZARD_VIEWS} from './navigation';
+
+function UnavailableNavigationItem({item}) {
+  const [open, setOpen] = useState(false);
+  const NavIcon = item.icon;
+  return <Tooltip content="Доступно в следующих обновлениях" open={open} onOpenChange={setOpen} openDelay={250}>
+    <button type="button" className="nav-item is-unavailable" aria-disabled="true" aria-label={item.label + '. Доступно в следующих обновлениях'} onClick={() => setOpen(true)} onBlur={() => setOpen(false)}>
+      <span className="nav-icon"><NavIcon /></span><span className="nav-label">{item.label}</span><Lock className="nav-lock" />
+    </button>
+  </Tooltip>;
+}
 
 export function AppShell({
   sidebarCollapsed,
   mobileNavOpen,
   userMenuOpen,
-  notificationsOpen,
-  notificationUnreadCount,
-  notificationItems,
+  museumProfile,
+  museums,
+  museumState,
+  museumSwitchBusy,
+  onSelectMuseum,
+  onRetryMuseums,
   currentUser,
   view,
   headerAction,
@@ -21,8 +36,41 @@ export function AppShell({
   onToggleUserMenu,
   onOpenUserProfile,
   onLogout,
-  onToggleNotifications,
+
 }) {
+  const profileRef = useRef(null);
+  const triggerRef = useRef(null);
+  useEffect(() => {
+    const close = (event) => {
+      if (event.type === 'keydown' && event.key !== 'Escape') return;
+      if (event.type === 'pointerdown' && profileRef.current?.contains(event.target)) return;
+      if (userMenuOpen) { onToggleUserMenu(); if (event.type === 'keydown') triggerRef.current?.focus(); }
+      if (event.type === 'keydown') onCloseMobileNav?.();
+    };
+    document.addEventListener('keydown', close);
+    document.addEventListener('pointerdown', close);
+    return () => { document.removeEventListener('keydown', close); document.removeEventListener('pointerdown', close); };
+  }, [userMenuOpen, onToggleUserMenu, onCloseMobileNav]);
+  useEffect(() => { if (userMenuOpen) profileRef.current?.querySelector('[role="menuitem"]')?.focus(); }, [userMenuOpen]);
+  useEffect(() => {
+    if (!mobileNavOpen) return undefined;
+    const drawer = document.querySelector('.sidebar');
+    const previous = document.activeElement;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    drawer?.querySelector('button')?.focus();
+    const trap = (event) => {
+      if (event.key !== 'Tab') return;
+      const buttons = [...drawer.querySelectorAll('button')].filter((button) => button.offsetParent !== null);
+      const first = buttons[0]; const last = buttons.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener('keydown', trap);
+    return () => { document.body.style.overflow = overflow; document.removeEventListener('keydown', trap); previous?.focus(); };
+  }, [mobileNavOpen]);
+  const name = currentUser?.full_name || currentUser?.email || 'Методист';
+  const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('');
   const handleNavigate = (nextView) => {
     onNavigate(nextView);
     onCloseMobileNav?.();
@@ -54,7 +102,7 @@ export function AppShell({
       </header>
 
       <div
-        className={`app-shell ${view.startsWith('editor-') ? 'is-artifact-editor' : ''} ${ARTIFACT_WIZARD_VIEWS.includes(view) ? 'is-artifact-flow' : ''} ${sidebarCollapsed ? 'is-sidebar-collapsed' : ''} ${
+        className={`app-shell ${ARTIFACT_WIZARD_VIEWS.includes(view) ? 'is-artifact-flow' : ''} ${sidebarCollapsed ? 'is-sidebar-collapsed' : ''} ${
           mobileNavOpen ? 'is-mobile-nav-open' : ''
         }`}
       >
@@ -65,7 +113,42 @@ export function AppShell({
           onClick={onCloseMobileNav}
         />
         <aside className={`sidebar ${sidebarCollapsed ? 'is-collapsed' : ''}`}>
-          <div className="sidebar-header">
+          <MuseumSwitcher museumProfile={museumProfile} currentMuseumId={currentUser?.museum_id} museums={museums} state={museumState} busy={museumSwitchBusy} onSelect={async (id) => {if (await onSelectMuseum(id)) onCloseMobileNav?.();}} onRetry={onRetryMuseums} onManage={() => handleNavigate('user-profile')} />
+
+          <nav className="nav" aria-label="Основная навигация">
+            {NAV_ITEMS.map((item) => {
+              const NavIcon = item.icon;
+              const active =
+                (item.id === 'artifacts' &&
+                  (view === 'artifacts' || ARTIFACT_WIZARD_VIEWS.includes(view))) ||
+                (item.id === 'museum' && view === 'museum') ||
+                (item.id === 'visitors' && view === 'visitors') ||
+                (item.id === 'stats' && view === 'stats') ||
+                (item.id === 'feedback' && view === 'feedback') ||
+                (item.id === 'routes' && (view === 'routes' || ROUTE_WIZARD_VIEWS.includes(view))) ||
+                (item.id === 'dashboard' && view === 'dashboard');
+
+              if (!PRODUCT_CAPABILITIES[item.id]) return <UnavailableNavigationItem key={item.id} item={item} />;
+              return (
+                <button
+                  key={item.id}
+                  className={`nav-item ${active ? 'is-active' : ''}`}
+                  aria-current={active ? 'page' : undefined}
+                  title={sidebarCollapsed ? item.label : undefined}
+                  onClick={() => handleNavigate(item.id)}
+                  type="button"
+                >
+                  <span className="nav-icon">
+                    <NavIcon />
+                  </span>
+                  <span className="nav-label">{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+
+          <div className="sidebar-header sidebar-brand-footer">
             <button type="button" className="brand brand-button" onClick={() => handleNavigate('dashboard')} aria-label="На главную">
               <div className="brand-logo">Я</div>
               <div className="brand-copy">
@@ -83,94 +166,25 @@ export function AppShell({
             </button>
           </div>
 
-          <nav className="nav">
-            {NAV_ITEMS.map((item) => {
-              const NavIcon = item.icon;
-              const active =
-                (item.id === 'artifacts' &&
-                  (view === 'artifacts' || ARTIFACT_WIZARD_VIEWS.includes(view) || view.startsWith('editor-'))) ||
-                (item.id === 'museum' && view === 'museum') ||
-                (item.id === 'visitors' && view === 'visitors') ||
-                (item.id === 'stats' && view === 'stats') ||
-                (item.id === 'feedback' && view === 'feedback') ||
-                (item.id === 'routes' && (view === 'routes' || ROUTE_WIZARD_VIEWS.includes(view))) ||
-                (item.id === 'dashboard' && view === 'dashboard');
-
-              return (
-                <button
-                  key={item.id}
-                  className={`nav-item ${active ? 'is-active' : ''}`}
-                  title={sidebarCollapsed ? item.label : undefined}
-                  onClick={() => handleNavigate(item.id)}
-                  type="button"
-                >
-                  <span className="nav-icon">
-                    <NavIcon />
-                  </span>
-                  <span className="nav-label">{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-
-          <div className="profile-menu-shell">
-            <button
-              type="button"
-              className={`profile-card profile-card-button ${userMenuOpen ? 'is-open' : ''}`}
-              title={sidebarCollapsed ? (currentUser?.full_name || currentUser?.email || 'Методист') : undefined}
-              onClick={onToggleUserMenu}
-            >
-              <div className="avatar" />
-              <div className="profile-copy">
-                <div className="profile-name">{currentUser?.full_name || currentUser?.email || 'Методист'}</div>
-                <div className="profile-role">Методист</div>
-              </div>
-              <span className="profile-chevron">▾</span>
-            </button>
-
-            {userMenuOpen && (
-              <div className="profile-dropdown">
-                <button type="button" className="profile-dropdown-item" onClick={onOpenUserProfile}>
-                  Настройки пользователя
-                </button>
-                <button type="button" className="profile-dropdown-item is-danger" onClick={onLogout}>
-                  Выйти
-                </button>
-              </div>
-            )}
-          </div>
         </aside>
 
-        <main className={`workspace ${view.startsWith('editor-') ? 'is-artifact-editor' : ''} ${ARTIFACT_WIZARD_VIEWS.includes(view) ? 'is-artifact-flow' : ''}`}>
+        <main className={`workspace ${ARTIFACT_WIZARD_VIEWS.includes(view) ? 'is-artifact-flow' : ''}`}>
           <div className="workspace-tools">
             <div className="workspace-tools-actions">
-              <div className="notification-shell">
-                <button
-                  type="button"
-                  className={`notification-trigger ${notificationsOpen ? 'is-open' : ''}`}
-                  aria-label="Оповещения"
-                  onClick={onToggleNotifications}
-                >
-                  <BellDot />
-                  <span className="notification-badge">{notificationUnreadCount}</span>
+              <div className="account-menu" ref={profileRef}>
+                <button ref={triggerRef} type="button" className="account-trigger" aria-label="Меню пользователя" aria-haspopup="menu" aria-expanded={userMenuOpen} onClick={onToggleUserMenu}>
+                  {currentUser?.avatar_url ? <img className="account-avatar" src={currentUser.avatar_url} alt="" /> : <span className="account-avatar">{initials}</span>}<span aria-hidden="true">⌄</span>
                 </button>
-                {notificationsOpen && (
-                  <div className="notification-popover">
-                    <div className="notification-popover-header">
-                      <strong>Оповещения</strong>
-                      <span>{notificationUnreadCount} новых</span>
-                    </div>
-                    <div className="notification-popover-list">
-                      {notificationItems.map((item) => (
-                        <button type="button" className="notification-popover-item" key={item.id}>
-                          <strong>{item.title}</strong>
-                          <span>{item.meta}</span>
-                        </button>
-                      ))}
-                    </div>
-                    <Button view="flat" size="m" width="max">Открыть все</Button>
-                  </div>
-                )}
+                {userMenuOpen && <div className="account-dropdown" role="menu" aria-label="Учётная запись" onKeyDown={(event) => {
+                  const items = [...event.currentTarget.querySelectorAll('[role="menuitem"]')];
+                  const index = items.indexOf(document.activeElement);
+                  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); items[(index + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus(); }
+                  if (event.key === 'Tab') onToggleUserMenu();
+                }}>
+                  <div className="account-info"><strong>{name}</strong><span>{currentUser?.role === 'methodist' ? 'Методист' : currentUser?.role || 'Пользователь'}</span></div>
+                  <button type="button" role="menuitem" onClick={onOpenUserProfile}>Мой профиль</button>
+                  <button type="button" role="menuitem" onClick={onLogout}>Выйти из системы</button>
+                </div>}
               </div>
               {headerAction}
             </div>

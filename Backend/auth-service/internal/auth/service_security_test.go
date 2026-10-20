@@ -128,3 +128,113 @@ func TestVisitorRegistrationAndLoginAreRoleScoped(t *testing.T) {
 		t.Fatalf("visitor login: %v", err)
 	}
 }
+
+func TestDirectMethodistsReceiveDistinctPersistentMuseumContexts(t *testing.T) {
+	service, _ := newTestService(t)
+	var ids []string
+	for _, email := range []string{"first@example.test", "second@example.test"} {
+		registered, err := service.Register(context.Background(), registerRequest{Consents: testConsents(false), Email: email, Password: "correct horse battery staple", FullName: email})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if registered.User.MuseumID == nil || !strings.HasPrefix(*registered.User.MuseumID, "mus_") {
+			t.Fatalf("registration has no museum context: %+v", registered.User)
+		}
+		pair, err := service.Login(context.Background(), loginRequest{Email: email, Password: "correct horse battery staple"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		claims, err := service.parseAccessToken(pair.AccessToken)
+		if err != nil || claims.MuseumID != *registered.User.MuseumID {
+			t.Fatalf("login museum = %q, registration museum = %q, err = %v", claims.MuseumID, *registered.User.MuseumID, err)
+		}
+		refreshed, err := service.Refresh(context.Background(), pair.RefreshToken)
+		if err != nil {
+			t.Fatal(err)
+		}
+		refreshClaims, err := service.parseAccessToken(refreshed.AccessToken)
+		if err != nil || refreshClaims.MuseumID != claims.MuseumID {
+			t.Fatalf("refresh lost museum context: %+v, %v", refreshClaims, err)
+		}
+		ids = append(ids, claims.MuseumID)
+	}
+	if ids[0] == ids[1] {
+		t.Fatalf("separate methodists share museum %q", ids[0])
+	}
+}
+
+func TestLegacyMethodistMuseumProvisionIsIdempotent(t *testing.T) {
+	service, repo := newTestService(t)
+	now := time.Now().UTC()
+	hash, err := hashPassword("correct horse battery staple")
+	if err != nil {
+		t.Fatal(err)
+	}
+	legacy := User{ID: "legacy", Email: "legacy@example.test", FullName: "Legacy", Role: "methodist", Status: "active", RegisteredAt: now, CreatedAt: now, UpdatedAt: now}
+	if err := repo.CreateUser(context.Background(), legacy, hash); err != nil {
+		t.Fatal(err)
+	}
+	oldPair, err := service.Login(context.Background(), loginRequest{Email: legacy.Email, Password: "correct horse battery staple"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldClaims, err := service.parseAccessToken(oldPair.AccessToken)
+	if err != nil || oldClaims.MuseumID != "" {
+		t.Fatalf("old token = %+v, %v", oldClaims, err)
+	}
+
+	first, err := service.ProvisionMuseumContext(context.Background(), oldPair.AccessToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := service.ProvisionMuseumContext(context.Background(), oldPair.AccessToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.User.MuseumID == nil || second.User.MuseumID == nil || *first.User.MuseumID != *second.User.MuseumID {
+		t.Fatalf("provision changed museum context: %+v %+v", first.User.MuseumID, second.User.MuseumID)
+	}
+	claims, err := service.parseAccessToken(first.AccessToken)
+	if err != nil || claims.MuseumID != *first.User.MuseumID || claims.SessionID != oldClaims.SessionID {
+		t.Fatalf("new token = %+v, %v", claims, err)
+	}
+	refreshed, err := service.Refresh(context.Background(), oldPair.RefreshToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	refreshClaims, err := service.parseAccessToken(refreshed.AccessToken)
+	if err != nil || refreshClaims.MuseumID != claims.MuseumID {
+		t.Fatalf("refresh = %+v, %v", refreshClaims, err)
+	}
+}
+
+func TestMuseumProvisionEndpointRequiresMethodistSession(t *testing.T) {
+	service, _ := newTestService(t)
+	handler := NewHandler(service)
+	request := func(token string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/museum-context", nil)
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		return rec
+	}
+	if rec := request(""); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("anonymous status = %d", rec.Code)
+	}
+	registered, err := service.RegisterVisitor(context.Background(), visitorRegisterRequest{Email: "visitor2@example.test", Password: "correct horse battery staple", DisplayName: "Visitor"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if registered.User.MuseumID != nil {
+		t.Fatal("visitor unexpectedly has museum")
+	}
+	pair, err := service.LoginVisitor(context.Background(), loginRequest{Email: "visitor2@example.test", Password: "correct horse battery staple"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rec := request(pair.AccessToken); rec.Code != http.StatusForbidden {
+		t.Fatalf("visitor status = %d body=%s", rec.Code, rec.Body.String())
+	}
+}

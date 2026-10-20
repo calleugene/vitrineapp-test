@@ -1,23 +1,13 @@
 import React, {Suspense, lazy, useEffect, useMemo, useState} from 'react';
 import './public-artifact-story.css';
+import {analyticsEvents, analyticsVisitorKey} from '../../app/analytics-events.js';
+import {appConfig} from '../../app/config.js';
+import {StoryFeedback} from './PublicServices.jsx';
 
-const apiBase = (import.meta.env.VITE_ARTIFACTS_API_URL || window.__VIRALABS_CONFIG__?.artifactsApiUrl || 'http://127.0.0.1:8081/api/v1').replace(/\/$/, '');
+const apiBase = appConfig.artifactsApiUrl.replace(/\/$/, '');
 const StoryExperienceView = lazy(() => import('../story/views.jsx').then((module) => ({default: module.StoryExperienceView})));
-const PUBLIC_VISITOR_KEY = 'viralabs.public.visitor.id';
 const PUBLIC_STORY_RETURN_URL_KEY = 'viralabs.public.story.return-url';
 const PUBLIC_COLLECTED_ARTIFACTS_KEY = 'viralabs.public.collected-artifacts';
-
-function publicVisitorId() {
-  try {
-    const stored = window.localStorage.getItem(PUBLIC_VISITOR_KEY);
-    if (stored) return stored;
-    const generated = window.crypto?.randomUUID?.() || `public-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    window.localStorage.setItem(PUBLIC_VISITOR_KEY, generated);
-    return generated;
-  } catch {
-    return `public-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  }
-}
 
 function parsePayload(value) {
   if (typeof value !== 'string') return value || {};
@@ -63,7 +53,7 @@ function normalizePublication(payload) {
     title: 'История пройдена',
     text: 'Добавьте экспонат в свою коллекцию, чтобы вернуться к нему позже.',
   };
-  return {artifactId: artifact.id || '', screens: [cover, ...screens, final]};
+  return {artifactId: artifact.id || '', museumId: artifact.museum_id || '', screens: [cover, ...screens, final]};
 }
 
 function museumReturnUrl() {
@@ -89,13 +79,19 @@ function rememberCollectedArtifact(artifactId) {
 }
 
 async function collectPublicArtifact(code, artifactId) {
-  const visitorId = publicVisitorId();
+  const visitorId = analyticsVisitorKey();
   const response = await fetch(`${apiBase}/public/artifacts/${encodeURIComponent(code)}/collect`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({visitor_id: visitorId}),
   });
   if (!response.ok) throw new Error('collect_failed');
+  const routeId = new URLSearchParams(window.location.search).get('route_id');
+  if (/^rte_[a-f0-9]{32}$/.test(routeId || '')) {
+    const progress = await fetch(`/api/route/api/v1/public/routes/${encodeURIComponent(routeId)}/progress`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitor_key:visitorId,session_id:analyticsEvents.sessionId(),artifact_id:artifactId})});
+    if (!progress.ok) throw new Error('Экспонат сохранён, но прогресс маршрута не обновлён. Повторите попытку.');
+  }
+  analyticsEvents.trackOnce(`collect:${artifactId}`, 'artifact_collected', {public_code: code, artifact_id: artifactId});
   rememberCollectedArtifact(artifactId);
   window.dispatchEvent(new CustomEvent('viralabs:artifact-collected', {
     detail: {artifactId, publicCode: code, visitorId},
@@ -107,6 +103,8 @@ function LoadingOrError({children}) {
 }
 
 export function PublicArtifactStory({code}) {
+  const query = new URLSearchParams(window.location.search);
+  const source = query.get('source') === 'qr' ? 'qr' : /^rte_[a-f0-9]{32}$/.test(query.get('route_id') || '') ? 'route' : 'direct';
   const [status, setStatus] = useState('loading');
   const [publication, setPublication] = useState(null);
 
@@ -131,16 +129,33 @@ export function PublicArtifactStory({code}) {
 
   const publicStory = useMemo(() => publication, [publication]);
 
+  useEffect(() => {
+    if (!publicStory?.artifactId) return;
+    analyticsEvents.trackOnce(`visit:${publicStory.museumId || code}`, 'visit_start', {
+      public_code: code,
+      artifact_id: publicStory.artifactId,
+      source,
+    });
+    if (source === 'qr') analyticsEvents.trackOnce(`scan:${code}`, 'scan', {public_code: code, artifact_id: publicStory.artifactId, source});
+  }, [code, publicStory, source]);
+
   if (status === 'loading') return <LoadingOrError>Загружаем экспонат…</LoadingOrError>;
   if (status !== 'ready' || !publicStory?.screens.length) return <LoadingOrError>Экспонат недоступен или был архивирован.</LoadingOrError>;
 
   return (
+    <>
     <Suspense fallback={<LoadingOrError>Открываем историю…</LoadingOrError>}>
       <StoryExperienceView
+        key={code}
         publicStory={publicStory}
+        feedback={<StoryFeedback publicCode={code} />}
+        exitLabel={/^rte_[a-f0-9]{32}$/.test(query.get('route_id') || '') ? 'Вернуться к маршруту' : 'Вернуться к музею'}
+        onTrackEvent={(type, data) => analyticsEvents.track(type, {public_code: code, artifact_id: publicStory.artifactId, source, ...data})}
+        onTrackEventOnce={(key, type, data) => analyticsEvents.trackOnce(`${code}:${key}`, type, {public_code: code, artifact_id: publicStory.artifactId, source, ...data})}
         onCollect={() => collectPublicArtifact(code, publicStory.artifactId)}
-        onExit={() => window.location.assign(museumReturnUrl())}
+        onExit={() => {const routeId = new URLSearchParams(window.location.search).get('route_id');window.location.assign(/^rte_[a-f0-9]{32}$/.test(routeId || '') ? `/routes/${routeId}` : museumReturnUrl());}}
       />
     </Suspense>
+    </>
   );
 }

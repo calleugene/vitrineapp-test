@@ -3,7 +3,7 @@ $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 Push-Location $root
 try {
     New-Item -ItemType Directory -Force .runtime/bin | Out-Null
-    foreach ($service in @('auth-service', 'artifacts-service', 'visitor-service')) {
+    foreach ($service in @('auth-service', 'artifacts-service', 'visitor-service', 'analytics-service', 'dashboard-service', 'route-service', 'feedback-service', 'notification-service')) {
         Push-Location "Backend/$service"
         try {
             & go build -trimpath -o "../../.runtime/bin/$service.exe" .
@@ -19,6 +19,8 @@ try {
     try {
         & npm.cmd ci --no-audit --no-fund
         if ($LASTEXITCODE) { throw 'Methodist install failed' }
+        & npm.cmd run report:product
+        if ($LASTEXITCODE) { throw 'Methodist updates report failed' }
         & npm.cmd run build -- --base=/methodist/
         if ($LASTEXITCODE) { throw 'Methodist build failed' }
     } finally { Pop-Location }

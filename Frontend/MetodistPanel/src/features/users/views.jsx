@@ -8,8 +8,9 @@ import {
   PROFILE_ROLE_OPTIONS,
   PROFILE_STATUS_OPTIONS,
   PROFILE_TIMEZONE_OPTIONS,
+  USER_MUSEUM_ACCESS_THEMES,
   USER_PROFILE_TABS,
-} from '../../app/constants';
+} from './config';
 import {Breadcrumbs, Field} from '../../components/ui';
 
 export function UserProfileView({profile, setProfile, activeTab, setActiveTab, profileError, onCancel, onSave, saving}) {
@@ -183,7 +184,7 @@ export function UserProfileView({profile, setProfile, activeTab, setActiveTab, p
                 <div className="profile-museum-item" key={museum.name}>
                   <div className="profile-museum-thumb" />
                   <div className="profile-museum-copy"><strong>{museum.name}</strong><span>{museum.city}</span></div>
-                  <Label theme={museum.status === 'Просмотр' ? 'info' : 'success'} size="xs">{museum.status}</Label>
+                  <Label theme={USER_MUSEUM_ACCESS_THEMES[museum.accessLevel]} size="xs">{museum.status}</Label>
                 </div>
               ))}
             </div>

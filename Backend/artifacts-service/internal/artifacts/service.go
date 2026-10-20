@@ -31,6 +31,10 @@ func (s *Service) ListArtifacts(ctx context.Context, status, category, sort stri
 	return items, pagination{Page: page, Limit: limit, Total: total}, nil
 }
 
+func (s *Service) ListMuseumProfiles(ctx context.Context) ([]MuseumProfile, error) {
+	return s.repo.ListMuseumProfiles(ctx)
+}
+
 func (s *Service) GetMuseumProfile(ctx context.Context, museumID string) (MuseumProfile, error) {
 	return s.repo.GetMuseumProfile(ctx, museumID)
 }
@@ -355,7 +359,7 @@ func (s *Service) PublishExpected(ctx context.Context, artifactID string, expect
 	}
 	snapshot := map[string]any{
 		"schema_version": 1,
-		"artifact":       map[string]any{"id": item.ID, "title": item.Title, "short_description": item.ShortDescription, "cover_url": item.CoverURL, "public_code": item.PublicCode},
+		"artifact":       map[string]any{"id": item.ID, "museum_id": item.MuseumID, "title": item.Title, "short_description": item.ShortDescription, "cover_url": item.CoverURL, "public_code": item.PublicCode},
 		"screens":        screens,
 	}
 	payload, err := json.Marshal(snapshot)

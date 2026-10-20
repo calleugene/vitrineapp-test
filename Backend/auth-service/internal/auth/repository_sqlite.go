@@ -9,14 +9,20 @@ import (
 
 type SQLiteRepository struct {
 	db *sql.DB
+	*profileRepository
 }
 
 func NewSQLiteRepository(db *sql.DB) *SQLiteRepository {
-	return &SQLiteRepository{db: db}
+	return &SQLiteRepository{db: db, profileRepository: &profileRepository{db: db}}
 }
 
 func (r *SQLiteRepository) CreateUser(ctx context.Context, user User, passwordHash string) error {
-	_, err := r.db.ExecContext(ctx, `
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = tx.ExecContext(ctx, `
 		INSERT INTO users (id, email, password_hash, full_name, role, museum_id, status,
 			phone, position, about, birth_date, gender,
 			timezone, interface_language, extra_languages, note, avatar_url,
@@ -32,7 +38,18 @@ func (r *SQLiteRepository) CreateUser(ctx context.Context, user User, passwordHa
 		nullableTime(user.EmailVerifiedAt), user.RegisteredAt.Format(time.RFC3339),
 		nullableTime(user.LastLoginAt), nullableString(user.RegistrationSource),
 		user.CreatedAt.Format(time.RFC3339), user.UpdatedAt.Format(time.RFC3339))
-	return err
+	if err == nil && user.MuseumID != nil {
+		_, err = tx.ExecContext(ctx, r.query(`INSERT INTO museum_memberships(user_id,museum_id,role) VALUES(?,?,'owner') ON CONFLICT(user_id,museum_id) DO NOTHING`), user.ID, *user.MuseumID)
+	}
+	if err != nil {
+		return err
+	}
+	for _, c := range user.registrationConsents {
+		if _, err = tx.ExecContext(ctx, r.profileRepository.query(`INSERT INTO user_consents(id,user_id,consent_type,document_version,confirmed_at,accepted) VALUES(?,?,?,?,?,?)`), newID("cns"), user.ID, c.Type, c.Version, user.CreatedAt.Format(time.RFC3339Nano), c.Accepted); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func (r *SQLiteRepository) FindUserByEmail(ctx context.Context, email string) (User, error) {
@@ -55,7 +72,7 @@ func (r *SQLiteRepository) UpdateUser(ctx context.Context, user User) error {
 		UPDATE users SET full_name = ?, phone = ?, position = ?, about = ?, birth_date = ?,
 			gender = ?, timezone = ?, interface_language = ?, extra_languages = ?,
 			note = ?, notifications_enabled = ?, level = ?, is_guest = ?, locale = ?, updated_at = ?
-		WHERE id = ?`,
+		WHERE id = ? AND LOWER(status)='active'`,
 		user.FullName, nullableString(user.Phone), nullableString(user.Position),
 		nullableString(user.About), nullableString(user.BirthDate), nullableString(user.Gender),
 		nullableString(user.Timezone), nullableString(user.InterfaceLanguage),
@@ -73,8 +90,11 @@ func (r *SQLiteRepository) UpdateUserPassword(ctx context.Context, userID, passw
 }
 
 func (r *SQLiteRepository) UpdateUserAvatar(ctx context.Context, userID, avatarURL string, now time.Time) error {
-	_, err := r.db.ExecContext(ctx, `UPDATE users SET avatar_url = ?, updated_at = ? WHERE id = ?`, nullableString(avatarURL), now.Format(time.RFC3339), userID)
-	return err
+	res, err := r.db.ExecContext(ctx, `UPDATE users SET avatar_url = ?, updated_at = ? WHERE id = ? AND LOWER(status)='active'`, nullableString(avatarURL), now.Format(time.RFC3339), userID)
+	if err != nil {
+		return err
+	}
+	return ensureRows(res)
 }
 
 func (r *SQLiteRepository) UpdateUserRole(ctx context.Context, userID, role string, now time.Time) error {
@@ -96,6 +116,21 @@ func (r *SQLiteRepository) UpdateUserStatus(ctx context.Context, userID, status 
 func (r *SQLiteRepository) UpdateLastLogin(ctx context.Context, userID string, now time.Time) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE users SET last_login_at = ? WHERE id = ?`, now.Format(time.RFC3339), userID)
 	return err
+}
+
+func (r *SQLiteRepository) EnsureMuseumID(ctx context.Context, userID, museumID string, now time.Time) (User, error) {
+	_, err := r.db.ExecContext(ctx, `UPDATE users SET museum_id = ?, updated_at = ? WHERE id = ? AND role = 'methodist' AND museum_id IS NULL`, museumID, now.Format(time.RFC3339), userID)
+	if err != nil {
+		return User{}, err
+	}
+	user, err := r.FindUserByID(ctx, userID)
+	if err != nil {
+		return User{}, err
+	}
+	if user.MuseumID != nil {
+		_, err = r.db.ExecContext(ctx, r.query(`INSERT INTO museum_memberships(user_id,museum_id,role) VALUES(?,?,'owner') ON CONFLICT(user_id,museum_id) DO NOTHING`), user.ID, *user.MuseumID)
+	}
+	return user, err
 }
 
 func (r *SQLiteRepository) VerifyUserEmail(ctx context.Context, userID string, now time.Time) error {
@@ -191,7 +226,7 @@ func (r *SQLiteRepository) ConsumeEmailVerificationToken(ctx context.Context, to
 	if err := ensureRows(res); err != nil {
 		return err
 	}
-	res, err = tx.ExecContext(ctx, `UPDATE users SET email_verified_at = ?, updated_at = ? WHERE id = ?`, now.Format(time.RFC3339), now.Format(time.RFC3339), userID)
+	res, err = tx.ExecContext(ctx, `UPDATE users SET email_verified_at = ?, updated_at = ? WHERE id = ? AND LOWER(status)='active'`, now.Format(time.RFC3339), now.Format(time.RFC3339), userID)
 	if err != nil {
 		return err
 	}
@@ -281,10 +316,10 @@ var userSelectColumns = `SELECT id, email, full_name, role, museum_id, status,
 	phone, position, about, birth_date, gender,
 	timezone, interface_language, extra_languages, note, avatar_url,
 	notifications_enabled, two_factor_enabled,
-	email_verified_at, registered_at, last_login_at, registration_source, created_at, updated_at, level, is_guest, locale FROM users`
+	email_verified_at, registered_at, last_login_at, registration_source, created_at, updated_at, level, is_guest, locale, deactivated_at, scheduled_deletion_at FROM users`
 
 var userSelectWithPasswordColumns = `SELECT id, email, password_hash, full_name, role, museum_id, status,
 	phone, position, about, birth_date, gender,
 	timezone, interface_language, extra_languages, note, avatar_url,
 	notifications_enabled, two_factor_enabled,
-	email_verified_at, registered_at, last_login_at, registration_source, created_at, updated_at, level, is_guest, locale FROM users`
+	email_verified_at, registered_at, last_login_at, registration_source, created_at, updated_at, level, is_guest, locale, deactivated_at, scheduled_deletion_at FROM users`

@@ -2,7 +2,7 @@
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+  gap: var(--vl-space-5);
 }
 
 .stats-grid.compact {
@@ -30,7 +30,7 @@
 }
 
 .stats-overview-title {
-  font-size: 15px;
+  font-size: var(--vl-text-body);
   line-height: 1.4;
 }
 
@@ -38,7 +38,7 @@
 .stat-value-row {
   display: flex;
   align-items: baseline;
-  gap: 14px;
+  gap: var(--vl-space-4);
 }
 
 .stats-summary-card {
@@ -53,13 +53,13 @@
 .stats-summary-delta,
 .stats-ranked-delta {
   color: #29a55a;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: var(--vl-text-body);
+  font-weight: var(--vl-weight-medium);
 }
 
 .stats-summary-note {
   margin-top: 8px;
-  font-size: 14px;
+  font-size: var(--vl-text-body);
   line-height: 1.45;
   color: #7b8196;
 }
@@ -68,7 +68,7 @@
 .stats-lower-grid,
 .feedback-layout {
   display: grid;
-  gap: 18px;
+  gap: var(--vl-space-5);
 }
 
 .stats-dashboard-grid {
@@ -85,8 +85,8 @@
 
 .stats-sources-layout {
   align-items: flex-start;
-  gap: 22px;
-  padding: 8px 4px 0;
+  gap: var(--vl-space-6);
+  padding: var(--vl-space-2) var(--vl-space-1) 0;
 }
 
 .stats-source-row strong,
@@ -114,8 +114,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 14px 0;
+  gap: var(--vl-space-3);
+  padding: var(--vl-space-4) 0;
   border-bottom: 1px solid rgba(24, 24, 27, 0.06);
 }
 
@@ -128,7 +128,7 @@
 .stats-ranked-main {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--vl-space-3);
   min-width: 0;
 }
 
@@ -140,14 +140,14 @@
   border-radius: 50%;
   background: rgba(24, 24, 27, 0.06);
   color: #7f8599;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--vl-text-caption);
+  font-weight: var(--vl-weight-semibold);
 }
 
 .stats-ranked-thumb {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--ui-radius-control);
   background:
     linear-gradient(135deg, rgba(110, 84, 62, 0.92), rgba(198, 166, 136, 0.78)),
     radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.2), transparent 20%);
@@ -160,8 +160,8 @@
 .stats-ranked-meta {
   display: flex;
   align-items: center;
-  gap: 18px;
-  font-size: 15px;
+  gap: var(--vl-space-5);
+  font-size: var(--vl-text-body);
 }
 
 .stats-ranked-delta.is-negative {
@@ -173,13 +173,13 @@
 }
 
 .stats-device-row {
-  padding: 12px 0;
+  padding: var(--vl-space-3) 0;
 }
 
 .stats-device-name {
   width: 150px;
   color: #2a2d38;
-  font-size: 15px;
+  font-size: var(--vl-text-body);
   line-height: 1.35;
 }
 
@@ -198,7 +198,7 @@
 }
 
 .stats-footnote {
-  font-size: 14px;
+  font-size: var(--vl-text-body);
   line-height: 1.45;
 }
 
@@ -212,11 +212,11 @@
 }
 
 .stats-side-panel .visitors-sources-list {
-  gap: 12px;
+  gap: var(--vl-space-3);
 }
 
 .stats-side-panel .visitors-source-row {
-  padding: 10px 0;
+  padding: var(--vl-space-3) 0;
   border-bottom: 1px solid rgba(15, 23, 42, 0.06);
 }
 
@@ -230,7 +230,7 @@
 
 .stats-side-panel .visitors-source-row strong {
   color: var(--text-primary);
-  font-size: 15px;
+  font-size: var(--vl-text-body);
 }
 
 .stats-dashboard-grid .g-segmented-radio-group,

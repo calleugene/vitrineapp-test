@@ -15,6 +15,10 @@ func NewPostgresRepository(db *sql.DB) *PostgresRepository {
 	return &PostgresRepository{db: db}
 }
 
+func (r *PostgresRepository) ListMuseumProfiles(ctx context.Context) ([]MuseumProfile, error) {
+	return listMuseumProfiles(ctx, r.db)
+}
+
 func (r *PostgresRepository) GetMuseumProfile(ctx context.Context, museumID string) (MuseumProfile, error) {
 	var item MuseumProfile
 	err := r.db.QueryRowContext(ctx, `SELECT museum_id, code, name, short_description, description, website, address, logo_url, created_at, updated_at FROM museum_profiles WHERE museum_id = $1`, museumID).Scan(&item.MuseumID, &item.Code, &item.Name, &item.ShortDescription, &item.Description, &item.Website, &item.Address, &item.LogoURL, &item.CreatedAt, &item.UpdatedAt)
@@ -352,7 +356,7 @@ func (r *PostgresRepository) MarkArtifactFound(ctx context.Context, visitorID, a
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO artifact_visitor_status (id, visitor_id, artifact_id, found, found_at, is_favorite, favorited_at, created_at, updated_at)
 		VALUES ($1, $2, $3, true, $4, false, NULL, $5, $6)
-		ON CONFLICT(visitor_id, artifact_id) DO UPDATE SET found = true, found_at = $4, updated_at = $6
+		ON CONFLICT(visitor_id, artifact_id) DO UPDATE SET found = true, found_at = COALESCE(artifact_visitor_status.found_at, $4), updated_at = $6
 	`, statusID, visitorID, artifactID, now, now, now)
 	return err
 }

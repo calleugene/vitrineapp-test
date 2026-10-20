@@ -1,7 +1,16 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {UI} from '../config';
 import {ArModelViewer} from '../ArModelViewer';
 import {MEDIA_ICON} from './icons';
+
+function StoryPhoto({src, isCover}) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className="story-media" aria-hidden="true">
+      {!failed && <img className="story-photo" src={src} alt="" loading={isCover ? 'eager' : 'lazy'} decoding="async" onError={() => setFailed(true)} />}
+    </div>
+  );
+}
 
 /* Медиа-слот слайда: выбирает фон по screen.media (image / ar / none).
    Живёт отдельно от форм контента, потому что медиа задаётся данными,
@@ -42,13 +51,10 @@ export function SlideMedia({screen, onArInteraction}) {
   }
 
   if (asset && screen.media === 'image') {
-    return (
-      <div className="story-media" aria-hidden="true">
-        <img className="story-photo" src={asset} alt="" loading="lazy" />
-        <div className="story-photo-tint" />
-      </div>
-    );
+    return <StoryPhoto key={asset} src={asset} isCover={screen.type === 'cover'} />;
   }
+
+  if (screen.media === 'image') return <div className="story-media story-media--plain" aria-hidden="true" />;
 
   return (
     <div className={`story-media story-media--${screen.media} story-media--${screen.type}`} aria-hidden="true">

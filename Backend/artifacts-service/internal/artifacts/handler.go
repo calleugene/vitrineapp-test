@@ -38,6 +38,18 @@ const (
 
 func NewHandler(service *Service) http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/v1/internal/museums/{museumId}", func(w http.ResponseWriter, r *http.Request) {
+		if service.config.TokenSecret == "" || !hmac.Equal([]byte(r.Header.Get("X-Service-Secret")), []byte(service.config.TokenSecret)) {
+			writeError(w, 403, "forbidden")
+			return
+		}
+		profile, err := service.GetMuseumProfile(r.Context(), r.PathValue("museumId"))
+		if err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		writeJSON(w, 200, museumProfileResponse{Museum: profile})
+	})
 
 	museumIDMiddleware := func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
@@ -47,6 +59,24 @@ func NewHandler(service *Service) http.Handler {
 				if !ok || claims.MuseumID == "" || !canManageArtifacts(claims.Role) {
 					writeError(w, http.StatusUnauthorized, "unauthorized")
 					return
+				}
+				if service.config.AuthServiceURL != "" {
+					req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, strings.TrimRight(service.config.AuthServiceURL, "/")+"/auth/authorize-museum", nil)
+					if err != nil {
+						writeError(w, 503, "auth_unavailable")
+						return
+					}
+					req.Header.Set("Authorization", r.Header.Get("Authorization"))
+					response, err := (&http.Client{Timeout: 5 * time.Second}).Do(req)
+					if err != nil {
+						writeError(w, 503, "auth_unavailable")
+						return
+					}
+					response.Body.Close()
+					if response.StatusCode != 200 {
+						writeError(w, 403, "account_access_denied")
+						return
+					}
 				}
 				museumID = claims.MuseumID
 			}
@@ -324,7 +354,7 @@ func NewHandler(service *Service) http.Handler {
 			writeError(w, http.StatusConflict, "artifact_not_published")
 			return
 		}
-		code, err := goqr.EncodeText(service.publicURL(item.PublicCode), goqr.Medium)
+		code, err := goqr.EncodeText(service.publicURL(item.PublicCode)+"?source=qr", goqr.Medium)
 		if err != nil {
 			writeServiceError(w, err)
 			return
@@ -344,9 +374,24 @@ func NewHandler(service *Service) http.Handler {
 			writeServiceError(w, err)
 			return
 		}
+		artifact, err := service.GetArtifact(r.Context(), publication.ArtifactID)
+		if err != nil || artifact.MuseumID == nil {
+			writeError(w, http.StatusServiceUnavailable, "museum_context_unavailable")
+			return
+		}
+		var snapshot map[string]any
+		if err := json.Unmarshal([]byte(publication.SnapshotJSON), &snapshot); err != nil {
+			writeError(w, http.StatusServiceUnavailable, "publication_unavailable")
+			return
+		}
+		publishedArtifact, ok := snapshot["artifact"].(map[string]any)
+		if !ok {
+			writeError(w, http.StatusServiceUnavailable, "publication_unavailable")
+			return
+		}
+		publishedArtifact["museum_id"] = *artifact.MuseumID
 		w.Header().Set("Cache-Control", "public, max-age=60")
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		_, _ = w.Write([]byte(publication.SnapshotJSON))
+		writeJSON(w, http.StatusOK, snapshot)
 	}
 	publicMuseumArtifactsHandler := func(w http.ResponseWriter, r *http.Request) {
 		museumID := strings.TrimSpace(r.PathValue("museumId"))
@@ -531,6 +576,15 @@ func NewHandler(service *Service) http.Handler {
 	mux.HandleFunc("POST /api/v1/public/artifacts/{publicCode}/collect", publicCollectHandler)
 	mux.HandleFunc("GET /api/v1/public/museums/{museumId}/artifacts", publicMuseumArtifactsHandler)
 	mux.HandleFunc("GET /api/v1/public/museums/{museumId}", publicMuseumProfileHandler)
+	mux.HandleFunc("GET /api/v1/public/museums", func(w http.ResponseWriter, r *http.Request) {
+		items, err := service.ListMuseumProfiles(r.Context())
+		if err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		w.Header().Set("Cache-Control", "no-cache")
+		writeJSON(w, http.StatusOK, map[string]any{"museums": items})
+	})
 
 	// Drafts (inline for brevity since they follow same pattern)
 	registerDraftHandlers(mux, service)

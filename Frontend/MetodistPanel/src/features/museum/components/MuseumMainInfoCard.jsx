@@ -11,7 +11,7 @@ export function MuseumMainInfoCard({profile, onChange}) {
   const website = normalizeWebsite(profile.website);
 
   return (
-    <Card className="panel panel-form" view="filled">
+    <Card className="panel panel-form museum-main-info-card" view="filled">
       <h3>{MUSEUM_INFO_CARD.title}</h3>
 
       <div className="field-grid">
@@ -34,7 +34,7 @@ export function MuseumMainInfoCard({profile, onChange}) {
         <div className="museum-textarea-shell">
           <TextArea
             size="xl"
-            rows={5}
+            rows={3}
             value={profile.shortDescription}
             onUpdate={(value) => onChange('shortDescription', clampDescription(value))}
           />

@@ -1,11 +1,15 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 	"time"
 )
 
 type Config struct {
+	TrustedProxyCIDRs []string
+	SendPasswordReset func(context.Context, string, string) error
+	SendEmailChange   func(context.Context, string, string) error
 	AccessTokenTTL    time.Duration
 	RefreshTokenTTL   time.Duration
 	ResetTokenTTL     time.Duration

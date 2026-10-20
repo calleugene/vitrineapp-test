@@ -54,7 +54,7 @@ const global = window;
   }
 
   function createMockApi(config = {}) {
-    const db = clone(mockData);
+    const db = config.publicCatalog ? {museums: []} : clone(mockData);
     const testMuseumId = 'viralabs-test-museum';
     const artifactsApiUrl = (config.artifactsApiUrl || 'http://127.0.0.1:8081/api/v1').replace(/\/$/, '');
     let lastTestMuseumSync = 0;
@@ -124,20 +124,28 @@ const global = window;
       // dependent on a local backend. A failed local request is intentionally
       // ignored: the rest of Visitor must remain usable offline.
       if (Date.now() - lastTestMuseumSync < 3000) return;
-      lastTestMuseumSync = Date.now();
       try {
+        const profiles = config.publicCatalog
+          ? (await fetchJson(`${artifactsApiUrl}/public/museums`, {cache: 'no-store'})).museums
+          : [{museum_id: 'mus_001'}];
+        const syncedMuseums = [];
+        for (const entry of profiles) {
+        const museumId = entry.museum_id;
         const [profileResponse, artifactsResponse] = await Promise.all([
-          global.fetch(`${artifactsApiUrl}/public/museums/mus_001`),
-          global.fetch(`${artifactsApiUrl}/public/museums/mus_001/artifacts`)
+          global.fetch(`${artifactsApiUrl}/public/museums/${encodeURIComponent(museumId)}`, {cache: 'no-store'}),
+          global.fetch(`${artifactsApiUrl}/public/museums/${encodeURIComponent(museumId)}/artifacts`, {cache: 'no-store'})
         ]);
         // A museum becomes visible only after the methodist has created its profile.
-        if (!profileResponse.ok || !artifactsResponse.ok) return;
+        if (!profileResponse.ok || !artifactsResponse.ok) {
+          if (config.publicCatalog) throw new Error('Не удалось загрузить экспозицию музея');
+          return;
+        }
         const [profilePayload, payload] = await Promise.all([profileResponse.json(), artifactsResponse.json()]);
         const profile = profilePayload.museum || {};
         const artifacts = Array.isArray(payload.artifacts) ? payload.artifacts : [];
         const collectedIDs = publicCollectedArtifactIDs();
         const museum = {
-          id: testMuseumId,
+          id: config.publicCatalog ? museumId : testMuseumId,
           title: profile.name || 'Музей',
           subtitle: profile.short_description || profile.description || 'Экспонаты музея.',
           durationLabel: `примерно ${Math.max(artifacts.length * 2, 1)} мин.`,
@@ -163,10 +171,15 @@ const global = window;
             })
           }))
         };
-        const index = db.museums.findIndex((item) => item.id === testMuseumId);
+        syncedMuseums.push(museum);
+        const index = db.museums.findIndex((item) => item.id === museum.id);
         if (index >= 0) db.museums[index] = museum;
         else db.museums.unshift(museum);
-      } catch {
+        }
+        if (config.publicCatalog) db.museums = syncedMuseums;
+        lastTestMuseumSync = Date.now();
+      } catch (error) {
+        if (config.publicCatalog) throw error;
         // The service may be stopped during local work. Do not break Visitor.
       }
     }
@@ -426,13 +439,14 @@ const global = window;
 
   function createAutoApi(config) {
     const mockApi = createMockApi(config);
+    const publishedApi = createMockApi({...config, publicCatalog: true});
     const httpApi = createHttpApi(config.apiBaseUrl);
     let resolvedApi = null;
 
     async function resolveApi() {
       if (resolvedApi) return resolvedApi;
       if (global.location?.protocol === "file:" || isLocalApiUnreachable(config.apiBaseUrl)) {
-        resolvedApi = mockApi;
+        resolvedApi = global.location?.protocol === 'file:' ? mockApi : publishedApi;
         return resolvedApi;
       }
       try {
@@ -441,7 +455,7 @@ const global = window;
         // A 404/400 is not a healthy Visitor API either. Falling through here
         // used to select a non-compatible service (often AuthService on :8080)
         // and left the museum catalogue empty.
-        resolvedApi = mockApi;
+        resolvedApi = publishedApi;
         return resolvedApi;
       }
       resolvedApi = httpApi;

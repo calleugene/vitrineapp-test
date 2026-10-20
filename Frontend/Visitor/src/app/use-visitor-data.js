@@ -3,19 +3,10 @@ import {createApiClient, createVisitorAuthApi} from './api-client.js';
 import {appConfig} from './config.js';
 import {findArtifactBySecretCode, readQrArtifactId} from '../features/scanner/code-utils.js';
 import {useToast} from '../components/Toast.jsx';
-import {createAnalyticsEvents} from './analytics-events.js';
+import {analyticsEvents as analytics} from './analytics-events.js';
 
 const api = createApiClient(appConfig);
 const visitorAuth = createVisitorAuthApi(appConfig.authApiUrl);
-const analytics = createAnalyticsEvents({
-  endpoint: appConfig.analyticsEventsUrl,
-  getContext: () => ({visitor_id: getStoredVisitorIdSafe()}),
-});
-
-function getStoredVisitorIdSafe() {
-  try { return localStorage.getItem('viralabs.visitor.id') || ''; } catch { return ''; }
-}
-
 const artifactQrMap = {
   'front-letter': 'qr-hermitage-madonna',
   'tank-diary': 'qr-hermitage-armor',

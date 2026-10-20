@@ -16,12 +16,42 @@ func NewSQLiteRepository(db *sql.DB) *SQLiteRepository {
 	return &SQLiteRepository{db: db}
 }
 
+func (r *SQLiteRepository) ListMuseumProfiles(ctx context.Context) ([]MuseumProfile, error) {
+	return listMuseumProfiles(ctx, r.db)
+}
+
+func listMuseumProfiles(ctx context.Context, db *sql.DB) ([]MuseumProfile, error) {
+	rows, err := db.QueryContext(ctx, `SELECT museum_id, name, short_description, description, website, address, logo_url FROM museum_profiles ORDER BY name, museum_id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []MuseumProfile{}
+	for rows.Next() {
+		var item MuseumProfile
+		if err := rows.Scan(&item.MuseumID, &item.Name, &item.ShortDescription, &item.Description, &item.Website, &item.Address, &item.LogoURL); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
 func (r *SQLiteRepository) GetMuseumProfile(ctx context.Context, museumID string) (MuseumProfile, error) {
 	var item MuseumProfile
-	err := r.db.QueryRowContext(ctx, `SELECT museum_id, code, name, short_description, description, website, address, logo_url, created_at, updated_at FROM museum_profiles WHERE museum_id = ?`, museumID).Scan(&item.MuseumID, &item.Code, &item.Name, &item.ShortDescription, &item.Description, &item.Website, &item.Address, &item.LogoURL, &item.CreatedAt, &item.UpdatedAt)
+	var createdAt, updatedAt string
+	err := r.db.QueryRowContext(ctx, `SELECT museum_id, code, name, short_description, description, website, address, logo_url, created_at, updated_at FROM museum_profiles WHERE museum_id = ?`, museumID).Scan(&item.MuseumID, &item.Code, &item.Name, &item.ShortDescription, &item.Description, &item.Website, &item.Address, &item.LogoURL, &createdAt, &updatedAt)
 	if err == sql.ErrNoRows {
 		return MuseumProfile{}, ErrNotFound
 	}
+	if err != nil {
+		return MuseumProfile{}, err
+	}
+	item.CreatedAt, err = time.Parse(time.RFC3339Nano, createdAt)
+	if err != nil {
+		return MuseumProfile{}, err
+	}
+	item.UpdatedAt, err = time.Parse(time.RFC3339Nano, updatedAt)
 	return item, err
 }
 
@@ -381,7 +411,7 @@ func (r *SQLiteRepository) MarkArtifactFound(ctx context.Context, visitorID, art
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO artifact_visitor_status (id, visitor_id, artifact_id, found, found_at, is_favorite, favorited_at, created_at, updated_at)
 		VALUES (?, ?, ?, 1, ?, 0, NULL, ?, ?)
-		ON CONFLICT(visitor_id, artifact_id) DO UPDATE SET found = 1, found_at = ?, updated_at = ?
+		ON CONFLICT(visitor_id, artifact_id) DO UPDATE SET found = 1, found_at = COALESCE(found_at, ?), updated_at = ?
 	`, statusID, visitorID, artifactID, now.Format(time.RFC3339), now.Format(time.RFC3339), now.Format(time.RFC3339), now.Format(time.RFC3339), now.Format(time.RFC3339))
 	return err
 }

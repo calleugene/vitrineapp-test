@@ -1,32 +1,26 @@
 import React from 'react';
-import {EditorAudioView, EditorModelView, EditorQuizView, EditorTextView} from '../features/artifacts/artifact-wizard';
 import {ServerArtifactFlow} from '../features/artifacts/server-artifact-flow';
 import {DashboardView, AttendanceChart} from '../features/dashboard/views';
 import {FeedbackView} from '../features/feedback/views';
 import {MuseumProfileView} from '../features/museum/views';
 import {RouteBasicView, RouteContentView, RoutePublishView, RouteSuccessView, RoutesView} from '../features/routes/views';
 import {StatsView} from '../features/stats/views';
-import {UserProfileView} from '../features/users/views';
 import {VisitorsView} from '../features/visitors/views';
 
 export function ViewContent({
   view,
   currentUser,
   dashboardData,
+  dashboardStates,
+  retryDashboardBlock,
   museumProfile,
   setMuseumProfile,
   onResetMuseumProfile,
   onSaveMuseumProfile,
   museumProfileSaving,
   museumProfileError,
-  userProfileDraft,
-  setUserProfileDraft,
-  userProfileTab,
-  setUserProfileTab,
-  profileError,
-  profileSaving,
-  onResetUserProfile,
-  onSaveUserProfile,
+  museumProfileLoadState,
+  onRetryMuseumProfileLoad,
   statsTab,
   setStatsTab,
   statsPeriod,
@@ -59,36 +53,14 @@ export function ViewContent({
   artifactsLoading,
   artifactsError,
   onReloadArtifacts,
-  editingScreen,
-  editorValidation,
-  showEditorValidation,
-  onUpdateEditingScreen,
-  onUpdateEditingScreenCorrectAnswer,
-  onCancelEditingScreen,
-  onSaveEditingScreen,
   serverArtifactFlow,
 }) {
   if (view === 'dashboard') {
-    return <DashboardView setView={setView} userName={currentUser?.full_name} dashboardData={dashboardData} />;
+    return <DashboardView setView={setView} userName={currentUser?.full_name} dashboardData={dashboardData} dashboardStates={dashboardStates} retryDashboardBlock={retryDashboardBlock} />;
   }
 
   if (view === 'museum') {
-    return <MuseumProfileView museumProfile={museumProfile} setMuseumProfile={setMuseumProfile} onReset={onResetMuseumProfile} onSave={onSaveMuseumProfile} saving={museumProfileSaving} error={museumProfileError} />;
-  }
-
-  if (view === 'user-profile') {
-    return (
-      <UserProfileView
-        profile={userProfileDraft}
-        setProfile={setUserProfileDraft}
-        activeTab={userProfileTab}
-        setActiveTab={setUserProfileTab}
-        profileError={profileError}
-        onCancel={onResetUserProfile}
-        onSave={onSaveUserProfile}
-        saving={profileSaving}
-      />
-    );
+    return <MuseumProfileView currentUser={currentUser} museumProfile={museumProfile} setMuseumProfile={setMuseumProfile} onReset={onResetMuseumProfile} onSave={onSaveMuseumProfile} saving={museumProfileSaving} error={museumProfileError} loadState={museumProfileLoadState} onRetryLoad={onRetryMuseumProfileLoad} />;
   }
 
   if (view === 'visitors') {
@@ -185,24 +157,6 @@ export function ViewContent({
 
   if (view === 'artifact-success') {
     return <ServerArtifactFlow mode="success" flow={serverArtifactFlow} onNavigate={setView} />;
-  }
-
-  if (view === 'editor-text') {
-    return <EditorTextView screen={editingScreen} validation={editorValidation} showValidation={showEditorValidation} onChange={onUpdateEditingScreen} onCancel={onCancelEditingScreen} onSave={onSaveEditingScreen} />;
-  }
-
-  if (view === 'editor-model') {
-    return <EditorModelView screen={editingScreen} validation={editorValidation} showValidation={showEditorValidation} onChange={onUpdateEditingScreen} onCancel={onCancelEditingScreen} onSave={onSaveEditingScreen} />;
-  }
-
-  if (view === 'editor-quiz') {
-    return (
-      <EditorQuizView screen={editingScreen} validation={editorValidation} showValidation={showEditorValidation} onChange={onUpdateEditingScreen} onCorrectAnswerChange={onUpdateEditingScreenCorrectAnswer} onCancel={onCancelEditingScreen} onSave={onSaveEditingScreen} />
-    );
-  }
-
-  if (view === 'editor-audio') {
-    return <EditorAudioView screen={editingScreen} validation={editorValidation} showValidation={showEditorValidation} onChange={onUpdateEditingScreen} onCancel={onCancelEditingScreen} onSave={onSaveEditingScreen} />;
   }
 
   return null;

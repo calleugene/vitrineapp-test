@@ -24,7 +24,7 @@ Add-Content .runtime/pgdata/postgresql.conf "`nlisten_addresses = '127.0.0.1'`np
 if ($LASTEXITCODE) { throw 'PostgreSQL startup failed' }
 $env:PGPASSWORD = $config.databasePassword
 try {
-    foreach ($db in @('vitrine_auth','vitrine_artifacts','vitrine_visitor')) {
+    foreach ($db in @('vitrine_auth','vitrine_artifacts','vitrine_visitor','vitrine_analytics','vitrine_route','vitrine_feedback','vitrine_notification')) {
         & .runtime/postgres/pgsql/bin/createdb.exe -h 127.0.0.1 -p 55432 -U vitrine $db
         if ($LASTEXITCODE) { throw "createdb failed: $db" }
     }

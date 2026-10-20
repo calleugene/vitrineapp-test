@@ -9,14 +9,14 @@ import (
 func scanUserRow(row *sql.Row) (User, error) {
 	var user User
 	var museumID, phone, position, about, birthDate, gender, timezone, interfaceLanguage, extraLanguages, note, avatarURL, registrationSource any
-	var verifiedAt, lastLoginAt, registeredAt, createdAt, updatedAt any
+	var verifiedAt, lastLoginAt, registeredAt, createdAt, updatedAt, deactivatedAt, scheduledDeletionAt any
 
 	if err := row.Scan(
 		&user.ID, &user.Email, &user.FullName, &user.Role, &museumID, &user.Status,
 		&phone, &position, &about, &birthDate, &gender,
 		&timezone, &interfaceLanguage, &extraLanguages, &note, &avatarURL,
 		&user.NotificationsEnabled, &user.TwoFactorEnabled,
-		&verifiedAt, &registeredAt, &lastLoginAt, &registrationSource, &createdAt, &updatedAt, &user.Level, &user.IsGuest, &user.Locale,
+		&verifiedAt, &registeredAt, &lastLoginAt, &registrationSource, &createdAt, &updatedAt, &user.Level, &user.IsGuest, &user.Locale, &deactivatedAt, &scheduledDeletionAt,
 	); err != nil {
 		return User{}, err
 	}
@@ -37,6 +37,8 @@ func scanUserRow(row *sql.Row) (User, error) {
 	user.LastLoginAt = mustParseTimePtr(lastLoginAt)
 	user.CreatedAt = mustParseTime(createdAt)
 	user.UpdatedAt = mustParseTime(updatedAt)
+	user.DeactivatedAt = mustParseTimePtr(deactivatedAt)
+	user.ScheduledDeletionAt = mustParseTimePtr(scheduledDeletionAt)
 	return user, nil
 }
 
@@ -55,14 +57,14 @@ func scanUserRows(rows *sql.Rows) ([]User, error) {
 func scanUserRowsScanner(scanner interface{ Scan(dest ...any) error }) (User, error) {
 	var user User
 	var museumID, phone, position, about, birthDate, gender, timezone, interfaceLanguage, extraLanguages, note, avatarURL, registrationSource any
-	var verifiedAt, lastLoginAt, registeredAt, createdAt, updatedAt any
+	var verifiedAt, lastLoginAt, registeredAt, createdAt, updatedAt, deactivatedAt, scheduledDeletionAt any
 
 	if err := scanner.Scan(
 		&user.ID, &user.Email, &user.FullName, &user.Role, &museumID, &user.Status,
 		&phone, &position, &about, &birthDate, &gender,
 		&timezone, &interfaceLanguage, &extraLanguages, &note, &avatarURL,
 		&user.NotificationsEnabled, &user.TwoFactorEnabled,
-		&verifiedAt, &registeredAt, &lastLoginAt, &registrationSource, &createdAt, &updatedAt, &user.Level, &user.IsGuest, &user.Locale,
+		&verifiedAt, &registeredAt, &lastLoginAt, &registrationSource, &createdAt, &updatedAt, &user.Level, &user.IsGuest, &user.Locale, &deactivatedAt, &scheduledDeletionAt,
 	); err != nil {
 		return User{}, err
 	}
@@ -83,6 +85,8 @@ func scanUserRowsScanner(scanner interface{ Scan(dest ...any) error }) (User, er
 	user.LastLoginAt = mustParseTimePtr(lastLoginAt)
 	user.CreatedAt = mustParseTime(createdAt)
 	user.UpdatedAt = mustParseTime(updatedAt)
+	user.DeactivatedAt = mustParseTimePtr(deactivatedAt)
+	user.ScheduledDeletionAt = mustParseTimePtr(scheduledDeletionAt)
 	return user, nil
 }
 
@@ -90,14 +94,14 @@ func scanUserWithPasswordRow(row *sql.Row) (User, string, error) {
 	var user User
 	var passwordHash string
 	var museumID, phone, position, about, birthDate, gender, timezone, interfaceLanguage, extraLanguages, note, avatarURL, registrationSource any
-	var verifiedAt, lastLoginAt, registeredAt, createdAt, updatedAt any
+	var verifiedAt, lastLoginAt, registeredAt, createdAt, updatedAt, deactivatedAt, scheduledDeletionAt any
 
 	if err := row.Scan(
 		&user.ID, &user.Email, &passwordHash, &user.FullName, &user.Role, &museumID, &user.Status,
 		&phone, &position, &about, &birthDate, &gender,
 		&timezone, &interfaceLanguage, &extraLanguages, &note, &avatarURL,
 		&user.NotificationsEnabled, &user.TwoFactorEnabled,
-		&verifiedAt, &registeredAt, &lastLoginAt, &registrationSource, &createdAt, &updatedAt, &user.Level, &user.IsGuest, &user.Locale,
+		&verifiedAt, &registeredAt, &lastLoginAt, &registrationSource, &createdAt, &updatedAt, &user.Level, &user.IsGuest, &user.Locale, &deactivatedAt, &scheduledDeletionAt,
 	); err != nil {
 		return User{}, "", err
 	}
@@ -118,6 +122,8 @@ func scanUserWithPasswordRow(row *sql.Row) (User, string, error) {
 	user.LastLoginAt = mustParseTimePtr(lastLoginAt)
 	user.CreatedAt = mustParseTime(createdAt)
 	user.UpdatedAt = mustParseTime(updatedAt)
+	user.DeactivatedAt = mustParseTimePtr(deactivatedAt)
+	user.ScheduledDeletionAt = mustParseTimePtr(scheduledDeletionAt)
 	return user, passwordHash, nil
 }
 
