@@ -552,6 +552,7 @@ func NewHandler(service *Service) http.Handler {
 	registerRoute("GET /museums/profile", getMuseumProfileHandler)
 	registerRoute("POST /museums/profile", createMuseumProfileHandler)
 	registerRoute("PATCH /museums/profile", updateMuseumProfileHandler)
+	registerRoute("POST /museums/profile/image", service.uploadMuseumImage)
 	registerRoute("POST /artifacts", createArtifactHandler)
 	registerRoute("GET /artifacts/{artifactId}", getArtifactHandler)
 	registerRoute("PATCH /artifacts/{artifactId}", updateArtifactHandler)

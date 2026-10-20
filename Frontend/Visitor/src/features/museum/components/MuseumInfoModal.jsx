@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Icon} from '@gravity-ui/uikit';
 import {Xmark} from '@gravity-ui/icons';
 import {MUSEUM_INFO} from '../config.js';
@@ -13,7 +13,8 @@ import {museumDirections} from '../directions.js';
    нормализуется, чтобы небезопасная или относительная ссылка не показывалась. */
 export function MuseumInfoModal({museum, onClose}) {
   const closeRef = useModalDismiss(onClose);
-  const hasPhoto = Boolean(museum.cover_image_url);
+  const [failedPhoto, setFailedPhoto] = useState('');
+  const hasPhoto = Boolean(museum.cover_image_url) && failedPhoto !== museum.cover_image_url;
   const websiteUrl = normalizeExternalUrl(museum.website);
   const directions = museumDirections(museum.address);
 
@@ -25,7 +26,7 @@ export function MuseumInfoModal({museum, onClose}) {
         {hasPhoto ? (
           <div className="museum-modal-cover">
             <div className="museum-modal-handle" aria-hidden="true" />
-            <img className="museum-modal-cover-img" src={museum.cover_image_url} alt={museum.name} />
+            <img className="museum-modal-cover-img" src={museum.cover_image_url} onError={() => setFailedPhoto(museum.cover_image_url)} alt={museum.name} />
             <div className="museum-modal-cover-scrim" aria-hidden="true" />
             <div className="museum-modal-cover-text">
               <h2 className="museum-modal-cover-name">{museum.name}</h2>

@@ -7,7 +7,7 @@ import {clampDescription, normalizeWebsite} from '../utils';
 
 /* Карточка «Основная информация»: название, код, описание, сайт и адрес.
    Код музея доступен только на чтение — присваивается при регистрации. */
-export function MuseumMainInfoCard({profile, onChange}) {
+export function MuseumMainInfoCard({profile, onChange, disabled = false}) {
   const website = normalizeWebsite(profile.website);
 
   return (
@@ -16,7 +16,7 @@ export function MuseumMainInfoCard({profile, onChange}) {
 
       <div className="field-grid">
         <Field label={MUSEUM_INFO_CARD.nameLabel}>
-          <TextInput size="xl" value={profile.name} onUpdate={(value) => onChange('name', value)} />
+          <TextInput disabled={disabled} size="xl" value={profile.name} controlProps={{'aria-label':'Название музея'}} onUpdate={(value) => onChange('name', value)} />
         </Field>
 
         <Field label={MUSEUM_INFO_CARD.codeLabel}>
@@ -24,17 +24,19 @@ export function MuseumMainInfoCard({profile, onChange}) {
             size="xl"
             value={profile.code}
             disabled
+            controlProps={{'aria-label':'Код музея'}}
             className="museum-readonly-input"
           />
           <p className="museum-field-note">{MUSEUM_INFO_CARD.codeNote}</p>
         </Field>
       </div>
 
-      <Field label={MUSEUM_INFO_CARD.descriptionLabel}>
+      <Field label={MUSEUM_INFO_CARD.descriptionLabel} className="museum-description-field">
         <div className="museum-textarea-shell">
-          <TextArea
+          <TextArea disabled={disabled}
             size="xl"
             rows={3}
+            controlProps={{'aria-label':MUSEUM_INFO_CARD.descriptionLabel, maxLength:MUSEUM_INFO_CARD.descriptionLimit}}
             value={profile.shortDescription}
             onUpdate={(value) => onChange('shortDescription', clampDescription(value))}
           />
@@ -48,14 +50,14 @@ export function MuseumMainInfoCard({profile, onChange}) {
         <Field label={MUSEUM_INFO_CARD.websiteLabel} error={website.ok ? undefined : MUSEUM_INFO_CARD.websiteError}>
           <div className="museum-input-with-icon">
             <Link />
-            <TextInput size="xl" value={profile.website} onUpdate={(value) => onChange('website', value)} />
+            <TextInput disabled={disabled} size="xl" value={profile.website} controlProps={{'aria-label':MUSEUM_INFO_CARD.websiteLabel}} onUpdate={(value) => onChange('website', value)} />
           </div>
         </Field>
 
         <Field label={MUSEUM_INFO_CARD.addressLabel}>
           <div className="museum-input-with-icon">
             <MapPin />
-            <TextInput size="xl" value={profile.address} onUpdate={(value) => onChange('address', value)} />
+            <TextInput disabled={disabled} size="xl" value={profile.address} controlProps={{'aria-label':MUSEUM_INFO_CARD.addressLabel}} onUpdate={(value) => onChange('address', value)} />
           </div>
         </Field>
       </div>

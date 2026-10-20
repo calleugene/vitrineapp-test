@@ -8,6 +8,7 @@ import {MuseumPageActions} from './components/MuseumPageActions';
 import {MuseumEmptyState} from './components/MuseumEmptyState';
 import {MuseumJoinCodeCard} from './components/MuseumJoinCodeCard';
 import {CreateMuseumDialog} from './components/CreateMuseumDialog';
+import {MuseumTeamCard} from './components/MuseumTeamCard';
 
 /* Профиль музея: два экрана — пустое состояние до создания и форма после.
 
@@ -26,10 +27,11 @@ export function MuseumProfileView({museumProfile, setMuseumProfile, onReset, onS
 
   const saveProfile = async (creating = false) => {
     setSavedProfile(null);
-    const saved = await onSave(museumProfile, creating);
+    const saved = await onSave(museumProfile, creating, logo.file?.file);
     if (saved) {
       setCreateDialogOpen(false);
       setSavedProfile(museumProfile);
+      logo.clear();
     }
   };
 
@@ -83,7 +85,7 @@ export function MuseumProfileView({museumProfile, setMuseumProfile, onReset, onS
   }
 
   return (
-    <section className="page">
+    <section className="page museum-profile-page">
       <div className="page-heading">
         <div>
           <h1>{MUSEUM_HEADING.title}</h1>
@@ -92,13 +94,12 @@ export function MuseumProfileView({museumProfile, setMuseumProfile, onReset, onS
       </div>
 
       <div className="museum-profile-layout">
-        <MuseumMainInfoCard profile={museumProfile} onChange={updateField} />
+        <MuseumMainInfoCard profile={museumProfile} onChange={updateField} disabled={saving} />
 
-        <div className="stack">
-          <MuseumLogoCard logo={logo} savedLogoUrl={museumProfile.logoUrl} onRemove={handleRemoveLogo} />
-          <MuseumJoinCodeCard currentUser={currentUser} />
-        </div>
+        <MuseumLogoCard logo={logo} savedLogoUrl={museumProfile.logoUrl} onRemove={handleRemoveLogo} disabled={saving} />
       </div>
+
+      <MuseumTeamCard key={currentUser?.museum_id} currentUser={currentUser} invitation={<MuseumJoinCodeCard currentUser={currentUser} />} />
 
       <MuseumPageActions
         profile={museumProfile}

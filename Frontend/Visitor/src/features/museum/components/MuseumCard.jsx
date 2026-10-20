@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Card, Icon, Label, Progress, Text} from '@gravity-ui/uikit';
 import {Check, ChevronRight, CircleCheckFill} from '@gravity-ui/icons';
 import {MuseumThumbIcon} from '../../../components/ui.jsx';
@@ -8,6 +8,8 @@ import {formatArtifactsLabel, readMuseumProgress} from '../utils.js';
 /* Карточка музея в списке выбора: обложка, название, подпись и,
    если маршрут начат, мини-прогресс. Сама не решает ничего про навигацию. */
 export function MuseumCard({museum, onSelect}) {
+  const [failedPhoto, setFailedPhoto] = useState('');
+  const hasPhoto = Boolean(museum.cover_image_url) && failedPhoto !== museum.cover_image_url;
   const {found, total, percent} = readMuseumProgress(museum);
   const isInProgress = museum.status === 'in_progress';
   const isCompleted = museum.status === 'completed';
@@ -20,8 +22,8 @@ export function MuseumCard({museum, onSelect}) {
     >
       <div className="museum-gcard-inner">
         <span className="museum-thumb-wrap">
-          {museum.cover_image_url ? (
-            <img className="museum-thumb-img" src={museum.cover_image_url} alt={museum.name} loading="lazy" />
+          {hasPhoto ? (
+            <img className="museum-thumb-img" src={museum.cover_image_url} onError={() => setFailedPhoto(museum.cover_image_url)} alt={museum.name} loading="lazy" />
           ) : (
             <span className="museum-thumb" aria-hidden="true"><MuseumThumbIcon /></span>
           )}

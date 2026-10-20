@@ -17,9 +17,9 @@ export function InlineTabs({items, value, onChange, className = '', compact}) {
   );
 }
 
-export function Field({label, error, children}) {
+export function Field({label, error, children, className = ''}) {
   return (
-    <div className={`field ${error ? 'has-error' : ''}`}>
+    <div className={`field ${error ? 'has-error' : ''} ${className}`}>
       <div className="field-label">{label}</div>
       {children}
       {error ? <div className="chart-note">{error}</div> : null}
