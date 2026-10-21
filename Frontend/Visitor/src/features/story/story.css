@@ -594,3 +594,4 @@
 @media (prefers-reduced-motion: reduce) {
   .story-view *, .story-view *::before, .story-view *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+.story-model-status {position:absolute;top:25%;left:24px;right:24px;text-align:center;color:#465b50;font-size:14px;line-height:1.5;pointer-events:none;}

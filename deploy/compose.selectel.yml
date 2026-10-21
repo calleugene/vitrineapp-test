@@ -1,0 +1,19 @@
+services:
+  auth-service:
+    ports: ["127.0.0.1:8080:8080"]
+    environment:
+      AUTH_SMTP_TLS_MAX_VERSION: "1.2"
+  artifacts-service:
+    ports: ["127.0.0.1:8081:8081"]
+  visitor-service:
+    ports: ["127.0.0.1:8088:8088"]
+  analytics-service:
+    ports: ["127.0.0.1:8085:8085"]
+  route-service:
+    ports: ["127.0.0.1:8083:8083"]
+  feedback-service:
+    ports: ["127.0.0.1:8086:8086"]
+  notification-service:
+    ports: ["127.0.0.1:8087:8087"]
+  dashboard-service:
+    ports: ["127.0.0.1:8084:8084"]

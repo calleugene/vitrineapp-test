@@ -32,7 +32,7 @@ export function PublicRoute({routeId}) {
       window.location.assign(`/exhibits/${encodeURIComponent(artifact.public_code)}?route_id=${encodeURIComponent(routeId)}`);
     } catch (reason) {setError(reason.message);}
   };
-  return <main className="public-service-page"><a href="/">Музеи</a><h1>{data?.route.title || 'Маршрут'}</h1>{error ? <p role="alert">{error}</p> : null}{!data && !error ? <p role="status">Загружаем маршрут…</p> : null}{data ? <><p>{data.route.description}</p><p>{data.route.duration}</p><ol>{data.artifacts.map((artifact) => <li key={artifact.id}><button type="button" onClick={() => openArtifact(artifact)}>{artifact.title}</button></li>)}</ol></> : null}</main>;
+  return <main className="public-service-page"><a href="/visitor/">Музеи</a><h1>{data?.route.title || 'Маршрут'}</h1>{error ? <p role="alert">{error}</p> : null}{!data && !error ? <p role="status">Загружаем маршрут…</p> : null}{data ? <><p>{data.route.description}</p><p>{data.route.duration}</p><ol>{data.artifacts.map((artifact) => <li key={artifact.id}><button type="button" onClick={() => openArtifact(artifact)}>{artifact.title}</button></li>)}</ol></> : null}</main>;
 }
 
 export {StoryFeedback} from './StoryFeedback.jsx';

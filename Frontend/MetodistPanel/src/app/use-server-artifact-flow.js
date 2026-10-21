@@ -2,9 +2,11 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 import {artifactsApi} from '../api';
 
 const emptyDraft = {title: '', short_description: '', description: '', category: 'other'};
-const payloadFor = (body, imageURL = '') => JSON.stringify({version: 1, content: {body, image_url: imageURL}, body, image_url: imageURL});
+const payloadFor = (body, imageURL = '', extra = {}) => JSON.stringify({version: 1, content: {...extra, body, image_url: imageURL}, body, image_url: imageURL});
 
 function messageFor(error) {
+  if (error?.code === 'screen_content_incomplete') return 'Проверьте экраны: в тесте нужны варианты и правильный ответ, в 3D-экране — модель.';
+  if (error?.code === 'invalid_glb') return 'Не удалось прочитать модель. Нужен GLB 2.0 со встроенными текстурами и ресурсами.';
   if (error?.code === 'revision_conflict') return 'Экспонат изменился после загрузки. Откройте его заново, проверьте изменения и повторите публикацию.';
   if (error?.code === 'no_unpublished_changes') return 'Все изменения уже опубликованы. Новая публикация не требуется.';
   if (error?.code === 'cannot_publish_empty') return 'Добавьте хотя бы один экран в разделе «Контент» перед публикацией.';
@@ -92,17 +94,17 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate}) {
     catch (nextError) { setError(messageFor(nextError)); }
     finally { setLoading(false); }
   }, [artifact, loadArtifacts, save]);
-  const addTextScreen = useCallback(async () => {
+  const addTextScreen = useCallback(async (type = 'text') => {
     const item = artifact || await save(); if (!item) return;
     setLoading(true); setError('');
-    try { const response = await artifactsApi.createScreen(item.id, {type: 'text', title: 'Заголовок', payload: payloadFor('')}); await loadScreens(item.id); setNotice('Экран добавлен.'); return response.screen; }
+    try { const response = await artifactsApi.createScreen(item.id, {type, title: type === 'quiz' ? 'Новый вопрос' : type === 'model' ? 'Рассмотрите экспонат' : 'Новый экран', payload: payloadFor('', '', type === 'quiz' ? {options: [], correct_answer: '', explanation: ''} : {})}); await loadScreens(item.id); setNotice('Экран добавлен.'); return response.screen; }
     catch (nextError) { setError(messageFor(nextError)); return null; }
     finally { setLoading(false); }
   }, [artifact, loadScreens, save]);
-  const updateScreen = useCallback(async (screenId, title, body, imageURL = '') => {
+  const updateScreen = useCallback(async (screenId, title, body, imageURL = '', extra = {}) => {
     if (!artifact) return false;
     setLoading(true); setError('');
-    try { await artifactsApi.updateScreen(artifact.id, screenId, {title: title.trim(), payload: payloadFor(body, imageURL)}); await loadScreens(artifact.id); setNotice('Экран сохранён.'); return true; }
+    try { await artifactsApi.updateScreen(artifact.id, screenId, {title: title.trim(), payload: payloadFor(body, imageURL, extra)}); await loadScreens(artifact.id); setNotice('Экран сохранён.'); return true; }
     catch (nextError) { setError(messageFor(nextError)); return false; }
     finally { setLoading(false); }
   }, [artifact, loadScreens]);
@@ -130,9 +132,11 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate}) {
   }, [artifact, loadScreens]);
   const reorder = useCallback(async (nextScreens) => {
     if (!artifact) return;
+    setLoading(true); setError('');
     const before = screens; setScreens(nextScreens);
     try { await artifactsApi.reorderScreens(artifact.id, nextScreens.map((screen, index) => ({screenId: screen.id, order: index + 1}))); await loadScreens(artifact.id); setNotice('Порядок экранов сохранён.'); }
     catch (nextError) { setScreens(before); setError(messageFor(nextError)); }
+    finally {setLoading(false);}
   }, [artifact, screens, loadScreens]);
   const duplicateArtifact = useCallback(async (artifactId) => { try { await artifactsApi.duplicate(artifactId); await loadArtifacts(); setNotice('Экспонат продублирован.'); } catch (nextError) { setError(messageFor(nextError)); } }, [loadArtifacts]);
 	const archiveArtifact = useCallback(async (artifactId) => { try { await artifactsApi.archive(artifactId); await loadArtifacts(); setNotice('Экспонат перенесён в архив.'); } catch (nextError) { setError(messageFor(nextError)); } }, [loadArtifacts]);

@@ -1,0 +1,65 @@
+name: Deploy to Selectel
+
+on:
+  push:
+    branches: [production]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: selectel-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Build landing
+        working-directory: Landing
+        run: npm ci && npm test && npm run build
+
+      - name: Build methodist
+        working-directory: Frontend/MetodistPanel
+        run: npm ci && npm test && npm run build -- --base=/methodist/
+
+      - name: Build visitor
+        working-directory: Frontend/Visitor
+        run: npm ci && npm run smoke && npm run build -- --base=/visitor/
+
+      - name: Package release
+        run: |
+          mkdir -p package/deploy package/Landing package/Frontend/MetodistPanel package/Frontend/Visitor
+          cp -a Backend docker docker-compose.yml package/
+          cp deploy/compose.selectel.yml package/deploy/
+          cp -a Landing/dist package/Landing/
+          cp -a Frontend/MetodistPanel/dist package/Frontend/MetodistPanel/
+          cp -a Frontend/Visitor/dist package/Frontend/Visitor/
+          tar -czf release.tgz -C package .
+
+      - name: Deploy release
+        env:
+          SELECTEL_DEPLOY_KEY: ${{ secrets.SELECTEL_DEPLOY_KEY }}
+        run: |
+          test -n "$SELECTEL_DEPLOY_KEY"
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$SELECTEL_DEPLOY_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          cp deploy/selectel_known_hosts "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          release_id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          scp -o StrictHostKeyChecking=yes release.tgz root@135.106.175.94:"/opt/vitrineapp/incoming/${release_id}.tgz"
+          ssh -o StrictHostKeyChecking=yes root@135.106.175.94 \
+            "bash -s -- '${release_id}' '${GITHUB_SHA}'" < deploy/selectel-deploy.sh

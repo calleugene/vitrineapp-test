@@ -1,18 +1,10 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Button, Card, Dialog, DropdownMenu, Icon, Label, TextArea, TextInput, Tooltip} from '@gravity-ui/uikit';
-import {Archive, ArrowRotateLeft, ArrowUpRight, Copy, EllipsisVertical, Eye, Plus, TrashBin} from '@gravity-ui/icons';
+import React, {useEffect, useState} from 'react';
+import {Button, Card, DropdownMenu, Icon, Label, TextArea, TextInput, Tooltip} from '@gravity-ui/uikit';
+import {Archive, ArrowRotateLeft, ArrowUpRight, Copy, EllipsisVertical, Eye, Plus} from '@gravity-ui/icons';
 import {artifactsApi} from '../../api';
-import {createScreenSaveHandler} from './screen-save.js';
-import {createScreenNavigationGuard, hasUnsavedScreenChanges} from './screen-navigation.js';
+import {ContentWorkspace} from './ContentWorkspace.jsx';
+
 import './server-artifact-flow.css';
-
-function screenBody(screen) {
-  try { const payload = JSON.parse(screen.payload || '{}'); return payload?.content?.body || payload?.body || ''; } catch { return ''; }
-}
-
-function screenImage(screen) {
-  try { const payload = JSON.parse(screen.payload || '{}'); return payload?.content?.image_url || payload?.content?.imageUrl || payload?.image_url || payload?.imageUrl || ''; } catch { return ''; }
-}
 
 function FlowMessage({flow}) {
   if (!flow.error && !flow.notice) return null;
@@ -104,65 +96,6 @@ function Cover({artifact, onUpload}) {
   return <div className="server-cover"><div className="server-cover-preview">{artifact?.cover_url ? <img src={artifact.cover_url} alt="Обложка экспоната" /> : <span>JPG, PNG или WebP до 10 МБ</span>}</div><input id={inputId} type="file" hidden accept="image/jpeg,image/png,image/webp" onChange={(event) => { onUpload(event.target.files?.[0]); event.currentTarget.value = ''; }} /><label htmlFor={inputId}><Button view="outlined" component="span">{artifact?.cover_url ? 'Заменить' : 'Загрузить обложку'}</Button></label></div>;
 }
 
-function Content({flow, onNavigate}) {
-  const {artifact, loading, saveAndGo} = flow;
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [screenDirty, setScreenDirty] = useState(false);
-  const closeEditor = useCallback(() => { setScreenDirty(false); setEditing(null); }, []);
-  const requestNavigation = useCallback((view, saveBasics = false) => createScreenNavigationGuard({
-    isDirty: () => screenDirty,
-    isPending: () => loading,
-    confirmDiscard: () => window.confirm('В экране есть несохранённые изменения. Перейти без сохранения?'),
-    navigate: () => {
-      if (screenDirty) onNavigate(view, {artifactId: artifact?.id});
-      else if (saveBasics) saveAndGo(view);
-      else onNavigate(view);
-    },
-  })(view), [artifact?.id, loading, saveAndGo, onNavigate, screenDirty]);
-  const requestEditorClose = useCallback(() => createScreenNavigationGuard({
-    isDirty: () => screenDirty,
-    isPending: () => loading,
-    confirmDiscard: () => window.confirm('В экране есть несохранённые изменения. Закрыть без сохранения?'),
-    navigate: closeEditor,
-  })(), [closeEditor, loading, screenDirty]);
-  const headerFlow = {...flow, dirty: flow.dirty || screenDirty, saveAndGo: (view) => requestNavigation(view, true)};
-  const onDrop = (fromId, toId) => { const from = flow.screens.findIndex((screen) => screen.id === fromId); const to = flow.screens.findIndex((screen) => screen.id === toId); if (from < 0 || to < 0 || from === to) return; const next = [...flow.screens]; const [item] = next.splice(from, 1); next.splice(to, 0, item); flow.reorder(next); };
-  return <section className="page server-artifact-flow"><Header step={1} flow={headerFlow} screenDirty={screenDirty} onNavigate={onNavigate} /><Card className="panel server-flow-card" view="filled"><div className="server-content-heading"><div><h2>Экраны</h2><p>{flow.screens.length ? `Добавлено: ${flow.screens.length}` : 'Сейчас контент отсутствует.'}</p></div><Button view="action" disabled={flow.loading} onClick={() => setDialogOpen(true)}><Plus />Добавить</Button></div>{flow.screens.length ? <div className="server-screen-list" role="list">{flow.screens.map((screen, index) => <ScreenRow key={screen.id} index={index} screen={screen} onDrop={onDrop} onEdit={() => setEditing(screen)} onDuplicate={() => flow.duplicateScreen(screen)} onRemove={() => flow.removeScreen(screen.id)} />)}</div> : <div className="server-empty"><p>Хотите создать первый экран?</p><Button view="action" disabled={flow.loading} onClick={() => setDialogOpen(true)}>Добавить</Button></div>}{editing ? <InlineTextEditor screen={editing} disabled={flow.loading} onDirty={setScreenDirty} onCancel={requestEditorClose} onUploadImage={flow.uploadScreenImage} onSave={async (title, body, imageURL) => { const saved = await flow.updateScreen(editing.id, title, body, imageURL); if (saved) closeEditor(); return saved; }} /> : null}<FlowMessage flow={flow} /></Card><ScreenTypeDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onAdd={async () => { const screen = await flow.addTextScreen(); setDialogOpen(false); if (screen) { setScreenDirty(false); setEditing(screen); } }} /><footer className="page-action-bar page-action-bar-split server-flow-footer"><Button view="outlined" size="xl" disabled={flow.loading} onClick={() => requestNavigation('artifact-basic')}>Назад</Button><Button view="action" size="xl" disabled={flow.loading || !flow.screens.length} onClick={() => requestNavigation('artifact-publish')}>К публикации</Button></footer></section>;
-}
-
-function ScreenRow({screen, index, onDrop, onEdit, onDuplicate, onRemove}) {
-	const items = [{text: 'Дублировать', icon: <Copy />, action: onDuplicate}, [{text: 'Удалить', icon: <TrashBin />, action: () => { if (window.confirm(`Удалить экран «${screen.title}»?`)) onRemove(); }, className: 'artifact-menu-danger'}]];
-  return <div className="server-screen-row" role="listitem" draggable onDragStart={(event) => event.dataTransfer.setData('text/plain', screen.id)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); onDrop(event.dataTransfer.getData('text/plain'), screen.id); }}><span className="server-drag" aria-label="Перенести экран" title="Перенесите экран">⠿</span><span className="server-screen-number">{index + 1}</span><Label theme="normal" size="s">Текст</Label><button type="button" className="server-screen-title" onClick={onEdit}><strong>{screen.title || 'Без названия'}</strong><small>Нажмите, чтобы отредактировать</small></button><DropdownMenu items={items} size="m" popupProps={{placement: 'bottom-end'}} renderSwitcher={(props) => <button className="artifact-row-menu" type="button" aria-label={`Действия с экраном «${screen.title}»`} {...props}><EllipsisVertical /></button>} /></div>;
-}
-
-function ScreenTypeDialog({open, onClose, onAdd}) { return <Dialog open={open} onClose={onClose} size="s"><Dialog.Header caption="Добавить экран">Добавить экран</Dialog.Header><Dialog.Body><Button view="flat" width="max" onClick={onAdd}>Текст<br /><small>Расскажите историю с помощью текста и изображений.</small></Button><div className="server-disabled-option">Тест <small>В следующем обновлении</small></div><div className="server-disabled-option">3D-модель <small>В следующем обновлении</small></div></Dialog.Body><Dialog.Footer textButtonCancel="Отменить" onClickButtonCancel={onClose} /></Dialog>; }
-
-function InlineTextEditor({screen, onCancel, onSave, onUploadImage, onDirty, disabled = false}) {
-  const [values, setValues] = useState({title: '', body: '', imageURL: ''}); const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false); const savingRef = useRef(false);
-  const originalRef = useRef({title: '', body: '', imageURL: ''}); const valuesRef = useRef(values);
-  const [inputId] = useState(() => `screen-image-${Math.random().toString(36).slice(2)}`);
-  const {title, body, imageURL} = values;
-  const setField = (field, value) => {
-    const next = {...valuesRef.current, [field]: value};
-    valuesRef.current = next;
-    setValues(next);
-    onDirty(hasUnsavedScreenChanges(next, originalRef.current));
-  };
-  React.useEffect(() => { if (screen) { const original = {title: screen.title || '', body: screenBody(screen), imageURL: screenImage(screen)}; originalRef.current = original; valuesRef.current = original; setValues(original); onDirty(false); } }, [screen, onDirty]);
-  const uploadImage = async (file) => {
-    if (!file) return;
-    setUploading(true);
-    const nextURL = await onUploadImage(screen.id, file);
-    if (nextURL) setField('imageURL', nextURL);
-    setUploading(false);
-  };
-  const save = useCallback(() => createScreenSaveHandler({savingRef, setSaving, onSave, onSaved: () => onDirty(false)})(title, body, imageURL), [onDirty, onSave, title, body, imageURL]);
-  const previewStyle = imageURL ? {backgroundImage: `linear-gradient(180deg, rgba(15, 17, 23, 0.08) 20%, rgba(15, 17, 23, 0.92) 100%), url("${imageURL}")`, backgroundSize: 'cover', backgroundPosition: 'center'} : undefined;
-  return <section className="server-inline-editor" aria-label="Редактирование текстового экрана"><div className="server-inline-editor__heading"><div><h3>Текстовый экран</h3><p>Добавьте текст и фоновое изображение для посетителя.</p></div><Button view="flat-secondary" disabled={saving || uploading || disabled} onClick={onCancel}>Закрыть</Button></div><div className="server-editor-grid"><div><label>Заголовок<TextInput size="l" value={title} disabled={saving || disabled} onUpdate={(value) => setField('title', value)} /></label><label>Текст<TextArea size="l" rows={9} value={body} disabled={saving || disabled} onUpdate={(value) => setField('body', value)} placeholder="Введите текст для посетителя" /></label><div className="server-screen-image-field"><div><strong>Фоновое изображение</strong><p>Необязательно. JPG, PNG или WebP, до 10 МБ.</p></div>{imageURL ? <img src={imageURL} alt="Фоновое изображение экрана" /> : <div className="server-screen-image-placeholder">Изображение не выбрано</div>}<input id={inputId} type="file" hidden accept="image/jpeg,image/png,image/webp" onChange={(event) => { uploadImage(event.target.files?.[0]); event.currentTarget.value = ''; }} /><label htmlFor={inputId}><Button view="outlined" component="span" disabled={saving || disabled} loading={uploading}>{imageURL ? 'Заменить изображение' : 'Загрузить изображение'}</Button></label>{imageURL ? <Button view="flat-danger" size="s" disabled={saving || uploading || disabled} onClick={() => setField('imageURL', '')}>Убрать изображение</Button> : null}</div><div className="server-inline-editor__actions"><Button view="outlined" disabled={saving || uploading || disabled} onClick={onCancel}>Отменить</Button><Button view="action" disabled={saving || uploading || disabled} loading={saving} onClick={save}>Сохранить экран</Button></div></div><div className="server-device"><span className="server-device__speaker" /><div className="server-story-preview" style={{aspectRatio: '9 / 19.5', minHeight: 'auto', ...previewStyle}}><span>Как увидит посетитель</span><strong>{title || 'Заголовок'}</strong><p>{body || 'Текст'}</p></div></div></div></section>;
-}
-
 function Publish({flow, onNavigate}) { const ready = Boolean(flow.artifact && flow.screens.length); return <section className="page server-artifact-flow"><Header step={2} flow={flow} onNavigate={onNavigate} /><Card className="panel server-flow-card" view="filled"><h2>Публикация</h2>{ready ? <p>Экспонат готов к публикации. Ссылка и QR-код останутся постоянными.</p> : <p className="server-flow-message is-error">Сохраните сведения и добавьте хотя бы один экран.</p>}<FlowMessage flow={flow} /></Card><footer className="page-action-bar page-action-bar-split server-flow-footer"><Button view="outlined" size="xl" onClick={() => onNavigate('artifact-content')}>Назад</Button><Button view="action" size="xl" disabled={flow.loading || !ready} loading={flow.loading} onClick={flow.publish}>Опубликовать</Button></footer></section>; }
 
 function Success({flow, onNavigate}) {
@@ -187,7 +120,7 @@ function Success({flow, onNavigate}) {
 export function ServerArtifactFlow({mode, artifacts, artifactsLoading, artifactsError, onReload, flow, onNavigate}) {
   if (mode === 'selector') return <Selector artifacts={artifacts} artifactsLoading={artifactsLoading} artifactsError={artifactsError} onReload={onReload} flow={flow} />;
   if (mode === 'basic') return <Basic flow={flow} onNavigate={onNavigate} />;
-  if (mode === 'content') return <Content flow={flow} onNavigate={onNavigate} />;
+  if (mode === 'content') return <ContentWorkspace flow={flow} onNavigate={onNavigate} />;
   if (mode === 'publish') return <Publish flow={flow} onNavigate={onNavigate} />;
   return <Success flow={flow} onNavigate={onNavigate} />;
 }

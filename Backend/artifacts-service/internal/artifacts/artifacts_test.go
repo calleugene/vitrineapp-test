@@ -170,10 +170,10 @@ func TestPublishCreatesImmutablePublicSnapshotAndQR(t *testing.T) {
 	}
 
 	unsupported := performJSON(t, env.handler, http.MethodPost, "/artifacts/"+artifact.Artifact.ID+"/screens", map[string]any{
-		"type": "model", "title": "Недоступно",
+		"type": "video", "title": "Недоступно",
 	})
 	if unsupported.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("expected only text screens, got %d %s", unsupported.Code, unsupported.Body.String())
+		t.Fatalf("expected unsupported type rejection, got %d %s", unsupported.Code, unsupported.Body.String())
 	}
 }
 

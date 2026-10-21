@@ -3,7 +3,7 @@ import {UI} from '../config';
 import {safeHtml} from '../html';
 
 /* Тест: вопрос и варианты. Блокировка после ответа — часть формы, а не навигации. */
-export function QuizScreen({title, options, quizAnswer, quizResult, correctAnswer, onAnswer}) {
+export function QuizScreen({title, text, options, quizAnswer, quizResult, correctAnswer, onAnswer}) {
   return (
     <>
       <span className="story-kicker">
@@ -11,6 +11,7 @@ export function QuizScreen({title, options, quizAnswer, quizResult, correctAnswe
         {UI.quizKicker}
       </span>
       <h2 className="story-title" dangerouslySetInnerHTML={{__html: safeHtml(title)}} />
+      {text && <p className="story-text">{text}</p>}
       <div className="story-quiz">
         {(options || []).map((option) => {
           let cls = 'story-quiz-btn';

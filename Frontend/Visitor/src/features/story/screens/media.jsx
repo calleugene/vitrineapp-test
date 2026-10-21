@@ -23,7 +23,7 @@ export function SlideMedia({screen, onArInteraction}) {
   const asset = screen.imageUrl || screen.modelUrl;
 
   if (screen.media === 'ar') {
-    if (screen.modelUrl) return <ArModelViewer modelUrl={screen.modelUrl} onInteraction={onArInteraction} />;
+    if (screen.modelUrl) return <ArModelViewer key={screen.modelUrl} modelUrl={screen.modelUrl} onInteraction={onArInteraction} />;
     return (
       <div className="story-media story-media--ar" aria-hidden="true">
         <span className="story-ph-shimmer" />

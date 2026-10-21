@@ -187,6 +187,10 @@ export const artifactsApi = {
     body.append('file', file);
     return request(ARTIFACTS_API_URL, `${API_PREFIX}/artifacts/${artifactId}/screens/${screenId}/image`, {method: 'POST', body, headers: museumHeaders()});
   },
+  uploadScreenModel: (artifactId, screenId, file) => {
+    const body = new FormData(); body.append('file', file);
+    return request(ARTIFACTS_API_URL, `${API_PREFIX}/artifacts/${artifactId}/screens/${screenId}/model`, {method: 'POST', body, headers: museumHeaders()});
+  },
   listScreens: (artifactId) => request(ARTIFACTS_API_URL, `${API_PREFIX}/artifacts/${artifactId}/screens`, {headers: museumHeaders()}),
   updateScreen: (artifactId, screenId, body) => request(ARTIFACTS_API_URL, `${API_PREFIX}/artifacts/${artifactId}/screens/${screenId}`, {...jsonOptions('PATCH', body), headers: museumHeaders()}),
   removeScreen: (artifactId, screenId) => request(ARTIFACTS_API_URL, `${API_PREFIX}/artifacts/${artifactId}/screens/${screenId}`, {method: 'DELETE', headers: museumHeaders()}),

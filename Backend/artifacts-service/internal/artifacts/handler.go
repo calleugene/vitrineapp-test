@@ -568,6 +568,7 @@ func NewHandler(service *Service) http.Handler {
 	registerRoute("GET /artifacts/{artifactId}/screens", listScreensHandler)
 	registerRoute("POST /artifacts/{artifactId}/screens", createScreenHandler)
 	registerRoute("POST /artifacts/{artifactId}/screens/{screenId}/image", uploadScreenImageHandler)
+	registerRoute("POST /artifacts/{artifactId}/screens/{screenId}/model", service.uploadScreenModel)
 	registerRoute("GET /artifacts/{artifactId}/screens/{screenId}", getScreenHandler)
 	registerRoute("PATCH /artifacts/{artifactId}/screens/{screenId}", updateScreenHandler)
 	registerRoute("DELETE /artifacts/{artifactId}/screens/{screenId}", deleteScreenHandler)
@@ -829,6 +830,8 @@ func writeServiceError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "no_unpublished_changes")
 	case errors.Is(err, ErrUnsupportedScreenType):
 		writeError(w, http.StatusUnprocessableEntity, "unsupported_screen_type")
+	case errors.Is(err, ErrScreenIncomplete):
+		writeError(w, http.StatusUnprocessableEntity, "screen_content_incomplete")
 	case errors.Is(err, ErrCannotPublishEmpty):
 		writeError(w, http.StatusUnprocessableEntity, "cannot_publish_empty")
 	case errors.Is(err, ErrArchivedArtifact):

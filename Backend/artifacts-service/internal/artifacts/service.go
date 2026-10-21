@@ -357,6 +357,13 @@ func (s *Service) PublishExpected(ctx context.Context, artifactID string, expect
 	if len(screens) == 0 {
 		return publishResponse{}, ErrCannotPublishEmpty
 	}
+	for _, screen := range screens {
+		if screen.Type == "quiz" || screen.Type == "model" {
+			if err := validateScreenContent(screen.Type, screen.Payload, true); err != nil {
+				return publishResponse{}, err
+			}
+		}
+	}
 	snapshot := map[string]any{
 		"schema_version": 1,
 		"artifact":       map[string]any{"id": item.ID, "museum_id": item.MuseumID, "title": item.Title, "short_description": item.ShortDescription, "cover_url": item.CoverURL, "public_code": item.PublicCode},
@@ -426,8 +433,11 @@ func (s *Service) CreateScreen(ctx context.Context, artifactID string, req creat
 	if strings.TrimSpace(req.Type) == "" || strings.TrimSpace(req.Title) == "" {
 		return Screen{}, ErrBadRequest
 	}
-	if strings.TrimSpace(req.Type) != "text" {
+	if req.Type != "text" && req.Type != "quiz" && req.Type != "model" {
 		return Screen{}, ErrUnsupportedScreenType
+	}
+	if err := validateScreenContent(req.Type, req.Payload, false); err != nil {
+		return Screen{}, err
 	}
 	if _, err := s.repo.GetArtifact(ctx, artifactID); err != nil {
 		return Screen{}, err
@@ -472,6 +482,9 @@ func (s *Service) UpdateScreen(ctx context.Context, artifactID, screenID string,
 	}
 	if req.Payload != nil {
 		screen.Payload = *req.Payload
+	}
+	if err := validateScreenContent(screen.Type, screen.Payload, false); err != nil {
+		return Screen{}, err
 	}
 	screen.UpdatedAt = s.config.now()
 	if err := s.repo.UpdateScreen(ctx, screen); err != nil {

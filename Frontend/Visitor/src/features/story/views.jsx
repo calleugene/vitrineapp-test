@@ -144,6 +144,7 @@ function ScreenContent({
       return (
         <QuizScreen
           title={screen.title}
+          text={screen.text}
           options={screen.options}
           quizAnswer={quizAnswer}
           quizResult={quizResult}
@@ -186,10 +187,10 @@ export function StoryExperienceView({data, navigate, actions, publicStory = null
   const slideRefs = useRef([]);
   const [active, setActive] = useState(0);
   const [hasNavigated, setHasNavigated] = useState(false);
-  const [quizAnswer, setQuizAnswer] = useState(null);
-  const [quizResult, setQuizResult] = useState(null);
-  const [quizSlideIdx, setQuizSlideIdx] = useState(null);
-  const [quizExplanation, setQuizExplanation] = useState('');
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const quizAnswer = quizAnswers[active]?.answer;
+  const quizResult = quizAnswers[active]?.result;
+  const quizSlideIdx = active;
   const [quizShake, setQuizShake] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isCollected, setIsCollected] = useState(false);
@@ -200,7 +201,8 @@ export function StoryExperienceView({data, navigate, actions, publicStory = null
   const story = publicStory || data?.storyData;
   const screens = useMemo(() => publicStory?.screens || buildScreensFromStory(story), [publicStory, story]);
   const count = screens.length;
-  const quizIdx = screens.findIndex((screen) => screen.type === 'quiz');
+  const quizIdx = screens.findIndex((screen, index) => screen.type === 'quiz' && !quizAnswers[index]);
+  const quizExplanation = screens[active]?.explanation || '';
   const activeType = screens[active]?.type;
   useEffect(() => {
     const progress = progressRef.current;
@@ -260,10 +262,6 @@ export function StoryExperienceView({data, navigate, actions, publicStory = null
     navigate?.('museumDetail');
   }, [navigate, onExit]);
 
-  /* Свежий ответ квиза нужен observer-у без пересоздания инстанса. */
-  const quizAnswerRef = useRef(null);
-  useEffect(() => { quizAnswerRef.current = quizAnswer; }, [quizAnswer]);
-
   const {activate: activateArIdle, reset: resetArIdle, deactivate: deactivateAr} = useArIdle({
     onDeactivate: () => setArActive(false),
     idleMs: AR_IDLE_MS,
@@ -315,7 +313,7 @@ export function StoryExperienceView({data, navigate, actions, publicStory = null
           if (!entry.isIntersecting || entry.intersectionRatio < VISIBLE_SLIDE_RATIO) return;
           const newIdx = Number(entry.target.dataset.index);
           /* Экран сбора не открывается, пока квиз без ответа. */
-          if (quizIdx >= 0 && newIdx > quizIdx && !quizAnswerRef.current) {
+          if (quizIdx >= 0 && newIdx > quizIdx) {
             nudgeBackToQuiz();
             return;
           }
@@ -362,12 +360,9 @@ export function StoryExperienceView({data, navigate, actions, publicStory = null
   }, [goNext, goPrev, exitStory, activeType, arActive, quizAnswer]);
 
   const handleQuiz = (option, idx, screen) => {
-    if (quizAnswer) return;
+    if (quizAnswers[idx]) return;
     const isCorrect = option === screen.correctAnswer;
-    setQuizAnswer(option);
-    setQuizResult(isCorrect ? 'correct' : 'wrong');
-    setQuizSlideIdx(idx);
-    setQuizExplanation(screen.explanation || '');
+    setQuizAnswers((answers) => ({...answers, [idx]: {answer: option, result: isCorrect ? 'correct' : 'wrong'}}));
     trackerRef.current?.('quiz_answer', {screen_id: screen.id, properties: {correct: isCorrect}});
     haptic(isCorrect ? [10, 40, 15] : [80]);
   };
@@ -411,7 +406,7 @@ export function StoryExperienceView({data, navigate, actions, publicStory = null
         )}
         <nav className="story-progress" ref={progressRef} aria-label="Экраны истории">
           {screens.map((screen, idx) => {
-            const isLocked = quizIdx >= 0 && idx > quizIdx && !quizAnswer;
+            const isLocked = quizIdx >= 0 && idx > quizIdx;
             return (
               <button
                 key={idx}
@@ -461,8 +456,8 @@ export function StoryExperienceView({data, navigate, actions, publicStory = null
                   imageUrl={screens.find((item) => item.imageUrl)?.imageUrl}
                   exitLabel={exitLabel}
                   feedback={feedback}
-                  quizAnswer={quizAnswer}
-                  quizResult={quizResult}
+                  quizAnswer={quizAnswers[idx]?.answer}
+                  quizResult={quizAnswers[idx]?.result}
                   onAnswer={(option) => handleQuiz(option, idx, screen)}
                   onArActivate={activateAR}
                   isCollected={isCollected}
