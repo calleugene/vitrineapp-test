@@ -38,9 +38,10 @@ func main() {
 		log.Fatal("ARTIFACTS_TOKEN_SECRET must be configured; protected museum APIs cannot run without it")
 	}
 	service := artifacts.NewService(repo, artifacts.Config{
-		PublicBaseURL: envOr("ARTIFACTS_PUBLIC_BASE_URL", "http://localhost:5173"),
-		AssetStore:    assetStore,
-		TokenSecret:   tokenSecret,
+		PublicBaseURL:  envOr("ARTIFACTS_PUBLIC_BASE_URL", "http://localhost:5173"),
+		AssetStore:     assetStore,
+		TokenSecret:    tokenSecret,
+		AuthServiceURL: envOr("AUTH_SERVICE_URL", "http://localhost:8080/api/v1"),
 	})
 	addr := envOr("ARTIFACTS_HTTP_ADDR", ":8081")
 	log.Printf("artifacts service listening on %s", addr)
@@ -50,6 +51,7 @@ func main() {
 	root.Handle("/artifacts", apiHandler)
 	root.Handle("/api/v1/artifacts/", apiHandler)
 	root.Handle("/api/v1/artifacts", apiHandler)
+	root.Handle("/api/v1/internal/museums/", apiHandler)
 	root.Handle("/api/v1/museums/", apiHandler)
 	root.Handle("/api/v1/museums", apiHandler)
 	root.Handle("/api/v1/public/", apiHandler)

@@ -3,20 +3,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--vl-space-4);
 }
 
 .visitors-filters {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--vl-space-3);
   flex-wrap: wrap;
 }
 
 .visitor-stat-card {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: var(--vl-space-5);
 }
 
 .visitor-stat-icon {
@@ -24,7 +24,7 @@
   height: 54px;
   display: grid;
   place-items: center;
-  border-radius: 18px;
+  border-radius: var(--ui-radius-card);
   flex: 0 0 54px;
 }
 
@@ -54,13 +54,13 @@
 }
 
 .visitor-stat-copy .stat-value.small {
-  font-size: 28px;
+  font-size: var(--vl-text-title);
 }
 
 .visitors-analytics {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.58fr) var(--content-side-column);
-  gap: 18px;
+  gap: var(--vl-space-5);
   align-items: stretch;
 }
 
@@ -84,7 +84,7 @@
 .visitors-sources-layout {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--vl-space-5);
   align-items: center;
 }
 
@@ -102,7 +102,7 @@
 .visitors-sources-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--vl-space-4);
   width: 100%;
 }
 
@@ -110,15 +110,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--vl-space-3);
 }
 
 .visitors-source-label {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--vl-space-3);
   color: #666d82;
-  font-size: 14px;
+  font-size: var(--vl-text-body);
 }
 
 .visitors-source-dot {
@@ -136,21 +136,21 @@
 .visitors-table-head,
 .visitors-table-row {
   grid-template-columns: minmax(160px, 1.05fr) minmax(170px, 1.02fr) minmax(170px, 0.92fr) minmax(130px, 0.72fr) minmax(150px, 0.86fr) minmax(140px, 0.82fr);
-  gap: 12px;
+  gap: var(--vl-space-3);
 }
 
 .visitors-table-panel {
-  padding: 22px 24px 18px;
+  padding: var(--vl-space-6) var(--vl-space-6) var(--vl-space-5);
 }
 
 .visitors-table-head {
-  padding-bottom: 12px;
+  padding-bottom: var(--vl-space-3);
   align-items: center;
 }
 
 .visitors-table-row {
   align-items: center;
-  padding: 14px 0;
+  padding: var(--vl-space-4) 0;
   transition: background-color 0.18s ease;
   min-height: 56px;
 }
@@ -161,7 +161,7 @@
 
 .visitors-table-row > span {
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: var(--vl-text-body);
   line-height: 1.2;
   min-width: 0;
   white-space: nowrap;
@@ -173,30 +173,30 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding-top: 14px;
+  gap: var(--vl-space-4);
+  padding-top: var(--vl-space-4);
   color: #8a90a4;
-  font-size: 14px;
+  font-size: var(--vl-text-body);
 }
 
 .visitors-pagination {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--vl-space-2);
 }
 
 .visitors-sort-button {
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
+  gap: var(--vl-space-2);
   width: 100%;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--vl-text-caption);
+  font-weight: var(--vl-weight-medium);
   text-align: left;
   cursor: pointer;
   white-space: nowrap;
@@ -219,9 +219,9 @@
 .visitors-sort-meta {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--vl-space-1);
   color: var(--text-tertiary);
-  font-size: 11px;
+  font-size: var(--vl-text-caption);
   white-space: nowrap;
   flex: 0 0 auto;
 }
@@ -233,9 +233,9 @@
 
 .visitors-export-button {
   border-radius: 999px;
-  padding-inline: 16px;
+  padding-inline: var(--vl-space-4);
   min-height: 40px;
-  gap: 8px;
+  gap: var(--vl-space-2);
 }
 
 .visitors-export-button svg {
@@ -248,7 +248,7 @@
   place-items: center;
   min-height: 180px;
   border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 18px;
+  border-radius: var(--ui-radius-card);
   color: var(--text-secondary);
   text-align: center;
   background: rgba(15, 23, 42, 0.015);
@@ -256,16 +256,16 @@
 
 .visitors-empty-state strong {
   max-width: 360px;
-  font-size: 16px;
+  font-size: var(--vl-text-lead);
   line-height: 1.4;
-  font-weight: 600;
+  font-weight: var(--vl-weight-semibold);
 }
 
 .visitors-page {
   min-width: 34px;
   height: 34px;
   border: 1px solid rgba(24, 24, 27, 0.08);
-  border-radius: 12px;
+  border-radius: var(--ui-radius-item);
   background: var(--color-surface);
   color: #707688;
   cursor: pointer;

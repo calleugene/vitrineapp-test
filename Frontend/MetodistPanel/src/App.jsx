@@ -1,36 +1,43 @@
-import React, {useEffect, useMemo, useState} from 'react';
-import {FEEDBACK_CONVERSATIONS} from './app/constants';
+import {useToaster} from '@gravity-ui/uikit';
+import {useMuseumAccess} from './app/use-museum-access';
+import {authApi} from './api';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {FEEDBACK_CONVERSATIONS} from './features/feedback/demo-data';
 import {DEFAULT_VIEW} from './app/routes';
 import {AuthScreen} from './app/AuthScreen';
+import {MuseumSetupScreen} from './app/MuseumSetupScreen';
 import {AppShell} from './app/AppShell';
 import {HeaderActions} from './app/header-actions';
-import {useArtifactDraft} from './app/use-artifact-draft';
 import {useArtifactsData} from './app/use-artifacts-data';
 import {useServerArtifactFlow} from './app/use-server-artifact-flow';
 import {ViewContent} from './app/view-content';
 import {useDashboardData} from './app/use-dashboard-data';
-import {useProfileData} from './app/use-profile-data';
+import {ProfilePage, ReactivationScreen} from './features/users/ProfilePage';
 import {mergeRouteTableRows} from './app/route-draft-utils';
 import {useRouteDraft} from './app/use-route-draft';
 import {useSession} from './app/use-session';
 import {useViewRouting} from './app/use-view-routing';
+import {useStatsData} from './features/stats/use-stats-data';
 
 function App() {
+  const {add:showToast} = useToaster();
+  const [museumSwitchBusy,setMuseumSwitchBusy] = useState(false);
+  const museumSwitchLock = useRef(false);
+  const [profileDirty,setProfileDirty] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [artifactTab, setArtifactTab] = useState('all');
-  const [artifactCategory, setArtifactCategory] = useState('all');
   const [routeTab, setRouteTab] = useState('all-routes');
   const [statsTab, setStatsTab] = useState('overview');
   const [statsPeriod, setStatsPeriod] = useState('day');
   const [feedbackTab, setFeedbackTab] = useState('all');
   const [selectedFeedbackId, setSelectedFeedbackId] = useState(FEEDBACK_CONVERSATIONS[0].id);
-  const [userProfileTab, setUserProfileTab] = useState('profile');
 
   const {
     session,
+    sessionChecking,
+    sessionCheckError,
+    retrySessionCheck,
     authTab,
     setAuthTab,
     authForm,
@@ -38,10 +45,12 @@ function App() {
     authError,
     authLoading,
     isAuthenticated,
+    needsMuseumContext,
     currentUser,
     updateSession,
     clearSession,
     handleLogin,
+    handleProvisionMuseum,
     handleRegister,
     handleLogout,
   } = useSession({
@@ -52,7 +61,6 @@ function App() {
 
   const navigate = (nextView, options) => {
     setUserMenuOpen(false);
-    setNotificationsOpen(false);
     setView(nextView, options);
   };
 
@@ -64,21 +72,23 @@ function App() {
     saveMuseumProfile,
     museumProfileSaving,
     museumProfileError,
+    museumProfileLoadState,
+    loadMuseumProfile,
     dashboardData,
+    dashboardStates,
+    retryDashboardBlock,
     routeRows,
     routeSummary,
     routeActivities,
     feedbackMessages,
     notificationItems,
     notificationUnreadCount,
-    statsDataByTab,
   } = useDashboardData({
-    isAuthenticated,
-    statsTab,
-    statsPeriod,
     selectedFeedbackId,
     setSelectedFeedbackId,
   });
+  const {museums, museumState, refreshMuseums, applyMuseums} = useMuseumAccess({userId:currentUser?.id, accessToken:session?.accessToken, active:isAuthenticated && currentUser?.status?.toUpperCase() === 'ACTIVE', isMock:session?.isMock});
+  const {statsDataByTab} = useStatsData({isAuthenticated, statsTab, statsPeriod});
 
   const {
     artifacts,
@@ -87,7 +97,7 @@ function App() {
     loadArtifacts,
   } = useArtifactsData({
     session,
-    isAuthenticated,
+    isAuthenticated: isAuthenticated && currentUser?.status?.toUpperCase() !== 'DORMANT',
     onSessionRefresh: updateSession,
     onUnauthorized: () => {
       clearSession({authErrorMessage: 'Сессия истекла. Войдите снова.'});
@@ -96,52 +106,6 @@ function App() {
     loadConnectedData: async () => {
       await loadConnectedData();
     },
-  });
-
-  const {
-    form,
-    setForm,
-    status,
-    setStatus,
-    visibility,
-    setVisibility,
-    routeAccess,
-    setRouteAccess,
-    showViews,
-    setShowViews,
-    allowDownload,
-    setAllowDownload,
-    artifactScreens,
-    selectedScreen,
-    editingScreen,
-    editorValidation,
-    showEditorValidation,
-    selectedArtifactScreenId,
-    setSelectedArtifactScreenId,
-    publishError,
-    publishLoading,
-    createdArtifact,
-    coverPreview,
-    coverError,
-    setCoverFile,
-    publishValidation,
-    startArtifactFlow,
-    goToArtifactStep,
-    addArtifactScreen,
-    duplicateArtifactScreen,
-    removeArtifactScreen,
-    moveArtifactScreen,
-    reorderArtifactScreens,
-    startEditingScreen,
-    updateEditingScreen,
-    updateEditingScreenOrder,
-    updateEditingScreenCorrectAnswer,
-    cancelEditingScreen,
-    saveEditingScreen,
-    handlePublishArtifact,
-  } = useArtifactDraft({
-    loadArtifacts,
-    onNavigate: navigate,
   });
 
 	const serverArtifactFlow = useServerArtifactFlow({
@@ -171,24 +135,28 @@ function App() {
     onNavigate: navigate,
   });
 
-  const {
-    userProfile,
-    userProfileDraft,
-    setUserProfileDraft,
-    profileSaving,
-    profileError,
-    handleSaveUserProfile,
-  } = useProfileData({
-    session,
-    isAuthenticated,
-    currentUser,
-    onSessionRefresh: updateSession,
-  });
 
   const visibleRouteRows = useMemo(
     () => mergeRouteTableRows(routeRows, routeDraft),
     [routeDraft, routeRows]
   );
+
+  const selectMuseum = async (museumId, {discardConfirmed = false} = {}) => {
+    if (museumSwitchLock.current) return false;
+    if (museumId === currentUser?.museum_id) {navigate('museum'); return true;}
+    if (!discardConfirmed && (profileDirty || view === 'museum' || view.startsWith('artifact-')) && !window.confirm('Переключиться на другой музей? Несохранённые изменения будут отменены.')) return false;
+    museumSwitchLock.current = true; setMuseumSwitchBusy(true);
+    try {
+      const response = await authApi.selectMuseum(museumId);
+      updateSession({...session, accessToken:response.accessToken, user:response.user});
+      await loadConnectedData();
+      navigate('museum');
+      return true;
+    } catch {
+      showToast({name:'museum-switch-error',theme:'warning',title:'Не удалось переключить музей. Повторите попытку.'});
+      return false;
+    } finally {museumSwitchLock.current = false; setMuseumSwitchBusy(false);}
+  };
 
   const handleAppLogout = async () => {
     await handleLogout();
@@ -198,22 +166,17 @@ function App() {
   const headerAction = (
     <HeaderActions
       view={view}
-      form={form}
-      profileSaving={profileSaving}
-      publishLoading={publishLoading}
-      onResetUserProfile={() => {
-        setUserProfileDraft(userProfile);
-        setView('dashboard');
-      }}
-      onSaveUserProfile={handleSaveUserProfile}
-      onStartArtifactFlow={serverArtifactFlow.start}
-      onStartRouteFlow={startRouteFlow}
-      onPublishRoute={publishRoute}
-      routeDraft={routeDraft}
-      onPublishArtifact={handlePublishArtifact}
-      onNavigate={navigate}
+      key={currentUser?.museum_id} items={notificationItems} unreadCount={notificationUnreadCount} onRefresh={loadConnectedData}
     />
   );
+
+  if (sessionChecking || sessionCheckError) return <main className="personal-recovery"><div><p role={sessionCheckError ? 'alert' : 'status'}>{sessionCheckError || 'Проверяем аккаунт…'}</p>{sessionCheckError && <button type="button" onClick={retrySessionCheck}>Повторить</button>}</div></main>;
+  if (session?.accessToken && currentUser?.status?.toUpperCase() === 'DORMANT') {
+    return <ReactivationScreen user={currentUser} onActivate={async () => {const response = await authApi.reactivate(); updateSession({...session, user: response.user}); setView('dashboard', {replace: true});}} onLogout={handleAppLogout} />;
+  }
+  if (needsMuseumContext) {
+    return <MuseumSetupScreen error={authError} loading={authLoading} onCreate={handleProvisionMuseum} onLogout={handleAppLogout} />;
+  }
 
   if (!isAuthenticated) {
     return (
@@ -238,9 +201,12 @@ function App() {
         sidebarCollapsed={sidebarCollapsed}
         mobileNavOpen={mobileNavOpen}
         userMenuOpen={userMenuOpen}
-        notificationsOpen={notificationsOpen}
-        notificationUnreadCount={notificationUnreadCount}
-        notificationItems={notificationItems}
+        museumProfile={museumProfile}
+        museums={museums}
+        museumState={museumState}
+        museumSwitchBusy={museumSwitchBusy}
+        onSelectMuseum={selectMuseum}
+        onRetryMuseums={refreshMuseums}
         currentUser={currentUser}
         view={view}
         headerAction={headerAction}
@@ -253,35 +219,25 @@ function App() {
         onCloseMobileNav={() => setMobileNavOpen(false)}
         onToggleUserMenu={() => setUserMenuOpen((prev) => !prev)}
         onOpenUserProfile={() => {
-          setUserProfileDraft(userProfile);
-          setUserProfileTab('profile');
           setView('user-profile');
           setUserMenuOpen(false);
         }}
         onLogout={handleAppLogout}
-        onToggleNotifications={() => setNotificationsOpen((prev) => !prev)}
       >
-        <ViewContent
+        {view === 'user-profile' ? <ProfilePage session={session} onSessionRefresh={updateSession} onNavigate={navigate} museums={museums} museumState={museumState} loadMuseums={refreshMuseums} onMuseumsUpdated={applyMuseums} onSelectMuseum={selectMuseum} onDirtyChange={setProfileDirty} /> : <ViewContent
           view={view}
           currentUser={currentUser}
           dashboardData={dashboardData}
+          dashboardStates={dashboardStates}
+          retryDashboardBlock={retryDashboardBlock}
           museumProfile={museumProfile}
           setMuseumProfile={setMuseumProfile}
           onResetMuseumProfile={resetMuseumProfile}
           onSaveMuseumProfile={saveMuseumProfile}
           museumProfileSaving={museumProfileSaving}
           museumProfileError={museumProfileError}
-          userProfileDraft={userProfileDraft}
-          setUserProfileDraft={setUserProfileDraft}
-          userProfileTab={userProfileTab}
-          setUserProfileTab={setUserProfileTab}
-          profileError={profileError}
-          profileSaving={profileSaving}
-          onResetUserProfile={() => {
-            setUserProfileDraft(userProfile);
-            setView('dashboard');
-          }}
-          onSaveUserProfile={handleSaveUserProfile}
+          museumProfileLoadState={museumProfileLoadState}
+          onRetryMuseumProfileLoad={loadMuseumProfile}
           statsTab={statsTab}
           setStatsTab={setStatsTab}
           statsPeriod={statsPeriod}
@@ -309,63 +265,16 @@ function App() {
           onPublishRoute={publishRoute}
           onCreateAnotherRoute={createAnotherRoute}
           onStartRouteFlow={startRouteFlow}
-          artifactTab={artifactTab}
-          setArtifactTab={setArtifactTab}
-          artifactCategory={artifactCategory}
-          setArtifactCategory={setArtifactCategory}
           setView={setView}
           artifacts={artifacts}
           artifactsLoading={artifactsLoading}
           artifactsError={artifactsError}
           onReloadArtifacts={loadArtifacts}
-          onStartArtifactFlow={startArtifactFlow}
           serverArtifactFlow={serverArtifactFlow}
-          form={form}
-          setForm={setForm}
-          goToArtifactStep={goToArtifactStep}
-          status={status}
-          setStatus={setStatus}
-          artifactScreens={artifactScreens}
-          selectedScreen={selectedScreen}
-          editingScreen={editingScreen}
-          editorValidation={editorValidation}
-          showEditorValidation={showEditorValidation}
-          selectedArtifactScreenId={selectedArtifactScreenId}
-          setSelectedArtifactScreenId={setSelectedArtifactScreenId}
-          onAddArtifactScreen={(typeId) => {
-            addArtifactScreen(typeId);
-            navigate(typeId);
-          }}
-          onDuplicateScreen={duplicateArtifactScreen}
-          onDeleteScreen={removeArtifactScreen}
-          onMoveScreen={moveArtifactScreen}
-          onReorderScreens={reorderArtifactScreens}
-          onEditScreen={startEditingScreen}
-          onUpdateEditingScreen={updateEditingScreen}
-          onUpdateEditingScreenOrder={updateEditingScreenOrder}
-          onUpdateEditingScreenCorrectAnswer={updateEditingScreenCorrectAnswer}
-          onCancelEditingScreen={cancelEditingScreen}
-          onSaveEditingScreen={saveEditingScreen}
-          visibility={visibility}
-          setVisibility={setVisibility}
-          routeAccess={routeAccess}
-          setRouteAccess={setRouteAccess}
-          showViews={showViews}
-          setShowViews={setShowViews}
-          allowDownload={allowDownload}
-          setAllowDownload={setAllowDownload}
-          publishLoading={publishLoading}
-          publishError={publishError}
-          onPublishArtifact={handlePublishArtifact}
-          createdArtifact={createdArtifact}
-          coverPreview={coverPreview}
-          coverError={coverError}
-          setCoverFile={setCoverFile}
-          publishValidation={publishValidation}
-          onCreateAnotherArtifact={startArtifactFlow}
-        />
+        />}
       </AppShell>
     </>
   );
 }
 export default App;
+

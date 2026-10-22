@@ -1,8 +1,16 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef} from 'react';
 import Chart from 'chart.js/auto';
-import {ArrowRight} from '@gravity-ui/icons';
-import {Button, Card, SegmentedRadioGroup} from '@gravity-ui/uikit';
-import {ATTENDANCE_SERIES} from '../../app/constants';
+import museumHero from '../../assets/museum-hero.webp';
+import {ArrowRight, FileText, Lock, ChartColumn, Clock, Comment, Route as RouteIcon, CircleInfo} from '@gravity-ui/icons';
+import {PRODUCT_CAPABILITIES} from '../../app/capabilities';
+import {Button, Card} from '@gravity-ui/uikit';
+
+function BlockState({state, onRetry, empty, emptyIcon: EmptyIcon = FileText, children}) {
+  if (state.status === 'loading') return <div className="widget-skeleton" role="status" aria-label="Загружаем данные"><i /><i /><i /></div>;
+  if (state.status === 'error') return <div className="widget-state"><span className="widget-state-icon has-neutral-indicator"><FileText /></span><p role="status">Не удалось загрузить данные.</p><Button view="flat-secondary" onClick={onRetry}>Повторить</Button></div>;
+  if (empty) return <div className="widget-state"><span className="widget-state-icon"><EmptyIcon /></span><p>Нет данных для отображения.</p></div>;
+  return children;
+}
 
 export function AttendanceChart({labels, values, tooltipLabel = 'Посещения'}) {
   const canvasRef = useRef(null);
@@ -113,20 +121,20 @@ export function AttendanceChart({labels, values, tooltipLabel = 'Посещен�
   );
 }
 
-export function DashboardView({setView, userName, dashboardData}) {
-  const [attendancePeriod, setAttendancePeriod] = useState('month');
-  const attendanceData = attendancePeriod === 'month' ? dashboardData.attendance : ATTENDANCE_SERIES[attendancePeriod];
-
+export function DashboardView({setView, userName, dashboardData, dashboardStates, retryDashboardBlock}) {
+  const retry = (key) => () => retryDashboardBlock(key);
   return (
-    <section className="page">
+    <section className="page dashboard-page">
+      <div className="dashboard-welcome">
+      <img className="dashboard-hero-art" src={museumHero} width="1600" height="600" alt="" fetchPriority="high" />
       <div className="page-heading">
         <div>
-          <h1>Добрый день, {userName || 'методист'}!</h1>
+          <h1>Добрый день,<br />{userName || 'методист'}!</h1>
           <p>Смотрите, что происходит в вашем музее сегодня.</p>
         </div>
       </div>
 
-      <div className="stats-grid">
+      {dashboardStates.summary.status === 'success' && dashboardData.summary.length > 0 ? <div className="stats-grid">
         {dashboardData.summary.map((item) => (
           <Card key={item.title} className="stat-card" view="filled">
             <div className="stat-value">{item.value}</div>
@@ -134,34 +142,27 @@ export function DashboardView({setView, userName, dashboardData}) {
             <div className="stat-delta">{item.delta}</div>
           </Card>
         ))}
-      </div>
+      </div> : <div className="stats-grid"><Card className="panel" view="filled"><BlockState state={dashboardStates.summary} onRetry={retry('summary')} empty={!dashboardData.summary.length} /></Card></div>}
 
+      </div>
       <div className="dashboard-grid">
         <Card className="panel panel-large" view="filled">
           <div className="panel-header">
-            <h3>Посещаемость</h3>
-            <SegmentedRadioGroup
-              size="m"
-              value={attendancePeriod}
-              options={[
-                {value: 'week', content: 'Неделя'},
-                {value: 'month', content: 'Месяц'},
-                {value: 'year', content: 'Год'},
-              ]}
-              onUpdate={setAttendancePeriod}
-            />
+            <h3><ChartColumn aria-hidden="true" />Посещаемость</h3>
+            <span aria-label="Период посещаемости">Месяц</span>
           </div>
-          <div className="chart">
-            <AttendanceChart labels={attendanceData.labels} values={attendanceData.values} />
-          </div>
-          <div className="chart-note">{attendanceData.note}</div>
+          <p className="chart-note"><CircleInfo aria-hidden="true" />Неделя и год недоступны для этого источника данных.</p>
+          {dashboardStates.attendance.status === 'success' && dashboardData.attendance.labels.length > 0
+            ? <><div className="chart"><AttendanceChart labels={dashboardData.attendance.labels} values={dashboardData.attendance.values} /></div>{dashboardData.attendance.note ? <div className="chart-note">{dashboardData.attendance.note}</div> : null}</>
+            : <BlockState state={dashboardStates.attendance} emptyIcon={ChartColumn} onRetry={retry('attendance')} empty={dashboardStates.attendance.status === 'success'} />}
         </Card>
 
         <Card className="panel" view="filled">
           <div className="panel-header">
-            <h3>Недавняя активность</h3>
-            <Button view="flat" size="m">Смотреть все</Button>
+            <h3><Clock aria-hidden="true" />Недавняя активность</h3>
+            
           </div>
+          <BlockState state={dashboardStates.recentActivity} emptyIcon={Clock} onRetry={retry('recentActivity')} empty={!dashboardData.recentActivity.length}>
           <ul className="activity-feed">
             {dashboardData.recentActivity.map((item) => (
               <li className="activity-feed-item" key={item.title}>
@@ -171,15 +172,15 @@ export function DashboardView({setView, userName, dashboardData}) {
                 </div>
               </li>
             ))}
-          </ul>
+          </ul></BlockState>
         </Card>
 
         <Card className="panel" view="filled">
           <div className="panel-header">
-            <h3>Популярные маршруты</h3>
-            <Button view="flat" size="m" onClick={() => setView('routes')}>Смотреть все</Button>
+            <h3><RouteIcon aria-hidden="true" />Популярные маршруты</h3>
+            {PRODUCT_CAPABILITIES.routes && <Button view="flat" size="m" onClick={() => setView('routes')}>Смотреть все</Button>}
           </div>
-          <div className="rank-list">
+          {!PRODUCT_CAPABILITIES.routes ? <div className="widget-state"><span className="widget-state-icon"><Lock /></span><p>Скоро появится</p><small>Доступно в следующих обновлениях</small></div> : <BlockState state={dashboardStates.popularRoutes} onRetry={retry('popularRoutes')} empty={!dashboardData.popularRoutes.length}><div className="rank-list">
             {dashboardData.popularRoutes.map((route) => (
               <div className="rank-card" key={route.title}>
                 <div className="rank-card-main">
@@ -187,25 +188,25 @@ export function DashboardView({setView, userName, dashboardData}) {
                   <div className="rank-copy">
                     <div className="rank-title-row"><strong>{route.title}</strong></div>
                     <span className="rank-description">{route.description}</span>
-                    <div className="rank-progress"><div className="rank-progress-bar" style={{width: `${route.progress}%`}} /></div>
+                    {route.progress !== null ? <div className="rank-progress"><div className="rank-progress-bar" style={{width: `${route.progress}%`}} /></div> : null}
                   </div>
                 </div>
                 <div className="rank-metric">
                   <span className={`rank-trend-chip ${route.delta.startsWith('-') ? 'is-negative' : ''}`}>{route.delta}</span>
                   <strong>{route.visits}</strong>
-                  <span>Завершение {route.progress}%</span>
+                  <span>{route.progress === null ? 'Завершение —' : `Завершение ${route.progress}%`}</span>
                 </div>
               </div>
             ))}
-          </div>
+          </div></BlockState>}
         </Card>
 
         <Card className="panel" view="filled">
           <div className="panel-header">
-            <h3>Заявки и обратная связь</h3>
-            <Button view="flat" size="m">Смотреть все</Button>
+            <h3><Comment aria-hidden="true" />Заявки и обратная связь</h3>
+            <Button view="flat" size="m" onClick={() => setView('feedback')}>Смотреть все <ArrowRight /></Button>
           </div>
-          <ul className="feedback-feed">
+          <BlockState state={dashboardStates.feedbackItems} emptyIcon={Comment} onRetry={retry('feedbackItems')} empty={!dashboardData.feedbackItems.length}><ul className="feedback-feed">
             {dashboardData.feedbackItems.map((item) => (
               <li className="feedback-feed-item" key={item.title}>
                 <div className="feedback-feed-copy">
@@ -213,12 +214,12 @@ export function DashboardView({setView, userName, dashboardData}) {
                   <span>{item.subtitle}</span>
                   <small>{item.meta}</small>
                 </div>
-                <button type="button" className="feedback-expand-button" aria-label={`Открыть ${item.title}`}>
+                <button type="button" className="feedback-expand-button" onClick={() => setView('feedback')} aria-label={`Открыть ${item.title}`}>
                   <ArrowRight />
                 </button>
               </li>
             ))}
-          </ul>
+          </ul></BlockState>
         </Card>
       </div>
     </section>

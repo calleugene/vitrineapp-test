@@ -5,6 +5,7 @@ import {ToastProvider} from './components/Toast.jsx';
 import {useVisitorData} from './app/use-visitor-data.js';
 import {useUrlSync} from './app/routes-router.jsx';
 import {PublicArtifactStory} from './features/public-artifact/PublicArtifactStory.jsx';
+import {PublicRoute} from './features/public-artifact/PublicServices.jsx';
 
 function LoadingScreen() {
   return (
@@ -55,6 +56,8 @@ function DataLayer() {
 }
 
 export function App() {
+  const publicRouteId = window.location.pathname.match(/^\/routes\/(rte_[a-f0-9]{32})\/?$/)?.[1];
+  if (publicRouteId) return <PublicRoute routeId={publicRouteId} />;
   const publicCode = window.location.pathname.match(/^\/exhibits\/([A-Z0-9]{5})\/?$/i)?.[1];
   if (publicCode) return <PublicArtifactStory code={publicCode.toUpperCase()} />;
   return (

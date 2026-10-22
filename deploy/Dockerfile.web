@@ -1,0 +1,18 @@
+FROM node:24-alpine AS panel
+WORKDIR /src
+COPY Frontend/MetodistPanel/package*.json ./
+RUN npm ci --no-audit --no-fund
+COPY Frontend/MetodistPanel/ ./
+ENV VITE_AUTH_API_URL=/api/auth VITE_ARTIFACTS_API_URL=/api/artifacts VITE_ROUTE_API_URL=/api/route VITE_DASHBOARD_API_URL=/api/dashboard VITE_ANALYTICS_API_URL=/api/analytics VITE_FEEDBACK_API_URL=/api/feedback VITE_NOTIFICATION_API_URL=/api/notification VITE_ROUTE_API_ENABLED=true
+RUN npm run build
+FROM node:24-alpine AS visitor
+WORKDIR /src
+COPY Frontend/Visitor/package*.json ./
+RUN npm ci --no-audit --no-fund
+COPY Frontend/Visitor/ ./
+ENV VITE_AUTH_API_URL=/api/auth/api/v1 VITE_ARTIFACTS_API_URL=/api/artifacts/api/v1 VITE_VISITOR_API_URL=/api/visitor/api/v1
+RUN npm run build
+FROM caddy:2-alpine
+COPY deploy/Caddyfile /etc/caddy/Caddyfile
+COPY --from=panel /src/dist/ /srv/methodist/
+COPY --from=visitor /src/dist/ /srv/visitor/

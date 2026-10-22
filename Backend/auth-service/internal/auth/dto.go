@@ -3,9 +3,10 @@ package auth
 import "encoding/json"
 
 type registerRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	FullName string `json:"full_name"`
+	Consents []consentInput `json:"consents"`
+	Email    string         `json:"email"`
+	Password string         `json:"password"`
+	FullName string         `json:"full_name"`
 }
 
 type visitorRegisterRequest struct {
@@ -29,6 +30,13 @@ type tokenPairResponse struct {
 	RefreshToken string `json:"refresh_token"`
 	TokenType    string `json:"token_type"`
 	ExpiresIn    int64  `json:"expires_in"`
+}
+
+type museumContextResponse struct {
+	User        User   `json:"user"`
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	ExpiresIn   int64  `json:"expires_in"`
 }
 
 type logoutRequest struct {
@@ -98,6 +106,7 @@ type userResponse struct {
 }
 
 type updateUserRequest struct {
+	Email                *string  `json:"email,omitempty"`
 	FullName             *string  `json:"full_name,omitempty"`
 	Phone                *string  `json:"phone,omitempty"`
 	Position             *string  `json:"position,omitempty"`

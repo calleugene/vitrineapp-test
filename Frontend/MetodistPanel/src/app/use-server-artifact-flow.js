@@ -100,10 +100,10 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate}) {
     finally { setLoading(false); }
   }, [artifact, loadScreens, save]);
   const updateScreen = useCallback(async (screenId, title, body, imageURL = '') => {
-    if (!artifact) return;
+    if (!artifact) return false;
     setLoading(true); setError('');
-    try { await artifactsApi.updateScreen(artifact.id, screenId, {title: title.trim(), payload: payloadFor(body, imageURL)}); await loadScreens(artifact.id); setNotice('Экран сохранён.'); }
-    catch (nextError) { setError(messageFor(nextError)); }
+    try { await artifactsApi.updateScreen(artifact.id, screenId, {title: title.trim(), payload: payloadFor(body, imageURL)}); await loadScreens(artifact.id); setNotice('Экран сохранён.'); return true; }
+    catch (nextError) { setError(messageFor(nextError)); return false; }
     finally { setLoading(false); }
   }, [artifact, loadScreens]);
   const uploadScreenImage = useCallback(async (screenId, file) => {

@@ -2,12 +2,12 @@ import React, {useState} from 'react';
 import QRCode from 'qrcode';
 import {Button, Card, Checkbox, Dialog, Label, RadioGroup, Select, Switch, TextArea, TextInput} from '@gravity-ui/uikit';
 import {Grip, Pencil, Plus, TrashBin} from '@gravity-ui/icons';
-import {ROUTE_TABS} from '../../app/constants';
+import {ROUTE_TABS} from './demo-data';
 import {Breadcrumbs, Field, InlineTabs, WizardSteps} from '../../components/ui';
 
 const ROUTE_STATUS_OPTIONS = [
   {value: 'draft', content: 'Черновик'},
-  {value: 'moderation', content: 'На модерации'},
+  {value: 'archived', content: 'Архив'},
   {value: 'published', content: 'Опубликован'},
 ];
 
@@ -22,29 +22,7 @@ const ROUTE_LANGUAGE_OPTIONS = [
   {value: 'en', content: 'English'},
 ];
 
-const MOCK_ROUTE_ARTIFACTS = [
-  {
-    id: 'mock-artifact-letter',
-    title: 'Письмо фронтовика 1943 года',
-    description: 'Личное письмо с фронта с историческим контекстом.',
-    category: 'letters',
-    status: 'published',
-  },
-  {
-    id: 'mock-artifact-photo',
-    title: 'Фотография полевой почты',
-    description: 'Фото экспедиционной почтовой станции.',
-    category: 'photo',
-    status: 'published',
-  },
-  {
-    id: 'mock-artifact-medal',
-    title: 'Медаль За отвагу',
-    description: 'Предметный артефакт для финального шага маршрута.',
-    category: 'items',
-    status: 'draft',
-  },
-];
+
 
 export function RoutesView({routeTab, setRouteTab, routeRows, routeSummary, routeActivities, onStartRouteFlow, onEditRoute, onDeleteRoute}) {
   const [routeToDelete, setRouteToDelete] = useState(null);
@@ -239,7 +217,7 @@ export function RouteBasicView({routeDraft, setRouteDraft, setView, goToRouteSte
 
 export function RouteContentView({routeDraft, artifacts, goToRouteStep, toggleRouteArtifact, reorderRouteArtifact}) {
   const [draggedArtifactId, setDraggedArtifactId] = useState(null);
-  const availableArtifacts = artifacts.length > 0 ? artifacts : MOCK_ROUTE_ARTIFACTS;
+  const availableArtifacts = artifacts;
   const selectedArtifacts = routeDraft.artifactIds
     .map((artifactId) => availableArtifacts.find((artifact) => artifact.id === artifactId))
     .filter(Boolean);
@@ -259,7 +237,7 @@ export function RouteContentView({routeDraft, artifacts, goToRouteStep, toggleRo
       <div className="route-builder">
         <Card className="panel route-list" view="filled">
           <h3>Артефакты</h3>
-          {artifacts.length === 0 ? <p>Показаны тестовые артефакты для сборки маршрута.</p> : null}
+          {artifacts.length === 0 ? <p>Сначала создайте экспонаты в разделе «Артефакты». Для публикации маршрута экспонаты тоже должны быть опубликованы.</p> : null}
           {availableArtifacts.map((artifact) => (
             <Checkbox
               key={artifact.id}
@@ -345,7 +323,7 @@ export function RoutePublishView({routeDraft, setRouteDraft, goToRouteStep, onPu
           </Field>
           <Field label="Дополнительные настройки">
             <div className="switch-list">
-              <div className="switch-row"><span>Показывать маршрут на карте музея</span><Switch checked={routeDraft.showOnMap} onUpdate={(value) => setRouteDraft((prev) => ({...prev, showOnMap: value}))} /></div>
+              <div className="switch-row"><span>Карта маршрутов пока недоступна</span><Switch disabled checked={false} onUpdate={(value) => setRouteDraft((prev) => ({...prev, showOnMap: value}))} /></div>
               <div className="switch-row"><span>Требовать QR-старт у первой точки</span><Switch checked={routeDraft.requireQr} onUpdate={(value) => setRouteDraft((prev) => ({...prev, requireQr: value}))} /></div>
             </div>
           </Field>
@@ -369,9 +347,10 @@ export function RoutePublishView({routeDraft, setRouteDraft, goToRouteStep, onPu
 }
 
 export function RouteSuccessView({route, setView, onCreateAnotherRoute}) {
-  const publicUrl = `https://museum.vira.ai/routes/${route?.id || 'demo'}`;
+  const isPublic = route?.status === 'published' && route?.visibility === 'public';
+  const publicUrl = `${window.location.origin}/routes/${route?.id || ''}`;
   const [qrUrl, setQrUrl] = useState('');
-  React.useEffect(() => { QRCode.toDataURL(publicUrl, {width: 480, margin: 2}).then(setQrUrl).catch(() => setQrUrl('')); }, [publicUrl]);
+  React.useEffect(() => { QRCode.toDataURL(`${publicUrl}?source=qr`, {width: 480, margin: 2}).then(setQrUrl).catch(() => setQrUrl('')); }, [publicUrl]);
   const copyLink = async () => {
     if (navigator.share) { await navigator.share({title: route?.title || 'Маршрут Витрины', url: publicUrl}); return; }
     try { await navigator.clipboard.writeText(publicUrl); }
@@ -392,11 +371,12 @@ export function RouteSuccessView({route, setView, onCreateAnotherRoute}) {
       <Card className="panel success-hero" view="filled">
         <div className="success-badge">✓</div>
         <h2>Маршрут готов</h2>
-        <p>Маршрут «{route?.title || 'Новый маршрут'}» опубликован и доступен в списке маршрутов.</p>
-        <div className="success-grid">
+        <p>Маршрут «{route?.title || 'Новый маршрут'}» сохранён со статусом «{route?.status}».</p>
+        {isPublic ? <div className="success-grid">
           <Card className="mini-panel" view="filled"><h4>QR-код маршрута</h4>{qrUrl ? <img className="qr-box" src={qrUrl} alt="QR-код маршрута" /> : <div className="qr-box">…</div>}<Button view="action" onClick={downloadQr}>Скачать QR-код</Button></Card>
           <Card className="mini-panel" view="filled"><h4>Публичная ссылка</h4><TextInput size="xl" value={publicUrl} readOnly /><Button view="outlined" onClick={copyLink}>Скопировать ссылку</Button></Card>
         </div>
+        : <p>Публичная ссылка доступна после публикации с публичной видимостью.</p>}
         <div className="success-actions">
           <Button view="outlined" size="l" onClick={onCreateAnotherRoute}>Создать ещё маршрут</Button>
           <Button view="action" size="xl" onClick={() => setView('routes')}>К списку маршрутов</Button>

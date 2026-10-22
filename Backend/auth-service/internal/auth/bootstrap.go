@@ -26,7 +26,16 @@ func InitSchema(ctx context.Context, db *sql.DB, driver string) error {
 	if err := ensureGamificationColumns(ctx, db, driver); err != nil {
 		return fmt.Errorf("migrate users: %w", err)
 	}
-	return nil
+	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS user_consents (
+ id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), consent_type TEXT NOT NULL,
+ document_version TEXT NOT NULL, confirmed_at TEXT NOT NULL, accepted BOOLEAN NOT NULL);
+ CREATE INDEX IF NOT EXISTS user_consents_user ON user_consents(user_id);
+ CREATE TABLE IF NOT EXISTS password_reset_mail (id TEXT PRIMARY KEY, email TEXT NOT NULL, expires_at TEXT NOT NULL, available_at TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0);
+ CREATE INDEX IF NOT EXISTS password_reset_mail_available ON password_reset_mail(available_at);
+ CREATE TABLE IF NOT EXISTS password_reset_limits (key TEXT PRIMARY KEY, window_start TEXT NOT NULL, attempts INTEGER NOT NULL);`); err != nil {
+		return err
+	}
+	return initProfileSchema(ctx, db, driver)
 }
 
 func ensureGamificationColumns(ctx context.Context, db *sql.DB, driver string) error {

@@ -1,6 +1,6 @@
 import {useEffect, useEffectEvent, useState} from 'react';
 import {authApi} from '../api';
-import {createUserProfileDraft, mapUserActivities, mapUserMuseums, splitFullName} from './utils';
+import {createUserProfileDraft, mapUserActivities, mapUserMuseums, splitFullName} from '../features/users/mappers';
 
 export function useProfileData({
   session,

@@ -1,5 +1,19 @@
 .runtime/
+VitrineServer.exe
 **/node_modules/
 **/dist/
 **/.env.local
 **/.env.production.local
+
+# Local state, QA artifacts and credentials stay off GitHub.
+.idea/
+**/tmp/
+**/output/
+**/.env
+**/.env.local
+**/.env.production
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.pem
+**/*.key

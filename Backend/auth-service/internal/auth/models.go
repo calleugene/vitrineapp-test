@@ -3,6 +3,9 @@ package auth
 import "time"
 
 type User struct {
+	registrationConsents []consentInput
+	DeactivatedAt        *time.Time `json:"deactivated_at,omitempty"`
+	ScheduledDeletionAt  *time.Time `json:"scheduled_deletion_at,omitempty"`
 	ID                   string     `json:"id"`
 	Email                string     `json:"email"`
 	FullName             string     `json:"full_name"`
@@ -72,6 +75,8 @@ type userActivity struct {
 }
 
 type museumAccess struct {
+	Role        string `json:"role,omitempty"`
+	LogoURL     string `json:"logo_url,omitempty"`
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	City        string `json:"city,omitempty"`

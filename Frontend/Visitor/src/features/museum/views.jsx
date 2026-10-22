@@ -13,6 +13,7 @@ import {MuseumInfoModal} from './components/MuseumInfoModal.jsx';
 import {MuseumErrorState, MuseumLoadingState} from './components/MuseumDetailState.jsx';
 import {LockIcon, StarIcon} from './components/icons.jsx';
 import './museum.css';
+import {MuseumRoutes} from '../public-artifact/PublicServices.jsx';
 
 /* Баннер-миссия музея: декоративная звезда + текст описания. */
 function MissionBanner({text}) {
@@ -116,6 +117,7 @@ export function MuseumDetailView({data, navigate, actions}) {
         {museum.description && <MissionBanner text={museum.description} />}
 
         <MuseumProgressCard museum={museum} />
+        <MuseumRoutes museumId={museum.id} />
 
         {data.loading && !artifacts.length ? (
           <SkeletonCards count={3} />

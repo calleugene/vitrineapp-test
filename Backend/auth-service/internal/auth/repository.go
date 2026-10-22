@@ -6,6 +6,11 @@ import (
 )
 
 type Repository interface {
+	QueuePasswordReset(context.Context, string, string, time.Time) error
+	LeasePasswordReset(context.Context, time.Time) (resetMailJob, error)
+	FinishPasswordReset(context.Context, string, time.Time, bool) error
+	ProfileRepository
+	AllowPasswordReset(context.Context, string, time.Time) (bool, error)
 	CreateUser(ctx context.Context, user User, passwordHash string) error
 	FindUserByEmail(ctx context.Context, email string) (User, error)
 	FindUserByID(ctx context.Context, userID string) (User, error)
@@ -16,6 +21,7 @@ type Repository interface {
 	UpdateUserRole(ctx context.Context, userID, role string, now time.Time) error
 	UpdateUserStatus(ctx context.Context, userID, status string, now time.Time) (User, error)
 	UpdateLastLogin(ctx context.Context, userID string, now time.Time) error
+	EnsureMuseumID(ctx context.Context, userID, museumID string, now time.Time) (User, error)
 	VerifyUserEmail(ctx context.Context, userID string, now time.Time) error
 
 	CreateSession(ctx context.Context, session Session) error

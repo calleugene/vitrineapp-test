@@ -5,6 +5,7 @@ import {MUSEUM_INFO} from '../config.js';
 import {normalizeExternalUrl} from '../utils.js';
 import {useModalDismiss} from '../hooks/useModalDismiss.js';
 import {ClockIcon, GlobeIcon, PinIcon} from './icons.jsx';
+import {museumDirections} from '../directions.js';
 
 /* Модалка «О музее»: обложка с названием, описание, адрес, часы и сайт.
 
@@ -14,6 +15,7 @@ export function MuseumInfoModal({museum, onClose}) {
   const closeRef = useModalDismiss(onClose);
   const hasPhoto = Boolean(museum.cover_image_url);
   const websiteUrl = normalizeExternalUrl(museum.website);
+  const directions = museumDirections(museum.address);
 
   return (
     <div className="museum-modal-overlay" role="dialog" aria-modal="true" aria-label={MUSEUM_INFO.ariaLabel} onClick={onClose}>
@@ -52,13 +54,28 @@ export function MuseumInfoModal({museum, onClose}) {
 
           {museum.about && <p className="museum-modal-about">{museum.about}</p>}
 
-          {(museum.address || museum.hours) && (
+          {(directions.length > 0 || museum.hours) && (
             <div className="museum-modal-rows">
-              {museum.address && (
-                <div className="museum-modal-row">
-                  <span className="museum-modal-row-icon"><PinIcon /></span>
-                  <span className="museum-modal-row-text">{museum.address}</span>
-                </div>
+              {directions.length > 0 && (
+                <details className="museum-address">
+                  <summary className="museum-modal-row">
+                    <span className="museum-modal-row-icon"><PinIcon /></span>
+                    <span className="museum-address-label">
+                      <span>{museum.address}</span>
+                      <small>Открыть в картах</small>
+                    </span>
+                    <span className="museum-address-chevron" aria-hidden="true">⌄</span>
+                  </summary>
+                  <nav className="museum-map-picker" aria-label="Выберите карты для маршрута">
+                    <p>Выберите карты. Начальную точку можно указать в них.</p>
+                    {directions.map(({name, href}) => (
+                      <a key={name} href={href} target="_blank" rel="noopener noreferrer"
+                        aria-label={`Построить маршрут — ${name} (откроется в новом окне)`}>
+                        {name}<span aria-hidden="true">↗</span>
+                      </a>
+                    ))}
+                  </nav>
+                </details>
               )}
               {museum.hours && (
                 <div className="museum-modal-row">

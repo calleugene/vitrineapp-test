@@ -17,10 +17,6 @@ export const VIEW_ROUTE_MAP = {
   'artifact-content': '/artifacts/content',
   'artifact-publish': '/artifacts/publish',
   'artifact-success': '/artifacts/success',
-  'editor-text': '/artifacts/editor/text',
-  'editor-model': '/artifacts/editor/model',
-  'editor-quiz': '/artifacts/editor/quiz',
-  'editor-audio': '/artifacts/editor/audio',
 };
 
 export const VIEW_TITLE_MAP = {
@@ -40,10 +36,6 @@ export const VIEW_TITLE_MAP = {
   'artifact-content': 'Артефакты: Контент',
   'artifact-publish': 'Артефакты: Публикация',
   'artifact-success': 'Артефакты: Успешно',
-  'editor-text': 'Редактор: Текст',
-  'editor-model': 'Редактор: 3D-модель',
-  'editor-quiz': 'Редактор: Викторина',
-  'editor-audio': 'Редактор: Аудио',
 };
 
 const ROUTE_VIEW_ENTRIES = Object.entries(VIEW_ROUTE_MAP)

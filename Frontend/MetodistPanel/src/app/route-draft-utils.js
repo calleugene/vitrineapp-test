@@ -1,4 +1,4 @@
-import {ROUTE_DRAFT_STORAGE_KEY} from './constants';
+import {ROUTE_DRAFT_STORAGE_KEY} from './config';
 
 export const DEFAULT_ROUTE_DRAFT = {
   title: 'Письма с фронта',
@@ -68,7 +68,7 @@ export function createPublishedRouteDraft(routeDraft) {
 
 export function createLocalRouteRowsFromStorage() {
   const routeDraft = readStoredRouteDraft();
-  if (!routeDraft?.title || !routeDraft.isSaved) {
+  if (!routeDraft?.title || !routeDraft.isSaved || routeDraft.serverSaved) {
     return [];
   }
 
@@ -102,7 +102,7 @@ export function createRouteTableRow(routeDraft) {
     artifacts: String(normalized.artifactIds.length),
     updated: normalized.updated || 'Только что',
     views: '0',
-    localOnly: true,
+    localOnly: !normalized.serverSaved,
     source: normalized,
     artifactIds: normalized.artifactIds,
   };
@@ -130,12 +130,14 @@ export function mergeLocalRouteRows(serverRoutes = []) {
 
 export function createRouteDraftFromRow(row) {
   return normalizeRouteDraft({
+    ...(row.source || {}),
     id: row.id,
     title: row.title || DEFAULT_ROUTE_DRAFT.title,
     subtitle: row.subtitle || row.description || '',
     description: row.description || row.subtitle || '',
     status: row.status === 'Опубликован' ? 'published' : row.status === 'Черновик' ? 'draft' : 'archived',
     artifactIds: row.artifactIds || [],
+    serverSaved: !row.localOnly,
     isSaved: true,
   });
 }
@@ -147,3 +149,5 @@ export function markRouteDeleted(routeDraft, routeId) {
     deletedRouteIds: Array.from(new Set([...(normalized.deletedRouteIds || []), routeId].filter(Boolean))),
   };
 }
+
+

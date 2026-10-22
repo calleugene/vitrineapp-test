@@ -1,0 +1,65 @@
+.personal-page { --personal-muted: var(--g-color-text-secondary); max-width: 1560px; margin: 0 auto; }
+.personal-heading { margin-bottom: 28px; }
+.personal-heading > .g-button { margin-left: -12px; margin-bottom: 12px; }
+.personal-heading h1 { font-size: var(--vl-text-page); line-height: 1.18; letter-spacing: -.035em; margin: 0 0 12px; }
+.personal-heading p { font-size: var(--vl-text-lead); color: var(--personal-muted); margin: 0; }
+.personal-layout { display: grid; grid-template-columns: minmax(0, 1.85fr) minmax(310px, 1fr); gap: var(--vl-space-6); align-items: start; }
+.personal-column { display: grid; gap: var(--vl-space-6); min-width: 0; }
+.personal-card.g-card { padding: var(--ui-card-padding); border: 1px solid var(--vl-color-line); border-radius: var(--ui-radius-card); background: var(--vl-color-surface); box-shadow: none; min-width: 0; }
+.personal-card h2 { font-size: var(--vl-text-heading); line-height: 1.3; letter-spacing: -.025em; margin: 0; }
+.personal-card-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--vl-space-4); margin-bottom: 24px; }
+.personal-card-heading .g-button { flex-shrink: 0; }
+.personal-basic { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: var(--vl-space-6); }
+.personal-avatar-control { display: flex; flex-direction: column; align-items: center; gap: var(--vl-space-2); min-width: 0; }
+.personal-avatar { width: 112px; height: 112px; border-radius: 50%; overflow: hidden; background: var(--vl-color-bg-subtle); display: grid; place-items: center; color: var(--vl-color-text-muted); margin-bottom: 4px; }
+.personal-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.personal-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--vl-space-5); }
+.personal-field { display: flex; flex-direction: column; gap: var(--vl-space-2); min-width: 0; font-size: var(--vl-text-body); color: var(--vl-color-text); }
+.personal-field-error { font-size: var(--vl-text-caption); color: var(--vl-color-warning); }
+.personal-about, .personal-wide { grid-column: 1 / -1; }
+.personal-about textarea { line-height: 1.6; }
+.personal-counter { display: block; text-align: right; color: var(--personal-muted); font-size: var(--vl-text-caption); margin-top: 6px; }
+.personal-caption { color: var(--personal-muted); font-size: var(--vl-text-caption); line-height: 1.6; margin: 0; }
+.personal-caption svg { vertical-align: middle; flex-shrink: 0; }
+.personal-card-heading + .personal-caption { margin-top: -12px; margin-bottom: 20px; }
+.personal-museums { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: var(--vl-space-3); }
+.personal-museum { display: flex; align-items: center; gap: var(--vl-space-3); min-width: 0; padding: var(--vl-space-3); border: 1px solid var(--vl-color-line); border-radius: var(--ui-radius-item); background: var(--vl-color-surface); text-align: left; cursor: pointer; color: var(--vl-color-text); transition: border-color 160ms, background 160ms; }
+.personal-museum:hover { border-color: var(--vl-color-brand); background: var(--vl-color-bg-subtle); }
+.personal-museum:focus-visible { outline: 3px solid var(--vl-color-brand); outline-offset: 3px; }
+.personal-museum:disabled { cursor: wait; opacity: .65; }
+.personal-museum > img, .personal-museum-placeholder { flex-shrink: 0; width: 58px; height: 58px; border-radius: var(--ui-radius-control); object-fit: cover; }
+.personal-museum-placeholder { display: grid; place-items: center; background: var(--vl-color-brand-soft); color: var(--vl-color-brand); }
+.personal-museum-copy { display: grid; gap: var(--vl-space-2); flex: 1; min-width: 0; }
+.personal-museum-copy strong { font-size: var(--vl-text-body); line-height: 1.4; overflow-wrap: anywhere; }
+.personal-museum-copy > span { font-size: var(--vl-text-caption); color: var(--personal-muted); }
+.personal-museum-arrow { flex-shrink: 0; color: var(--vl-color-brand); }
+.personal-empty { text-align: center; padding: var(--vl-space-7) var(--vl-space-4); background: var(--vl-color-bg-subtle); border-radius: var(--ui-radius-item); color: var(--personal-muted); }
+.personal-empty p { color: var(--vl-color-text); font-weight: var(--vl-weight-medium); }
+.personal-empty > span { font-size: var(--vl-text-caption); }
+.personal-status { margin: 0; }
+.personal-status > div { display: flex; align-items: center; justify-content: space-between; gap: var(--vl-space-4); padding: var(--vl-space-4) 0; border-bottom: 1px solid var(--vl-color-line); }
+.personal-status > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.personal-status dt { display: flex; align-items: center; gap: var(--vl-space-3); font-size: var(--vl-text-caption); color: var(--personal-muted); }
+.personal-status dt svg { flex-shrink: 0; }
+.personal-status dd { font-size: var(--vl-text-caption); text-align: right; margin: 0; max-width: 58%; }
+.personal-id { display: flex; align-items: center; gap: var(--vl-space-1); min-width: 0; }
+.personal-id > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.personal-id .g-button { flex-shrink: 0; }
+.personal-lifecycle { display: flex; flex-direction: column; gap: var(--vl-space-5); }
+.personal-lifecycle > p { margin: 0; line-height: 1.6; color: var(--personal-muted); }
+.personal-notice { display: flex; align-items: flex-start; gap: var(--vl-space-3); padding: var(--vl-space-4); border-radius: var(--ui-radius-item); font-size: var(--vl-text-body); line-height: 1.6; background: var(--vl-color-brand-soft); color: var(--vl-color-brand-active); }
+.personal-notice svg { flex-shrink: 0; margin-top: 3px; }
+.personal-dialog-intro { margin-top: 0; color: var(--vl-color-text-muted); line-height: 1.6; }
+.personal-deletion-warning { padding: var(--vl-space-4); border-radius: var(--ui-radius-item); background: var(--g-color-base-danger-light); color: var(--g-color-text-danger); line-height: 1.7; }
+.personal-recovery { min-height: 100vh; display: grid; place-items: center; padding: var(--vl-space-6); }
+.personal-recovery > .personal-card { max-width: 500px; display: flex; flex-direction: column; align-items: flex-start; gap: var(--vl-space-5); }
+.personal-recovery h1 { font-size: var(--vl-text-page); line-height: 1.2; margin: 0; }
+.personal-recovery p { line-height: 1.6; margin: 0; }
+.personal-recovery > .personal-card > .g-button { align-self: stretch; }
+.personal-recovery-icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: var(--ui-radius-card); background: var(--vl-color-brand-soft); color: var(--vl-color-brand); }
+@media (max-width: 1250px) { .personal-layout { grid-template-columns: minmax(0, 1.6fr) minmax(290px, 1fr); gap: var(--vl-space-5); } .personal-card.g-card { padding: var(--ui-card-padding); } .personal-basic { grid-template-columns: 1fr; } .personal-avatar-control { flex-direction: row; flex-wrap: wrap; } .personal-avatar { width: 76px; height: 76px; margin-right: 6px; } }
+@media (max-width: 1000px) { .personal-layout { grid-template-columns: 1fr; } .personal-basic { grid-template-columns: 124px minmax(0, 1fr); } .personal-avatar-control { flex-direction: column; } .personal-avatar { width: 108px; height: 108px; margin-right: 0; } }
+@media (max-width: 600px) { .personal-heading { margin-bottom: 20px; } .personal-heading p { font-size: var(--vl-text-body); } .personal-card.g-card { padding: var(--ui-card-padding); border-radius: var(--ui-radius-card); } .personal-card h2 { font-size: var(--vl-text-subheading); } .personal-basic, .personal-fields { grid-template-columns: 1fr; } .personal-avatar-control { flex-direction: row; } .personal-avatar { width: 76px; height: 76px; } .personal-card-heading .g-button { min-height: 44px; } .personal-card-heading { align-items: flex-start; } .personal-status > div { flex-wrap: wrap; gap: var(--vl-space-2); } .personal-status dd { max-width: 100%; } .personal-id .g-button { min-height: 44px; min-width: 44px; } .personal-recovery { padding: var(--vl-space-4); } }
+@media (prefers-reduced-motion: reduce) { .personal-museum { transition: none; } }
+
+.personal-join-code-field { height: 20px; }

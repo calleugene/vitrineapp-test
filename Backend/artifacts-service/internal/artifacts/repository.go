@@ -6,6 +6,7 @@ import (
 )
 
 type Repository interface {
+	ListMuseumProfiles(ctx context.Context) ([]MuseumProfile, error)
 	GetMuseumProfile(ctx context.Context, museumID string) (MuseumProfile, error)
 	CreateMuseumProfile(ctx context.Context, profile MuseumProfile) (MuseumProfile, error)
 	UpdateMuseumProfile(ctx context.Context, profile MuseumProfile) (MuseumProfile, error)

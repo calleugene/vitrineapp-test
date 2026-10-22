@@ -8,7 +8,8 @@ type Config struct {
 	AssetStore    AssetStore
 	// TokenSecret is shared with AuthService. An empty value is allowed only by
 	// explicit test configuration; the production entrypoint requires it.
-	TokenSecret string
+	TokenSecret    string
+	AuthServiceURL string
 }
 
 func (c Config) now() time.Time {

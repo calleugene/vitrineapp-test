@@ -40,9 +40,11 @@ export function useArtifactsData({
     let cancelled = false;
 
     const bootstrap = async () => {
+      // Dashboard widgets must load even when the artifact service fails.
+      const connectedData = loadConnectedDataEvent();
       if (isMock) {
         try {
-          const [artifactsResponse] = await Promise.all([artifactsApi.list(), loadConnectedDataEvent()]);
+          const [artifactsResponse] = await Promise.all([artifactsApi.list(), connectedData]);
 
           if (cancelled) {
             return;
@@ -70,7 +72,7 @@ export function useArtifactsData({
           artifactsApi.list(),
         ]);
 
-        await loadConnectedDataEvent();
+        await connectedData;
 
         if (cancelled) {
           return;

@@ -295,7 +295,12 @@ func (s *service) authenticate(header string) (accessClaims, error) {
 			return claims, err
 		}
 		defer response.Body.Close()
-		if response.StatusCode != http.StatusOK {
+		var account struct {
+			User struct {
+				Status string `json:"status"`
+			} `json:"user"`
+		}
+		if response.StatusCode != http.StatusOK || json.NewDecoder(response.Body).Decode(&account) != nil || !strings.EqualFold(account.User.Status, "active") {
 			return claims, errors.New("session is not active")
 		}
 	}

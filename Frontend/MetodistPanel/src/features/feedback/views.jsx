@@ -1,11 +1,33 @@
-import React from 'react';
+import React, {useState} from 'react';
+import {feedbackApi} from '../../api';
+import {mapFeedbackConversations} from './mappers';
 import {Button, Card, Label, Select, TextArea} from '@gravity-ui/uikit';
 import {ArrowUpRightFromSquare, Camera, EllipsisVertical, Envelope} from '@gravity-ui/icons';
-import {FEEDBACK_TABS} from '../../app/constants';
+import {FEEDBACK_TABS} from './demo-data';
 import {Field} from '../../components/ui';
 
 export function FeedbackView({feedbackTab, setFeedbackTab, selectedFeedbackId, setSelectedFeedbackId, feedbackMessages}) {
-  const selectedMessage = feedbackMessages.find((item) => item.id === selectedFeedbackId) || feedbackMessages[0];
+  const [savedMessages, setSavedMessages] = useState({});
+  const [drafts, setDrafts] = useState({});
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+  const originalMessage = feedbackMessages.find((item) => item.id === selectedFeedbackId) || feedbackMessages[0];
+  const selectedMessage = savedMessages[originalMessage?.id] || originalMessage;
+  const saveResponse = (response) => {const [item] = mapFeedbackConversations([response.feedback]);setSavedMessages((previous) => ({...previous,[item.id]:item}));};
+  const submitReply = async () => {
+    if (pending || !selectedMessage) return;
+    setPending(true);setError('');
+    try {saveResponse(await feedbackApi.reply(selectedMessage.id, drafts[selectedMessage.id] || '', 'published', selectedMessage.version));setDrafts((previous) => ({...previous,[selectedMessage.id]:''}));}
+    catch {setError('Не удалось сохранить ответ. Повторите попытку.');}
+    finally {setPending(false);}
+  };
+  const moderate = async (status) => {
+    if (pending || !selectedMessage) return;
+    setPending(true);setError('');
+    try {saveResponse(await feedbackApi.moderate(selectedMessage.id,status,selectedMessage.version));}
+    catch {setError('Не удалось изменить статус сообщения.');}
+    finally {setPending(false);}
+  };
   const filteredMessages = feedbackMessages.filter((item) => {
     if (feedbackTab === 'all') return true;
     if (feedbackTab === 'reviews') return item.type === 'Отзыв';
@@ -13,6 +35,8 @@ export function FeedbackView({feedbackTab, setFeedbackTab, selectedFeedbackId, s
     if (feedbackTab === 'suggestions') return item.type === 'Предложение';
     return true;
   });
+
+  if (!selectedMessage) return <section className="page"><h1>Обратная связь</h1><p role="status">Сообщений пока нет. Здесь появятся отзывы, вопросы и предложения посетителей.</p></section>;
 
   return (
     <section className="page">
@@ -97,6 +121,8 @@ export function FeedbackView({feedbackTab, setFeedbackTab, selectedFeedbackId, s
           <div className="feedback-detail-body">
             <h3>{selectedMessage.title}</h3>
             <p>{selectedMessage.body}</p>
+            {error ? <p role="alert">{error}</p> : null}
+            {selectedMessage.type === 'Отзыв' ? <div><p>Статус модерации: {selectedMessage.moderationStatus}</p><Button disabled={pending || selectedMessage.moderationStatus === 'published'} onClick={() => moderate('published')}>Опубликовать отзыв</Button><Button disabled={pending || selectedMessage.moderationStatus === 'rejected'} onClick={() => moderate('rejected')}>Скрыть отзыв</Button></div> : null}
           </div>
 
           <div className="feedback-meta-grid">
@@ -107,7 +133,7 @@ export function FeedbackView({feedbackTab, setFeedbackTab, selectedFeedbackId, s
             <div className="feedback-meta-item"><span>Устройство</span><strong>{selectedMessage.device}</strong></div>
             <div className="feedback-meta-item">
               <span>Оценка</span>
-              <strong>{selectedMessage.rating ? '★★★★★' : '—'}</strong>
+              <strong>{selectedMessage.rating ? '★'.repeat(selectedMessage.rating) + '☆'.repeat(5 - selectedMessage.rating) : '—'}</strong>
             </div>
           </div>
 
@@ -119,7 +145,7 @@ export function FeedbackView({feedbackTab, setFeedbackTab, selectedFeedbackId, s
                   {selectedMessage.replyStatus}
                 </Label>
               </div>
-              <Button view="outlined" size="m">Редактировать ответ</Button>
+              <Button view="outlined" size="m" onClick={() => setDrafts((previous) => ({...previous,[selectedMessage.id]:selectedMessage.reply || ''}))}>Редактировать ответ</Button>
             </div>
 
             <div className="feedback-reply-card">
@@ -136,7 +162,7 @@ export function FeedbackView({feedbackTab, setFeedbackTab, selectedFeedbackId, s
 
             <Field label="Быстрый ответ">
               <div className="feedback-compose-box">
-                <TextArea size="xl" rows={4} placeholder="Напишите ответ пользователю..." />
+                <TextArea size="xl" rows={4} placeholder="Напишите ответ пользователю..." value={drafts[selectedMessage.id] || ''} onUpdate={(value) => setDrafts((previous) => ({...previous,[selectedMessage.id]:value}))} />
                 <div className="feedback-compose-actions">
                   <div className="feedback-compose-icons">
                     <button type="button" className="feedback-inline-action">
@@ -148,7 +174,7 @@ export function FeedbackView({feedbackTab, setFeedbackTab, selectedFeedbackId, s
                       Медиа
                     </button>
                   </div>
-                  <Button view="action" size="l">Отправить ответ</Button>
+                  <Button view="action" size="l" loading={pending} disabled={pending || !drafts[selectedMessage.id]?.trim()} onClick={submitReply}>Отправить ответ</Button>
                 </div>
               </div>
             </Field>

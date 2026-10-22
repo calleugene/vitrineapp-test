@@ -20,6 +20,21 @@
 	handle_path /api/visitor/* {
 		reverse_proxy 127.0.0.1:18088
 	}
+	handle_path /api/analytics/* {
+		reverse_proxy 127.0.0.1:18085
+	}
+	handle_path /api/route/* {
+		reverse_proxy 127.0.0.1:18083
+	}
+	handle_path /api/feedback/* {
+		reverse_proxy 127.0.0.1:18086
+	}
+	handle_path /api/notification/* {
+		reverse_proxy 127.0.0.1:18087
+	}
+	handle_path /api/dashboard/* {
+		reverse_proxy 127.0.0.1:18084
+	}
 	handle_path /media-files/* {
 		rewrite * /assets{uri}
 		reverse_proxy 127.0.0.1:18081
@@ -29,9 +44,21 @@
 		respond `{"error":"service_not_in_repository"}` 503
 	}
 	redir /methodist /methodist/ 308
+	handle /methodist/updates.html {
+		root * Frontend/MetodistPanel/public
+		rewrite * /updates.html
+		header Cache-Control "no-store"
+		file_server
+	}
 	handle_path /methodist/* {
 		root * Frontend/MetodistPanel/dist
 		try_files {path} /index.html
+		header Cache-Control "no-cache"
+		file_server
+	}
+	# Missing build chunks must return 404 rather than the SPA HTML shell.
+	handle /assets/* {
+		root * Frontend/Visitor/dist
 		header Cache-Control "no-cache"
 		file_server
 	}

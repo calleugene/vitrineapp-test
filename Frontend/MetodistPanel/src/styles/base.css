@@ -11,17 +11,32 @@
 
 body {
   margin: 0;
-  font-family: var(--g-font-family-sans);
+  font-family: var(--vl-font-sans);
+  font-size: var(--vl-text-body);
+  line-height: 1.5;
   background: var(--color-bg);
   color: var(--color-text);
 }
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
 #root {
   min-height: 100vh;
+}
+
+/* Semantic defaults also cover headings without a feature-specific rule. */
+h1, h2, h3 { font-weight: var(--vl-weight-bold); line-height: 1.3; }
+h1 { font-size: var(--vl-text-page); }
+h2 { font-size: var(--vl-text-title); }
+h3 { font-size: var(--vl-text-subheading); }
+
+@media (max-width: 600px) {
+  input, textarea, select, .g-text-input__control, .g-text-area__control {
+    font-size: var(--vl-text-lead);
+  }
 }

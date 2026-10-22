@@ -1,17 +1,12 @@
-function normalizeBaseUrl(value) {
-  return value.replace(/\/$/, '');
-}
+import {API_PREFIX, API_URLS, DEFAULT_MUSEUM_ID, DEFAULT_USER_ID, SESSION_STORAGE_KEY} from './app/config';
 
-const AUTH_API_URL = normalizeBaseUrl(import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8080');
-const ARTIFACTS_API_URL = normalizeBaseUrl(import.meta.env.VITE_ARTIFACTS_API_URL || 'http://localhost:8081');
-const ROUTE_API_URL = normalizeBaseUrl(import.meta.env.VITE_ROUTE_API_URL || 'http://localhost:8083');
-const DASHBOARD_API_URL = normalizeBaseUrl(import.meta.env.VITE_DASHBOARD_API_URL || 'http://localhost:8084');
-const ANALYTICS_API_URL = normalizeBaseUrl(import.meta.env.VITE_ANALYTICS_API_URL || 'http://localhost:8085');
-const FEEDBACK_API_URL = normalizeBaseUrl(import.meta.env.VITE_FEEDBACK_API_URL || 'http://localhost:8086');
-const NOTIFICATION_API_URL = normalizeBaseUrl(import.meta.env.VITE_NOTIFICATION_API_URL || 'http://localhost:8087');
-const API_PREFIX = '/api/v1';
-const DEFAULT_MUSEUM_ID = import.meta.env.VITE_MUSEUM_ID || 'mus_001';
-const DEFAULT_USER_ID = import.meta.env.VITE_NOTIFICATION_USER_ID || 'usr_001';
+const AUTH_API_URL = API_URLS.auth;
+const ARTIFACTS_API_URL = API_URLS.artifacts;
+const ROUTE_API_URL = API_URLS.routes;
+const DASHBOARD_API_URL = API_URLS.dashboard;
+const ANALYTICS_API_URL = API_URLS.analytics;
+const FEEDBACK_API_URL = API_URLS.feedback;
+const NOTIFICATION_API_URL = API_URLS.notifications;
 const JSON_CONTENT_TYPE = 'application/json';
 
 class ApiError extends Error {
@@ -76,14 +71,14 @@ function jsonOptions(method, body, headers = {}) {
   return {
     method,
     body: JSON.stringify(body),
-    headers,
+    ...(Object.keys(headers).length ? {headers} : {}),
   };
 }
 
 async function request(baseUrl, path, options = {}) {
   let response;
   const {query, headers: headersFromOptions = {}, body, ...restOptions} = options;
-  const headers = {...headersFromOptions};
+  const headers = {...(baseUrl === AUTH_API_URL ? sessionAuthHeaders() : {}), ...headersFromOptions};
 
   if (shouldSetJsonContentType(body, headers)) {
     headers['Content-Type'] = JSON_CONTENT_TYPE;
@@ -105,12 +100,12 @@ async function request(baseUrl, path, options = {}) {
   const payload = await parseResponseBody(response);
   if (!response.ok) {
     const message =
-      (payload && typeof payload === 'object' && (payload.error || payload.message)) ||
+      (payload && typeof payload === 'object' && (payload.error?.message || payload.error?.code || payload.error || payload.message)) ||
       (typeof payload === 'string' && payload) ||
       `HTTP ${response.status}`;
 
     throw new ApiError(message, {
-      code: typeof payload === 'object' ? (payload?.code ?? payload?.error) : null,
+      code: typeof payload === 'object' ? (payload?.code ?? payload?.error?.code ?? payload?.error) : null,
       status: response.status,
       payload,
     });
@@ -134,8 +129,15 @@ function normalizeTokenPayload(payload) {
 }
 
 export const authApi = {
+  legalDocuments: () => request(AUTH_API_URL, `${API_PREFIX}/auth/legal-documents`),
+  forgotPassword: (email) => request(AUTH_API_URL, `${API_PREFIX}/auth/forgot-password`, jsonOptions('POST', {email})),
+  resetPassword: (token, newPassword) => request(AUTH_API_URL, `${API_PREFIX}/auth/reset-password`, jsonOptions('POST', {token, new_password: newPassword})),
   login: async (body) => normalizeTokenPayload(await request(AUTH_API_URL, `${API_PREFIX}/auth/login`, jsonOptions('POST', body))),
   register: (body) => request(AUTH_API_URL, `${API_PREFIX}/auth/register`, jsonOptions('POST', body)),
+  provisionMuseumContext: async (accessToken) => normalizeTokenPayload(await request(AUTH_API_URL, `${API_PREFIX}/auth/museum-context`, {
+    method: 'POST',
+    headers: {Authorization: `Bearer ${accessToken}`},
+  })),
   logout: (accessToken, refreshToken) =>
     request(AUTH_API_URL, `${API_PREFIX}/auth/logout`, {
       headers: {Authorization: `Bearer ${accessToken}`},
@@ -145,6 +147,18 @@ export const authApi = {
     request(AUTH_API_URL, `${API_PREFIX}/auth/me`, {
       headers: {Authorization: `Bearer ${accessToken}`},
     }),
+  deactivate: () => request(AUTH_API_URL, `${API_PREFIX}/auth/deactivate`, {method: 'POST'}),
+  reactivate: () => request(AUTH_API_URL, `${API_PREFIX}/auth/reactivate`, {method: 'POST'}),
+  joinMuseum: (museumId, code) => request(AUTH_API_URL, `${API_PREFIX}/auth/museums/join`, jsonOptions('POST', {museum_id: museumId, code})),
+  selectMuseum: async (museumId) => normalizeTokenPayload(await request(AUTH_API_URL, `${API_PREFIX}/auth/museums/select`, jsonOptions('POST', {museum_id: museumId}))),
+  createMuseumCode: () => request(AUTH_API_URL, `${API_PREFIX}/auth/museums/code`, {method: 'POST'}),
+  revokeMuseumCode: () => request(AUTH_API_URL, `${API_PREFIX}/auth/museums/code`, {method: 'DELETE'}),
+  requestEmailChange: (email) => request(AUTH_API_URL, `${API_PREFIX}/auth/email-change`, jsonOptions('POST', {email})),
+  confirmEmailChange: (token) => request(AUTH_API_URL, `${API_PREFIX}/auth/email-change/confirm`, jsonOptions('POST', {token})),
+  uploadAvatar: (userId, file) => {
+    const body = new FormData(); body.append('file', file);
+    return request(AUTH_API_URL, `${API_PREFIX}/users/${userId}/avatar`, {method: 'POST', body});
+  },
   getUser: (userId) => request(AUTH_API_URL, `${API_PREFIX}/users/${userId}`),
   updateUser: (userId, body) => request(AUTH_API_URL, `${API_PREFIX}/users/${userId}`, jsonOptions('PATCH', body)),
   getRoles: (userId) => request(AUTH_API_URL, `${API_PREFIX}/users/${userId}/roles`),
@@ -196,18 +210,25 @@ export const artifactsApi = {
   },
 };
 
-function museumHeaders(museumId = DEFAULT_MUSEUM_ID, headers = {}) {
+function museumHeaders(museumId, headers = {}) {
 	let accessToken = '';
 	try {
-		accessToken = JSON.parse(window.localStorage.getItem('vira-methodist-session') || '{}').accessToken || '';
+		const stored = JSON.parse(window.sessionStorage.getItem(SESSION_STORAGE_KEY) || '{}');
+ accessToken = stored.accessToken || '';
+ museumId = museumId || stored.user?.museum_id || (stored.isMock ? DEFAULT_MUSEUM_ID : '');
 	} catch {
 		// The API will return unauthorized if the locally stored session is malformed.
 	}
 	return {
-		'X-Museum-ID': museumId,
+		...(museumId ? {'X-Museum-ID': museumId} : {}),
 		...(accessToken ? {Authorization: `Bearer ${accessToken}`} : {}),
 		...headers,
 	};
+}
+
+function sessionAuthHeaders() {
+  const {Authorization} = museumHeaders();
+  return Authorization ? {Authorization} : {};
 }
 
 export const museumApi = {
@@ -234,15 +255,17 @@ export const routeApi = {
 };
 
 export const dashboardApi = {
-  summary: () => request(DASHBOARD_API_URL, `${API_PREFIX}/dashboard/summary`),
+  summary: () => request(DASHBOARD_API_URL, `${API_PREFIX}/dashboard/summary`, {headers: sessionAuthHeaders()}),
   attendance: (period = 'month') =>
-    request(DASHBOARD_API_URL, `${API_PREFIX}/dashboard/attendance`, {query: {period}}),
-  popularRoutes: () => request(DASHBOARD_API_URL, `${API_PREFIX}/dashboard/popular-routes`),
-  recentActivity: () => request(DASHBOARD_API_URL, `${API_PREFIX}/dashboard/recent-activity`),
-  feedback: () => request(DASHBOARD_API_URL, `${API_PREFIX}/dashboard/feedback`),
+    request(DASHBOARD_API_URL, `${API_PREFIX}/dashboard/attendance`, {query: {period}, headers: sessionAuthHeaders()}),
+  popularRoutes: () => request(DASHBOARD_API_URL, `${API_PREFIX}/dashboard/popular-routes`, {headers: sessionAuthHeaders()}),
+  recentActivity: () => request(DASHBOARD_API_URL, `${API_PREFIX}/dashboard/recent-activity`, {headers: sessionAuthHeaders()}),
+  feedback: () => request(DASHBOARD_API_URL, `${API_PREFIX}/dashboard/feedback`, {headers: sessionAuthHeaders()}),
 };
 
 export const feedbackApi = {
+	 reply: (id, body, status = 'published', version) => request(FEEDBACK_API_URL, `${API_PREFIX}/feedback/${encodeURIComponent(id)}/reply`, {headers: museumHeaders(), ...jsonOptions('PUT', {body, status, version})}),
+	 moderate: (id, status, version) => request(FEEDBACK_API_URL, `${API_PREFIX}/feedback/${encodeURIComponent(id)}`, {headers: museumHeaders(), ...jsonOptions('PATCH', {status, version})}),
   list: ({type = '', replyStatus = '', page = 1, limit = 20, museumId} = {}) =>
     request(FEEDBACK_API_URL, `${API_PREFIX}/feedback`, {
       query: {type, reply_status: replyStatus, page, limit},
@@ -251,32 +274,34 @@ export const feedbackApi = {
 };
 
 export const notificationApi = {
-  list: ({unreadOnly = false, userId = DEFAULT_USER_ID, page = 1, limit = 20} = {}) =>
+  markRead: (id) => request(NOTIFICATION_API_URL, `${API_PREFIX}/notifications/${encodeURIComponent(id)}/read`, {method:'POST', headers: sessionAuthHeaders()}),
+  markAllRead: () => request(NOTIFICATION_API_URL, `${API_PREFIX}/notifications/read-all`, {method:'POST', headers: sessionAuthHeaders()}),
+  list: ({unreadOnly = false, page = 1, limit = 20} = {}) =>
     request(NOTIFICATION_API_URL, `${API_PREFIX}/notifications`, {
       query: {unread: unreadOnly ? 'true' : '', page, limit},
-      headers: {'X-User-ID': userId},
+      headers: sessionAuthHeaders(),
     }),
 };
 
 export const analyticsApi = {
   visitorsSummary: (period = 'month') =>
-    request(ANALYTICS_API_URL, `${API_PREFIX}/visitors/summary`, {query: {period}}),
+    request(ANALYTICS_API_URL, `${API_PREFIX}/visitors/summary`, {query: {period}, headers: sessionAuthHeaders()}),
   visitorsDynamics: (period = 'month', series = 'visitors') =>
     request(ANALYTICS_API_URL, `${API_PREFIX}/visitors/dynamics`, {
-      query: {period, series},
+      query: {period, series}, headers: sessionAuthHeaders(),
     }),
-  visitorsSources: () => request(ANALYTICS_API_URL, `${API_PREFIX}/visitors/sources`),
-  visitorsList: ({page = 1, limit = 10, sortBy = '', sortDir = '', routeId = ''} = {}) =>
+  visitorsSources: (period = 'month') => request(ANALYTICS_API_URL, `${API_PREFIX}/visitors/sources`, {query: {period}, headers: sessionAuthHeaders()}),
+  visitorsList: ({page = 1, limit = 10, sortBy = '', sortDir = '', routeId = '', period = 'month'} = {}) =>
     request(ANALYTICS_API_URL, `${API_PREFIX}/visitors/list`, {
-      query: {page, limit, sort_by: sortBy, sort_dir: sortDir, route_id: routeId},
+      query: {page, limit, period, sort_by: sortBy, sort_dir: sortDir, route_id: routeId}, headers: sessionAuthHeaders(),
     }),
   statsSummary: (tab, period = 'month') =>
-    request(ANALYTICS_API_URL, `${API_PREFIX}/stats/${encodeURIComponent(tab)}/summary`, {query: {period}}),
+    request(ANALYTICS_API_URL, `${API_PREFIX}/stats/${encodeURIComponent(tab)}/summary`, {query: {period}, headers: sessionAuthHeaders()}),
   statsChart: (tab, period = 'month') =>
-    request(ANALYTICS_API_URL, `${API_PREFIX}/stats/${encodeURIComponent(tab)}/chart`, {query: {period}}),
-  statsBreakdown: (tab) => request(ANALYTICS_API_URL, `${API_PREFIX}/stats/${encodeURIComponent(tab)}/breakdown`),
-  statsRanked: (tab) => request(ANALYTICS_API_URL, `${API_PREFIX}/stats/${encodeURIComponent(tab)}/ranked`),
-  statsBars: (tab) => request(ANALYTICS_API_URL, `${API_PREFIX}/stats/${encodeURIComponent(tab)}/bars`),
+    request(ANALYTICS_API_URL, `${API_PREFIX}/stats/${encodeURIComponent(tab)}/chart`, {query: {period}, headers: sessionAuthHeaders()}),
+  statsBreakdown: (tab, period = 'month') => request(ANALYTICS_API_URL, `${API_PREFIX}/stats/${encodeURIComponent(tab)}/breakdown`, {query: {period}, headers: sessionAuthHeaders()}),
+  statsRanked: (tab, period = 'month') => request(ANALYTICS_API_URL, `${API_PREFIX}/stats/${encodeURIComponent(tab)}/ranked`, {query: {period}, headers: sessionAuthHeaders()}),
+  statsBars: (tab, period = 'month') => request(ANALYTICS_API_URL, `${API_PREFIX}/stats/${encodeURIComponent(tab)}/bars`, {query: {period}, headers: sessionAuthHeaders()}),
 };
 
 export {

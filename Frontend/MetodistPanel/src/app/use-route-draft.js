@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState} from 'react';
-import {ROUTE_WIZARD_VIEWS} from './constants';
+import {ROUTE_WIZARD_VIEWS} from './navigation';
 import {
   DEFAULT_ROUTE_DRAFT,
   createRouteDraftFromRow,
@@ -8,11 +8,11 @@ import {
   persistRouteDraft,
   readStoredRouteDraft,
 } from './route-draft-utils';
-import {moveItem} from './utils';
+import {moveItem} from './array';
 import {routeApi} from '../api';
+import {ROUTE_API_ENABLED} from './config';
 
-const ROUTE_API_ENABLED = import.meta.env.VITE_ROUTE_API_ENABLED === 'true';
-const MUSEUM_ID = import.meta.env.VITE_MUSEUM_ID || 'mus_001';
+
 
 export function useRouteDraft({onNavigate}) {
   const [routeDraft, setRouteDraft] = useState(readStoredRouteDraft);
@@ -29,6 +29,7 @@ export function useRouteDraft({onNavigate}) {
   }, []);
 
   const startRouteFlow = useCallback(() => {
+    setRouteDraft({...DEFAULT_ROUTE_DRAFT, artifactIds: []});
     setCreatedRoute(null);
     onNavigate('route-basic');
   }, [onNavigate]);
@@ -44,12 +45,12 @@ export function useRouteDraft({onNavigate}) {
   );
 
   const toggleRouteArtifact = useCallback(async (artifactId) => {
-    const currentRouteId = routeDraft.id && !String(routeDraft.id).startsWith('local-') ? routeDraft.id : null;
+    const currentRouteId = routeDraft.serverSaved && routeDraft.id ? routeDraft.id : null;
     const isSelected = routeDraft.artifactIds.includes(artifactId);
     if (ROUTE_API_ENABLED && currentRouteId) {
       try {
-        if (isSelected) await routeApi.removeArtifact(currentRouteId, artifactId, MUSEUM_ID);
-        else await routeApi.addArtifact(currentRouteId, {artifact_id: artifactId, order: routeDraft.artifactIds.length}, MUSEUM_ID);
+        if (isSelected) await routeApi.removeArtifact(currentRouteId, artifactId);
+        else await routeApi.addArtifact(currentRouteId, {artifact_id: artifactId, order: routeDraft.artifactIds.length});
         setRouteSyncError(null);
       } catch (error) { setRouteSyncError(error); return; }
     }
@@ -64,12 +65,12 @@ export function useRouteDraft({onNavigate}) {
   }, [routeDraft]);
 
   const reorderRouteArtifact = useCallback(async (fromId, toId) => {
-    const currentRouteId = routeDraft.id && !String(routeDraft.id).startsWith('local-') ? routeDraft.id : null;
+    const currentRouteId = routeDraft.serverSaved && routeDraft.id ? routeDraft.id : null;
     const fromIndex = routeDraft.artifactIds.indexOf(fromId);
     const toIndex = routeDraft.artifactIds.indexOf(toId);
     const nextIds = fromIndex === -1 || toIndex === -1 ? routeDraft.artifactIds : moveItem(routeDraft.artifactIds, fromIndex, toIndex);
     if (ROUTE_API_ENABLED && currentRouteId && nextIds !== routeDraft.artifactIds) {
-      try { await routeApi.reorderArtifacts(currentRouteId, nextIds, MUSEUM_ID); setRouteSyncError(null); }
+      try { await routeApi.reorderArtifacts(currentRouteId, nextIds); setRouteSyncError(null); }
       catch (error) { setRouteSyncError(error); return; }
     }
     setRouteDraft((prev) => {
@@ -99,7 +100,7 @@ export function useRouteDraft({onNavigate}) {
     setCreatedRoute(null);
     setRouteSyncError(null);
     if (ROUTE_API_ENABLED && routeRow?.id) {
-      try { await routeApi.remove(routeRow.id, MUSEUM_ID); }
+      try { await routeApi.remove(routeRow.id); }
       catch (error) { setRouteSyncError(error); return; }
     }
     setRouteDraft((prev) => markRouteDeleted(prev, routeRow.id));
@@ -108,15 +109,18 @@ export function useRouteDraft({onNavigate}) {
 
   const publishRoute = useCallback(async () => {
     const nextRoute = createPublishedRouteDraft(routeDraft);
+    nextRoute.status = routeDraft.status;
     setRouteSyncError(null);
     if (ROUTE_API_ENABLED) {
       try {
-        const existingId = routeDraft.id && !String(routeDraft.id).startsWith('local-') ? routeDraft.id : null;
+        const existingId = routeDraft.serverSaved && routeDraft.id ? routeDraft.id : null;
         const response = existingId
-          ? await routeApi.update(existingId, {title: nextRoute.title, description: nextRoute.description, status: 'published'}, MUSEUM_ID)
-          : await routeApi.create({title: nextRoute.title, description: nextRoute.description, status: 'published'}, MUSEUM_ID);
+          ? await routeApi.update(existingId, {title: nextRoute.title, subtitle: nextRoute.subtitle, description: nextRoute.description, duration: nextRoute.duration, audience: nextRoute.audience, difficulty: nextRoute.difficulty, language: nextRoute.language, visibility: nextRoute.visibility === 'team' ? 'private' : nextRoute.visibility, show_on_map: nextRoute.showOnMap, require_qr: nextRoute.requireQr, artifact_ids: nextRoute.artifactIds, status: nextRoute.status})
+          : await routeApi.create({title: nextRoute.title, subtitle: nextRoute.subtitle, description: nextRoute.description, duration: nextRoute.duration, audience: nextRoute.audience, difficulty: nextRoute.difficulty, language: nextRoute.language, visibility: nextRoute.visibility === 'team' ? 'private' : nextRoute.visibility, show_on_map: nextRoute.showOnMap, require_qr: nextRoute.requireQr, artifact_ids: nextRoute.artifactIds, status: nextRoute.status});
         const persisted = response?.route || response;
-        nextRoute.id = persisted?.id || nextRoute.id;
+        if (!persisted?.id) throw new Error('Сервер не подтвердил сохранение маршрута');
+        nextRoute.id = persisted.id;
+        nextRoute.serverSaved = true;
       } catch (error) { setRouteSyncError(error); return; }
     }
 
@@ -145,3 +149,6 @@ export function useRouteDraft({onNavigate}) {
     createAnotherRoute,
   };
 }
+
+
+

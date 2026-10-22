@@ -1,0 +1,180 @@
+openapi: 3.0.3
+info:
+  title: Vitrine analytics and dashboard API
+  version: 1.0.0
+  description: Public event ingestion and museum scoped Methodist reads. See METRICS.md for formulas and unavailable sources.
+servers:
+  - url: /api/v1
+components:
+  securitySchemes:
+    bearer: {type: http, scheme: bearer}
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: {type: string, example: invalid_period}
+            message: {type: string, example: invalid_period}
+      example: {error: {code: invalid_period, message: invalid_period}}
+    Meta:
+      type: object
+      required: [from, to, timezone, filters, generated_at, data_through, capabilities]
+      properties:
+        from: {type: string, format: date-time}
+        to: {type: string, format: date-time}
+        timezone: {type: string, example: Europe/Berlin}
+        filters: {type: object}
+        generated_at: {type: string, format: date-time}
+        data_through: {type: string, format: date-time}
+        capabilities: {type: object, additionalProperties: {type: boolean}}
+    Event:
+      type: object
+      additionalProperties: false
+      required: [schema_version, id, type, occurred_at, session_id, visitor_key, public_code]
+      properties:
+        schema_version: {type: integer, enum: [1]}
+        id: {type: string, maxLength: 128}
+        type: {type: string, enum: [visit_start, scan, scene_view, engagement, scene_complete, quiz_answer, artifact_collected]}
+        occurred_at: {type: string, format: date-time}
+        session_id: {type: string, maxLength: 128}
+        visitor_key: {type: string, maxLength: 128}
+        public_code: {type: string, maxLength: 128}
+        artifact_id: {type: string, maxLength: 128}
+        screen_id: {type: string, maxLength: 128}
+        source: {type: string, enum: [qr, direct, route, unknown]}
+        properties:
+          type: object
+          additionalProperties: false
+          properties:
+            active_ms: {type: integer, minimum: 1, maximum: 15000}
+            correct: {type: boolean}
+      example:
+        schema_version: 1
+        id: 7c14b655-e98e-48f9-a518-ced0b159e382
+        type: scene_view
+        occurred_at: '2026-10-17T10:00:00Z'
+        session_id: a47a59d4-2fa7-422f-a7d4-6188c23681ce
+        visitor_key: 797f895d-710c-475f-a6b0-cf403357cc19
+        public_code: pub_test
+        artifact_id: art_test
+        screen_id: screen_1
+        source: unknown
+  parameters:
+    period: {in: query, name: period, schema: {type: string, enum: [day, week, month, year], default: month}}
+    from: {in: query, name: from, schema: {type: string, format: date-time}}
+    to: {in: query, name: to, schema: {type: string, format: date-time}}
+    timezone: {in: query, name: timezone, schema: {type: string, default: UTC}}
+    route: {in: query, name: route_id, schema: {type: string}, description: Currently returns 400 filter_unavailable.}
+    team: {in: query, name: team_id, schema: {type: string}, description: Currently returns 400 filter_unavailable.}
+  responses:
+    BadRequest: {description: Invalid filter or event, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+    Unauthorized: {description: Missing or invalid Bearer session, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+    Forbidden: {description: Wrong museum or role, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+    Unavailable: {description: Storage, publication, or source unavailable, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+paths:
+  /analytics/events:
+    post:
+      summary: Store one public Visitor event idempotently
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/Event'}}}
+      responses:
+        '200':
+          description: Stored or already recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [accepted_event_id, duplicate]
+                properties:
+                  accepted_event_id: {type: string}
+                  duplicate: {type: boolean}
+              example: {accepted_event_id: 7c14b655-e98e-48f9-a518-ced0b159e382, duplicate: false}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '409': {$ref: '#/components/responses/BadRequest'}
+        '413': {$ref: '#/components/responses/BadRequest'}
+        '429': {$ref: '#/components/responses/BadRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /analytics/filter-options:
+    get:
+      security: [{bearer: []}]
+      summary: Supported filters and capabilities
+      parameters: [{$ref: '#/components/parameters/period'}, {$ref: '#/components/parameters/timezone'}]
+      responses:
+        '200': {description: Periods, routes, teams, capabilities, meta; unavailable catalogues are empty with false capability.}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /analytics/recent-activity:
+    get:
+      security: [{bearer: []}]
+      summary: Recent real event activity in the museum
+      parameters: [{$ref: '#/components/parameters/period'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/timezone'}]
+      responses:
+        '200': {description: activities with id, type, created_at, title, artifact_id, screen_id, artifact_url and meta}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /visitors/summary:
+    get:
+      security: [{bearer: []}]
+      summary: Unique and new browser visitors and active session minutes
+      parameters: [{$ref: '#/components/parameters/period'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/timezone'}, {$ref: '#/components/parameters/route'}, {$ref: '#/components/parameters/team'}]
+      responses:
+        '200':
+          description: Summary and meta
+          content:
+            application/json:
+              example: {total_visitors: 0, new_visitors: 0, avg_session_minutes: 0, deltas: {total_visitors: null, new_visitors: null, avg_session_minutes: null}, meta: {from: '2026-10-01T00:00:00Z', to: '2026-11-01T00:00:00Z', timezone: UTC, filters: {period: month, route_id: '', team_id: ''}, generated_at: '2026-10-17T12:00:00Z', data_through: '2026-10-17T12:00:00Z', capabilities: {route_filter: false, team_filter: false}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /visitors/dynamics:
+    get:
+      security: [{bearer: []}]
+      summary: Unique visitors by calendar bucket
+      parameters: [{$ref: '#/components/parameters/period'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/timezone'}, {in: query, name: series, schema: {type: string, enum: [visitors, newVisitors]}}]
+      responses:
+        '200': {description: series, labels, values, buckets and meta}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /visitors/sources:
+    get:
+      security: [{bearer: []}]
+      summary: Acquisition source of the first visit event
+      parameters: [{$ref: '#/components/parameters/period'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/timezone'}]
+      responses:
+        '200': {description: sources with code, label, value percent, count and meta}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /visitors/list:
+    get:
+      security: [{bearer: []}]
+      summary: Entire server sorted list of anonymous visitors
+      parameters: [{$ref: '#/components/parameters/period'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/timezone'}, {in: query, name: page, schema: {type: integer, minimum: 1, default: 1}}, {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}, {in: query, name: sort_by, schema: {type: string, enum: [name, firstVisit, duration, collectedArtifacts]}}, {in: query, name: sort_dir, schema: {type: string, enum: [asc, desc]}}]
+      responses:
+        '200': {description: items, total, page, limit and meta; route fields are null; collected_artifacts counts persisted collection rows in range.}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /stats/{tab}/{view}:
+    get:
+      security: [{bearer: []}]
+      summary: Per tab summary, chart, breakdown, ranked or bars
+      parameters: [{in: path, name: tab, required: true, schema: {type: string, enum: [overview, visitors, content, routes, stories, artifacts, feedback]}}, {in: path, name: view, required: true, schema: {type: string, enum: [summary, chart, breakdown, ranked, bars]}}, {$ref: '#/components/parameters/period'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/timezone'}]
+      responses:
+        '200': {description: Available metric data and meta}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /dashboard/{view}:
+    get:
+      security: [{bearer: []}]
+      summary: Dashboard projection of the analytics aggregates
+      parameters: [{in: path, name: view, required: true, schema: {type: string, enum: [summary, attendance, popular-routes, recent-activity, feedback]}}, {$ref: '#/components/parameters/period'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/timezone'}]
+      responses:
+        '200': {description: Summary or attendance with meta; monthly visitor card also has visitors_per_month_meta; unsupported fields are null with availability reasons.}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '503': {$ref: '#/components/responses/Unavailable'}

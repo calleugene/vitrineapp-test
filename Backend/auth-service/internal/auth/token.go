@@ -86,6 +86,14 @@ func newID(prefix string) string {
 	return prefix + "_" + hex.EncodeToString(b)
 }
 
+func newMuseumID() (string, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return "mus_" + hex.EncodeToString(b), nil
+}
+
 func isUnauthorized(err error) bool {
 	return errors.Is(err, ErrUnauthorized)
 }

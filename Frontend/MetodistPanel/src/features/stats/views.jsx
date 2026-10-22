@@ -1,7 +1,8 @@
 import React, {useEffect, useRef} from 'react';
 import Chart from 'chart.js/auto';
 import {Button, Card, SegmentedRadioGroup} from '@gravity-ui/uikit';
-import {STATS_TABS, STATS_TAB_CONTENT} from '../../app/constants';
+import {STATS_TABS, STATS_TAB_CONTENT} from './demo-data';
+import {mapStatsBarsData, mapStatsBreakdownData, mapStatsRankedData} from './mappers';
 
 function DonutCenter({value, label}) {
   return (
@@ -73,12 +74,12 @@ function GenericDonutChart({items}) {
 
 export function StatsView({statsTab, setStatsTab, statsPeriod, setStatsPeriod, statsData, AttendanceChart}) {
   const tabContent = STATS_TAB_CONTENT[statsTab] || STATS_TAB_CONTENT.overview;
-  const fallbackSeries = tabContent.chartSeries[statsPeriod] || tabContent.chartSeries.day;
-  const chartData = statsData?.chart || {labels: fallbackSeries.labels, values: fallbackSeries.values, chartLabel: tabContent.chartLabel};
-  const summaryItems = statsData?.summary || tabContent.summary;
-  const breakdown = statsData?.breakdown || {title: tabContent.sideTitle, items: tabContent.sideItems};
-  const rankedSection = statsData?.ranked || tabContent.lowerSections[0];
-  const barsSection = statsData?.bars || tabContent.lowerSections[tabContent.lowerSections.length - 1];
+  const current = statsData?.period === statsPeriod ? statsData : null;
+  const chartData = current?.chart || {labels: [], values: [], chartLabel: ''};
+  const summaryItems = current?.summary || [];
+  const breakdown = current?.breakdown || mapStatsBreakdownData(null);
+  const rankedSection = current?.ranked || mapStatsRankedData(null);
+  const barsSection = current?.bars || mapStatsBarsData(null);
 
   const exportReportCsv = () => {
     const escape = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
@@ -110,7 +111,7 @@ export function StatsView({statsTab, setStatsTab, statsPeriod, setStatsPeriod, s
         <div>
           <h1>Статистика</h1>
         </div>
-        <Button view="outlined" size="l" onClick={exportReportCsv}>Экспортировать CSV</Button>
+        <Button view="outlined" size="l" disabled={!current} onClick={exportReportCsv}>Экспортировать CSV</Button>
       </div>
 
       <div className="profile-tabs stats-tabs">
@@ -126,6 +127,9 @@ export function StatsView({statsTab, setStatsTab, statsPeriod, setStatsPeriod, s
         ))}
       </div>
 
+      {!current ? <p role="status">Загружаем статистику…</p> : current.errors.length ? <div role="alert"><p>Не удалось загрузить: {current.errors.join(', ')}. Повторите запрос позже.</p><Button onClick={current.retry}>Повторить</Button></div> : null}
+      {current && !current.errors.length && !chartData.values.some((value) => value > 0) ? <p role="status">За выбранный период событий нет.</p> : null}
+      {current?.meta ? <p>Период: {current.meta.from} — {current.meta.to} ({current.meta.timezone})</p> : null}
       <div className="stats-grid stats-summary-grid">
         {summaryItems.map((item) => {
           return (
@@ -144,7 +148,7 @@ export function StatsView({statsTab, setStatsTab, statsPeriod, setStatsPeriod, s
       <div className="stats-dashboard-grid">
         <Card className="panel panel-large" view="filled">
           <div className="panel-header">
-            <h3>{tabContent.chartTitle}</h3>
+            <h3>{chartData.chartLabel || 'Активность'}</h3>
             <SegmentedRadioGroup
               size="m"
               value={statsPeriod}
@@ -169,7 +173,7 @@ export function StatsView({statsTab, setStatsTab, statsPeriod, setStatsPeriod, s
           <div className="visitors-sources-layout stats-sources-layout">
             <div className="visitors-donut-shell">
               <GenericDonutChart items={breakdown.items} />
-              <DonutCenter value="100%" />
+              <DonutCenter value={breakdown.items.some((item) => item.count > 0) ? '100%' : '—'} />
             </div>
             <div className="visitors-sources-list">
               {breakdown.items.map((item) => (
@@ -231,8 +235,9 @@ export function StatsView({statsTab, setStatsTab, statsPeriod, setStatsPeriod, s
       </div>
 
       <div className="stats-footnote">
-        {tabContent.footnote}
+        Цифровая аудитория: уникальные браузеры. Активное время учитывается при видимой истории. Сессия маршрута начинается при открытии экспоната из маршрута; завершение подтверждается сохранённой коллекцией. Командные фильтры пока недоступны.
       </div>
     </section>
   );
 }
+

@@ -34,10 +34,10 @@ export const UI = {
   arExitButton: 'Готово',
 
   // collect
-  collectBtnDefault: 'Собрать артефакт',
-  collectBtnInProgress: 'Собираем…',
-  collectBtnDone: 'Артефакт собран',
-  collectGhostDefault: 'Вернуться без сбора',
+  collectBtnDefault: 'Сохранить в коллекцию',
+  collectBtnInProgress: 'Сохраняем…',
+  collectBtnDone: 'Сохранено в коллекции',
+  collectGhostDefault: 'Вернуться к музею',
   collectGhostDone: 'К музею',
   collectError: 'Не удалось добавить экспонат в коллекцию. Попробуйте ещё раз.',
 

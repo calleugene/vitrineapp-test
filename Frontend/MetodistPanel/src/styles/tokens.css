@@ -4,3 +4,42 @@
   --shadow-soft: var(--vl-shadow-float);
   --content-side-column: 320px;
 }
+
+/* Shared type scale: captions, interface copy, section titles and display values. */
+:root, .g-root {
+  --vl-text-caption: 12px;
+  --vl-text-body: 14px;
+  --vl-text-lead: 16px;
+  --vl-text-subheading: 18px;
+  --vl-text-heading: 20px;
+  --vl-text-title: 24px;
+  --vl-text-page: 32px;
+  --vl-text-display: 40px;
+  --vl-weight-regular: 400;
+  --vl-weight-medium: 500;
+  --vl-weight-semibold: 600;
+  --vl-weight-bold: 700;
+}
+@media (max-width: 600px) {
+  :root, .g-root { --vl-text-page: 24px; --vl-text-display: 32px; }
+}
+
+/* Common geometry for the methodist interface. */
+:root, .g-root {
+  --vl-space-7: 32px;
+  --vl-space-8: 40px;
+  --vl-space-9: 48px;
+  --ui-radius-control: 8px;
+  --ui-radius-item: 12px;
+  --ui-radius-card: 16px;
+  --ui-radius-dialog: 24px;
+  --ui-card-padding: 24px;
+  --ui-control-height: 40px;
+  --radius-lg: var(--ui-radius-card);
+  --g-border-radius-m: var(--ui-radius-control);
+  --g-border-radius-l: var(--ui-radius-item);
+  --g-border-radius-xl: var(--ui-radius-card);
+}
+@media (max-width: 600px) {
+  :root, .g-root { --ui-card-padding: 16px; --ui-control-height: 44px; }
+}

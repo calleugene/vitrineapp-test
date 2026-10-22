@@ -1,215 +1,71 @@
-import React from 'react';
-import {Button, Checkbox, TextInput} from '@gravity-ui/uikit';
-import {Field} from '../components/ui';
+import React, {useId, useState} from 'react';
+import {Button} from '@gravity-ui/uikit';
+import {authApi} from '../api';
+import {LegalDocumentDialog} from './LegalDocument';
+import {useLegalDocuments} from './use-legal-documents';
 
-export function AuthScreen({
-  authTab,
-  setAuthTab,
-  authForm,
-  setAuthForm,
-  authError,
-  authLoading,
-  onLogin,
-  onRegister,
-}) {
-  const isLogin = authTab === 'login';
+function Input({label, password = false, ...props}) {
+  const id = useId();
+  const [visible, setVisible] = useState(false);
+  const [validation, setValidation] = useState('');
+  return <div className="auth-field"><label htmlFor={id}>{label}</label><div className="auth-input-wrap"><input id={id} {...props} aria-invalid={Boolean(validation)} aria-describedby={validation ? `${id}-error` : undefined} onInvalid={(event) => {event.preventDefault(); setValidation(event.target.validity.valueMissing ? 'Заполните это поле.' : event.target.validity.typeMismatch ? 'Введите корректный email.' : event.target.validity.tooShort ? 'Пароль должен содержать не менее 12 символов.' : event.target.validationMessage);}} onChange={(event) => {setValidation(''); props.onChange?.(event);}} type={password ? (visible ? 'text' : 'password') : (props.type || 'text')} />{password && <button type="button" className="auth-reveal" aria-label={visible ? `Скрыть: ${label}` : `Показать: ${label}`} aria-pressed={visible} onClick={() => setVisible(!visible)}>{visible ? 'Скрыть' : 'Показать'}</button>}</div>{validation && <span id={`${id}-error`} className="auth-error" role="alert">{validation}</span>}</div>;
+}
 
-  return (
-    <div className="desktop-app-shell">
-      <div className="auth-shell">
-        <div className="auth-backdrop" />
-        <section className="auth-hero">
-          <div className="auth-brand">
-            <div className="brand-logo">Я</div>
-            <div>
-              <div className="brand-title">Витрина</div>
-              <div className="brand-subtitle">Кабинет методиста</div>
-            </div>
-          </div>
-
-          <div className="auth-hero-copy">
-            <h1>Создавайте интерактивные артефакты и маршруты, которые запоминаются</h1>
-            <p>
-              Витрина — платформа для методистов и музейных команд. Оживляйте
-              экспонаты, выстраивайте маршруты и изучайте свою аудиторию.
-            </p>
-          </div>
-
-          <div className="auth-feature-list">
-            <div className="auth-feature">
-              <div className="auth-feature-icon">✦</div>
-              <div>
-                <strong>Интерактивность</strong>
-                <span>Оживляйте экспонаты с помощью мультимедиа и интерактивных заданий</span>
-              </div>
-            </div>
-            <div className="auth-feature">
-              <div className="auth-feature-icon">⌘</div>
-              <div>
-                <strong>Маршруты и точки</strong>
-                <span>Создавайте логичные маршруты и управляйте точками интереса</span>
-              </div>
-            </div>
-            <div className="auth-feature">
-              <div className="auth-feature-icon">▥</div>
-              <div>
-                <strong>Аналитика</strong>
-                <span>Отслеживайте вовлечённость и поведение посетителей</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="auth-visual">
-            <div className="auth-device">
-              <div className="auth-device-card">
-                <div className="auth-device-title">Письмо фронтовика 1943 года</div>
-                <div className="auth-device-text">Отсканируйте QR-код, чтобы просмотреть артефакт</div>
-                <div className="auth-qr" />
-              </div>
-            </div>
-            <div className="auth-map" />
-            <div className="auth-badge auth-badge-a">T</div>
-            <div className="auth-badge auth-badge-b">◁</div>
-            <div className="auth-badge auth-badge-c">⌂</div>
-          </div>
-
-          <div className="auth-footer-note">
-            <strong>Ваши данные защищены</strong>
-            <span>Мы соблюдаем требования 152-ФЗ и используем современные методы шифрования</span>
-          </div>
-        </section>
-
-        <section className="auth-panel">
-          <div className="auth-tabs">
-            <button
-              type="button"
-              className={`auth-tab ${isLogin ? 'is-active' : ''}`}
-              onClick={() => setAuthTab('login')}
-            >
-              Вход
-            </button>
-            <button
-              type="button"
-              className={`auth-tab ${!isLogin ? 'is-active' : ''}`}
-              onClick={() => setAuthTab('register')}
-            >
-              Регистрация
-            </button>
-          </div>
-
-          {isLogin ? (
-            <div className="auth-form">
-              <div className="auth-form-heading">
-                <h2>Добро пожаловать!</h2>
-                <p>Войдите в свой аккаунт, чтобы продолжить работу</p>
-              </div>
-
-              <Field label="Электронная почта">
-                <TextInput
-                  size="xl"
-                  placeholder="Введите вашу почту"
-                  value={authForm.loginEmail}
-                  onUpdate={(value) => setAuthForm((prev) => ({...prev, loginEmail: value}))}
-                />
-              </Field>
-              <Field label="Пароль">
-                <TextInput
-                  size="xl"
-                  type="password"
-                  placeholder="Введите пароль"
-                  value={authForm.loginPassword}
-                  onUpdate={(value) => setAuthForm((prev) => ({...prev, loginPassword: value}))}
-                />
-              </Field>
-
-              <div className="auth-inline-row">
-                <label className="auth-checkline">
-                  <Checkbox />
-                  <span>Запомнить меня</span>
-                </label>
-                <button type="button" className="auth-link">Забыли пароль?</button>
-              </div>
-
-              {authError ? <div className="chart-note">{authError}</div> : null}
-
-              <Button view="action" size="xl" width="max" onClick={onLogin} loading={authLoading}>
-                Войти
-              </Button>
-
-              <div className="auth-divider"><span>или</span></div>
-
-              <div className="auth-socials">
-                <Button view="outlined" size="xl">Войти через Яндекс</Button>
-                <Button view="outlined" size="xl">Войти через Google</Button>
-                <Button view="outlined" size="xl">Войти через VK ID</Button>
-              </div>
-
-              <div className="auth-bottom-text">
-                Нет аккаунта?{' '}
-                <button type="button" className="auth-link" onClick={() => setAuthTab('register')}>
-                  Зарегистрируйтесь
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="auth-form">
-              <div className="auth-form-heading">
-                <h2>Создание аккаунта</h2>
-                <p>Заполните форму, чтобы начать работу в Витрине</p>
-              </div>
-
-              <Field label="Имя и фамилия">
-                <TextInput
-                  size="xl"
-                  placeholder="Анна Смирнова"
-                  value={authForm.registerFullName}
-                  onUpdate={(value) => setAuthForm((prev) => ({...prev, registerFullName: value}))}
-                />
-              </Field>
-              <Field label="Электронная почта">
-                <TextInput
-                  size="xl"
-                  placeholder="example@mail.ru"
-                  value={authForm.registerEmail}
-                  onUpdate={(value) => setAuthForm((prev) => ({...prev, registerEmail: value}))}
-                />
-              </Field>
-              <Field label="Пароль">
-                <TextInput
-                  size="xl"
-                  type="password"
-                  placeholder="Придумайте пароль"
-                  value={authForm.registerPassword}
-                  onUpdate={(value) => setAuthForm((prev) => ({...prev, registerPassword: value}))}
-                />
-              </Field>
-
-              <label className="auth-checkline auth-checkline-wrap">
-                <Checkbox />
-                <span>
-                  Я принимаю{' '}
-                  <button type="button" className="auth-link">Политику конфиденциальности</button>,{' '}
-                  <button type="button" className="auth-link">Пользовательское соглашение</button> и{' '}
-                  <button type="button" className="auth-link">Правила сервиса</button>
-                </span>
-              </label>
-
-              {authError ? <div className="chart-note">{authError}</div> : null}
-
-              <Button view="action" size="xl" width="max" onClick={onRegister} loading={authLoading}>
-                Зарегистрироваться
-              </Button>
-
-              <div className="auth-bottom-text">
-                Уже есть аккаунт?{' '}
-                <button type="button" className="auth-link" onClick={() => setAuthTab('login')}>
-                  Войти
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
-      </div>
-    </div>
-  );
+export function AuthScreen({authTab = 'login', setAuthTab, authForm = {}, setAuthForm, authError, authLoading, onLogin, onRegister, initialMode}) {
+  const [mode, setMode] = useState(initialMode || 'auth');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [repeat, setRepeat] = useState('');
+  const [token] = useState(() => new URLSearchParams(window.location.search).get('token') || '');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [personal, setPersonal] = useState(false);
+  const [marketing, setMarketing] = useState(false);
+  const [document, setDocument] = useState(null);
+  const {documents, error: legalError, retry} = useLegalDocuments();
+  const login = authTab === 'login';
+  const update = (key) => (event) => setAuthForm((previous) => ({...previous, [key]: event.target.value}));
+  const legalLink = (type, text) => <button type="button" className="auth-link" disabled={!documents.length} onClick={() => setDocument(documents.find((item) => item.type === type))}>{text}</button>;
+  const back = () => {if (initialMode) {window.location.assign(import.meta.env.BASE_URL); return;} setMode('auth'); setError(''); setSuccess('');};
+  const submit = async (event) => {
+    event.preventDefault(); setError('');
+    if (mode === 'auth') {
+      if (login) {onLogin(); return;}
+      if (!personal || documents.length !== 3) {setError('Для регистрации подтвердите согласие на обработку персональных данных.'); return;}
+      onRegister(['personal_data', 'marketing'].map((type) => ({type, version: documents.find((item) => item.type === type).version, accepted: type === 'personal_data' ? personal : marketing})));
+      return;
+    }
+    if (mode === 'reset' && password !== repeat) {setError('Пароли не совпадают.'); return;}
+    setBusy(true);
+    try {
+      if (mode === 'forgot') {await authApi.forgotPassword(email); setSuccess('Если аккаунт с указанной почтой существует, мы отправили письмо с инструкцией по восстановлению пароля');}
+      else {await authApi.resetPassword(token, password); setPassword(''); setRepeat(''); window.history.replaceState({}, '', `${import.meta.env.BASE_URL}reset-password`); setSuccess('Пароль сохранён. Войдите с новым паролем.');}
+    } catch (failure) {
+      setError(failure.status === 429 ? 'Слишком много запросов. Повторите через 30 минут.' : mode === 'reset' && failure.status === 400 ? 'Ссылка недействительна или срок её действия истёк. Запросите новую.' : 'Не удалось выполнить запрос. Попробуйте позже.');
+    } finally {setBusy(false);}
+  };
+  return <main className="auth-centered">
+    <div className="auth-container">
+      <header className="auth-brand"><div className="brand-logo" aria-hidden="true">Я</div><div><div className="brand-title">Витрина</div><div className="brand-subtitle">Кабинет методиста</div></div></header>
+      {mode === 'auth' && <nav className="auth-tabs" aria-label="Авторизация"><button type="button" aria-current={login ? 'page' : undefined} className={`auth-tab ${login ? 'is-active' : ''}`} onClick={() => {setAuthTab('login'); setError('');}}>Вход</button><button type="button" aria-current={!login ? 'page' : undefined} className={`auth-tab ${!login ? 'is-active' : ''}`} onClick={() => {setAuthTab('register'); setError('');}}>Регистрация</button></nav>}
+      <form className="auth-form" onSubmit={submit} onInvalid={(event) => event.currentTarget.querySelector(':invalid')?.focus()}>
+        <div className="auth-form-heading"><h1>{mode === 'forgot' ? 'Восстановление пароля' : mode === 'reset' ? 'Новый пароль' : login ? 'Добро пожаловать!' : 'Создание аккаунта'}</h1><p>{mode === 'forgot' ? 'Введите электронную почту, указанную при регистрации. Мы отправим ссылку для восстановления доступа' : mode === 'reset' ? 'Придумайте пароль длиной не менее 12 символов.' : login ? 'Войдите в свой аккаунт, чтобы продолжить работу' : 'Заполните форму, чтобы начать работу в Витрине'}</p></div>
+        {success ? <p role="status">{success}</p> : <>
+          {mode === 'auth' && !login && <Input label="Имя и фамилия" required autoComplete="name" value={authForm.registerFullName} onChange={update('registerFullName')} />}
+          {mode !== 'reset' && <Input label="Электронная почта" type="email" required autoComplete="email" maxLength={254} placeholder="example@mail.ru" value={mode === 'forgot' ? email : login ? authForm.loginEmail : authForm.registerEmail} onChange={mode === 'forgot' ? (event) => setEmail(event.target.value) : update(login ? 'loginEmail' : 'registerEmail')} />}
+          {mode !== 'forgot' && <Input label={mode === 'reset' ? 'Новый пароль' : 'Пароль'} password required maxLength={1024} minLength={mode === 'auth' && login ? undefined : 12} autoComplete={mode === 'auth' && login ? 'current-password' : 'new-password'} value={mode === 'reset' ? password : login ? authForm.loginPassword : authForm.registerPassword} onChange={mode === 'reset' ? (event) => {setPassword(event.target.value); event.target.form.querySelector('[name=repeatPassword]')?.setCustomValidity(event.target.value === repeat ? '' : 'Пароли не совпадают.');} : update(login ? 'loginPassword' : 'registerPassword')} />}
+          {mode === 'reset' && <Input label="Повтор нового пароля" name="repeatPassword" password required maxLength={1024} minLength={12} autoComplete="new-password" value={repeat} onChange={(event) => {setRepeat(event.target.value); event.target.setCustomValidity(event.target.value === password ? '' : 'Пароли не совпадают.');}} />}
+          {mode === 'auth' && login && <div className="auth-inline-row"><label className="auth-checkline" title="Сохранить email на этом устройстве"><input type="checkbox" checked={Boolean(authForm.rememberMe)} onChange={updateRemember} />Запомнить меня</label><button type="button" className="auth-link" onClick={() => {setMode('forgot'); setError('');}}>Забыли пароль?</button></div>}
+          {mode === 'auth' && !login && <><div className="auth-consent"><input id="personal-consent" type="checkbox" required checked={personal} onChange={(event) => setPersonal(event.target.checked)} /><div><label htmlFor="personal-consent">Даю согласие на обработку персональных данных.</label> {legalLink('personal_data', 'Текст согласия')} · {legalLink('privacy', 'Политика обработки данных')}</div></div><div className="auth-consent"><input id="marketing-consent" type="checkbox" checked={marketing} onChange={(event) => setMarketing(event.target.checked)} /><div><label htmlFor="marketing-consent">Хочу получать рекламные рассылки (необязательно).</label> {legalLink('marketing', 'Текст согласия')}</div></div><small>Пароль — не менее 12 символов.</small></>}
+          {(error || (mode === 'auth' && authError)) && <p className="auth-error" role="alert">{error || authError}</p>}
+          {mode === 'reset' && (!token || error) && <a className="auth-link" href={`${import.meta.env.BASE_URL}forgot-password`}>Запросить новую ссылку</a>}
+          <Button type="submit" view="action" size="xl" width="max" loading={busy || authLoading} disabled={mode === 'reset' ? !token : mode === 'auth' && !login ? documents.length !== 3 : false}>{mode === 'forgot' ? 'Отправить ссылку' : mode === 'reset' ? 'Сохранить пароль' : login ? 'Войти' : 'Зарегистрироваться'}</Button>
+        </>}
+        {mode !== 'auth' ? <button type="button" className="auth-link auth-return" onClick={back}>Вернуться ко входу</button> : <div className="auth-bottom-text">{login ? 'Нет аккаунта? ' : 'Уже есть аккаунт? '}<button type="button" className="auth-link" onClick={() => {setAuthTab(login ? 'register' : 'login'); setError('');}}>{login ? 'Зарегистрируйтесь' : 'Войти'}</button></div>}
+      </form>
+      <footer className="auth-legal">{legalLink('privacy', 'Политика обработки персональных данных')}{legalLink('personal_data', 'Согласие на обработку данных')}{legalLink('marketing', 'Согласие на рекламные рассылки')}{legalError && <p role="alert">{legalError} <button type="button" onClick={retry}>Повторить</button></p>}</footer>
+    </div>{document && <LegalDocumentDialog document={document} onClose={() => setDocument(null)} />}
+  </main>;
+  function updateRemember(event) {setAuthForm((previous) => ({...previous, rememberMe: event.target.checked}));}
 }

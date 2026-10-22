@@ -6,6 +6,7 @@ globalThis.localStorage = {
   removeItem: (key) => storage.delete(key),
 };
 globalThis.window = {addEventListener: () => {}};
+globalThis.sessionStorage = globalThis.localStorage;
 Object.defineProperty(globalThis, 'navigator', {value: {onLine: false}, configurable: true});
 
 const {createApiClient} = await import('../src/app/api-client.js');
@@ -41,7 +42,85 @@ const story = await api.getStory(museum.route_id, museum.artifacts[0].id);
 assert.ok(story.coverTitle, 'artifact story has a cover');
 
 const events = createAnalyticsEvents({endpoint: 'https://events.invalid'});
-events.track('scene_view', {artifact_id: museum.artifacts[0].id});
+events.track('scene_view', {public_code: 'example', artifact_id: museum.artifacts[0].id, screen_id: 'cover'});
 assert.equal(events.pending(), 1, 'offline event is queued');
 
+const delivered = [];
+const retryingEvents = createAnalyticsEvents({
+  endpoint: 'https://events.invalid',
+  fetcher: async (_url, options) => {
+    const item = JSON.parse(options.body);
+    delivered.push(item.id);
+    return {ok: true, json: async () => ({accepted_event_id: item.id, duplicate: delivered.length > 1})};
+  },
+});
+navigator.onLine = true;
+await retryingEvents.flush();
+assert.equal(retryingEvents.pending(), 0, 'confirmed delivery clears the queue');
+assert.equal(delivered.length, 1, 'queued event is delivered once');
+
+// A temporary server outage must not silently discard queued analytics after
+// eight attempts. Recovery must deliver the original event ID.
+navigator.onLine = false;
+let recovering = false;
+const outageIds = [];
+const outageEvents = createAnalyticsEvents({
+  endpoint: 'https://events.invalid',
+  fetcher: async (_url, options) => {
+    const item = JSON.parse(options.body);
+    outageIds.push(item.id);
+    return recovering
+      ? {ok: true, json: async () => ({accepted_event_id: item.id})}
+      : {ok: false, status: 503};
+  },
+});
+outageEvents.track('scene_view', {public_code: 'example', artifact_id: 'art', screen_id: 'cover'});
+navigator.onLine = true;
+const realSetTimeout = globalThis.setTimeout;
+const realClearTimeout = globalThis.clearTimeout;
+// Manual flushes replace retry timers in this deterministic outage check.
+globalThis.setTimeout = () => 0;
+globalThis.clearTimeout = () => {};
+try {
+  for (let attempt = 0; attempt < 10; attempt += 1) await outageEvents.flush();
+  assert.equal(outageEvents.pending(), 1, 'transient outage retains the event');
+  recovering = true;
+  await outageEvents.flush();
+  assert.equal(outageEvents.pending(), 0, 'recovery confirms delivery');
+  assert.equal(new Set(outageIds).size, 1, 'every retry preserves the event ID');
+} finally {
+  globalThis.setTimeout = realSetTimeout;
+  globalThis.clearTimeout = realClearTimeout;
+}
+
+navigator.onLine = false;
+for (let index = 0; index < 110; index += 1) {
+  retryingEvents.track('scene_view', {public_code: 'example', artifact_id: 'art', screen_id: `screen-${index}`});
+}
+assert.equal(retryingEvents.pending(), 100, 'offline queue is bounded');
+
 console.log('Visitor smoke flow: PASS');
+
+// A missing legacy Visitor catalogue must load every real museum, not demo data.
+const originalFetch = globalThis.fetch;
+globalThis.window.URL = URL;
+globalThis.window.location = {protocol: 'http:', hostname: 'localhost'};
+const catalogFetch = async (url) => {
+  if (url.startsWith('/visitor/')) return new Response('', {status: 404});
+  if (url === '/artifacts/public/museums') return Response.json({museums: [{museum_id: 'real-one'}, {museum_id: 'real-two'}]});
+  const id = url.includes('real-two') ? 'real-two' : 'real-one';
+  if (url.endsWith('/artifacts')) return Response.json({artifacts: [{id: `${id}-exhibit`, title: 'Published', public_code: `${id}-code`}]});
+  return Response.json({museum: {museum_id: id, name: id}});
+};
+globalThis.fetch = globalThis.window.fetch = catalogFetch;
+const published = createApiClient({apiMode: 'auto', apiBaseUrl: '/visitor', artifactsApiUrl: '/artifacts'});
+const realMuseums = await published.listMuseums();
+assert.deepEqual(realMuseums.map((item) => item.id), ['real-one', 'real-two']);
+const realMuseum = await published.getMuseum('real-two');
+assert.equal(realMuseum.artifacts[0].publicCode, 'real-two-code');
+globalThis.fetch = globalThis.window.fetch = async () => {throw new Error('backend offline');};
+const unavailable = createApiClient({apiMode: 'auto', apiBaseUrl: '/visitor', artifactsApiUrl: '/artifacts'});
+await assert.rejects(unavailable.listMuseums(), /backend offline/);
+globalThis.fetch = originalFetch;
+delete globalThis.window.fetch;
+console.log('Visitor real museum catalogue: PASS');

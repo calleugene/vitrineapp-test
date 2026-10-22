@@ -1,10 +1,10 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import Chart from 'chart.js/auto';
-import {ArrowDownToLine, ArrowUpArrowDown, Eye, Person, Persons, Stopwatch} from '@gravity-ui/icons';
+import {ArrowDownToLine, ArrowUpArrowDown, Person, Persons, Stopwatch} from '@gravity-ui/icons';
 import {Button, Card, SegmentedRadioGroup, Select} from '@gravity-ui/uikit';
 import {analyticsApi} from '../../api';
-import {VISITORS_DYNAMICS, VISITOR_ROWS, VISITOR_SOURCES, VISITOR_STATS, VISITOR_TABLE_COLUMNS} from '../../app/constants';
-import {formatDateTimeLabel, parseDurationMinutes, parseVisitorCount, parseVisitorDateTime} from '../../app/utils';
+import {VISITOR_TABLE_COLUMNS} from './demo-data';
+import {formatDateTimeLabel} from '../../app/date';
 import {InlineTabs} from '../../components/ui';
 
 function VisitorsSourcesChart({items}) {
@@ -71,11 +71,15 @@ export function VisitorsView({AttendanceChart}) {
   const [sortColumn, setSortColumn] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [summaryCards, setSummaryCards] = useState(VISITOR_STATS);
-  const [visitorsData, setVisitorsData] = useState(VISITORS_DYNAMICS.month);
-  const [visitorSources, setVisitorSources] = useState(VISITOR_SOURCES);
-  const [visitorRows, setVisitorRows] = useState(VISITOR_ROWS);
+  const [summaryCards, setSummaryCards] = useState([]);
+  const [visitorsData, setVisitorsData] = useState({labels: [], visitors: [], newVisitors: []});
+  const [visitorSources, setVisitorSources] = useState([]);
+  const [visitorRows, setVisitorRows] = useState([]);
+  const [loadState, setLoadState] = useState({key: '', errors: [], total: 0, meta: null});
+  const [retry, setRetry] = useState(0);
   const itemsPerPage = 10;
+  const requestKey = `${period}:${sortColumn}:${sortDirection}:${currentPage}:${retry}`;
+  const loading = loadState.key !== requestKey;
 
   useEffect(() => {
     let cancelled = false;
@@ -85,22 +89,29 @@ export function VisitorsView({AttendanceChart}) {
         analyticsApi.visitorsSummary(period),
         analyticsApi.visitorsDynamics(period, 'visitors'),
         analyticsApi.visitorsDynamics(period, 'newVisitors'),
-        analyticsApi.visitorsSources(),
-        analyticsApi.visitorsList({page: 1, limit: 50, sortBy: sortColumn, sortDir: sortDirection}),
+        analyticsApi.visitorsSources(period),
+        analyticsApi.visitorsList({period, page: currentPage, limit: itemsPerPage, sortBy: sortColumn, sortDir: sortDirection}),
       ]);
 
       if (cancelled) {
         return;
       }
 
+      const results = [summaryResult, visitorsDynamicsResult, newVisitorsDynamicsResult, sourcesResult, listResult];
+      setLoadState({key: requestKey, errors: results.flatMap((result, index) => result.status === 'rejected' ? [['Метрики', 'Посещаемость', 'Новые посетители', 'Источники', 'Список посетителей'][index]] : []), total: listResult.status === 'fulfilled' ? listResult.value.total : 0, meta: summaryResult.status === 'fulfilled' ? summaryResult.value.meta : null});
+      setSummaryCards([]);
+      setVisitorsData({labels: [], visitors: [], newVisitors: []});
+      setVisitorSources([]);
+      setVisitorRows([]);
+      const percentage = (value) => typeof value === 'number' ? `${value > 0 ? '+' : ''}${value.toFixed(1)}%` : '';
+
       if (summaryResult.status === 'fulfilled') {
         const payload = summaryResult.value;
         const deltas = payload.deltas || {};
         setSummaryCards([
-          {icon: Persons, value: String(payload.total_visitors ?? 0), title: 'Всего посетителей', delta: deltas.total_visitors || '', tone: 'violet'},
-          {icon: Person, value: String(payload.new_visitors ?? 0), title: 'Новые посетители', delta: deltas.new_visitors || '', tone: 'green'},
-          {icon: Stopwatch, value: `${payload.avg_session_minutes ?? 0} мин`, title: 'Среднее время на маршруте', delta: deltas.avg_session_minutes || '', tone: 'amber'},
-          {icon: Eye, value: String(payload.artifact_views ?? 0), title: 'Просмотров артефактов', delta: deltas.artifact_views || '', tone: 'blue'},
+          {icon: Persons, value: String(payload.total_visitors ?? '—'), title: 'Уникальные браузеры', delta: percentage(deltas.total_visitors), tone: 'violet'},
+          {icon: Person, value: String(payload.new_visitors ?? '—'), title: 'Новые браузеры', delta: percentage(deltas.new_visitors), tone: 'green'},
+          {icon: Stopwatch, value: payload.avg_session_minutes == null ? '—' : `${Number(payload.avg_session_minutes).toFixed(2)} мин`, title: 'Среднее активное время сессии', delta: percentage(deltas.avg_session_minutes), tone: 'amber'},
         ]);
       }
 
@@ -110,22 +121,23 @@ export function VisitorsView({AttendanceChart}) {
         setVisitorsData({
           labels: visitorsPayload?.labels || newVisitorsPayload?.labels || [],
           visitors: visitorsPayload?.values || [],
-          newVisitors: newVisitorsPayload?.values || visitorsPayload?.values || [],
+          newVisitors: newVisitorsPayload?.values || [],
         });
       }
 
       if (sourcesResult.status === 'fulfilled') {
-        setVisitorSources(sourcesResult.value.sources || VISITOR_SOURCES);
+        setVisitorSources((sourcesResult.value.sources || []).map((item, index) => ({...item, color: ['#5A4FF6', '#4D7EF1', '#63C987', '#FFB01F'][index % 4]})));
       }
 
       if (listResult.status === 'fulfilled') {
         setVisitorRows((listResult.value.items || []).map((item) => ({
-          name: item.name,
-          route: item.route_title,
+          id: item.id,
+          name: `${item.name} (${item.id.slice(-8)})`,
+          route: item.route_title || 'Недоступно',
           firstVisit: formatDateTimeLabel(item.first_visit_at),
           duration: `${item.duration_minutes} мин`,
           collectedArtifacts: String(item.collected_artifacts),
-          routeCompleted: `${item.route_progress_screens} экранов`,
+          routeCompleted: 'Недоступно',
         })));
       }
     };
@@ -135,36 +147,12 @@ export function VisitorsView({AttendanceChart}) {
     return () => {
       cancelled = true;
     };
-  }, [period, sortColumn, sortDirection]);
+  }, [period, sortColumn, sortDirection, currentPage, requestKey]);
 
-  const sortedVisitors = useMemo(() => {
-    const rows = [...visitorRows];
-
-    rows.sort((left, right) => {
-      const direction = sortDirection === 'asc' ? 1 : -1;
-
-      const getValue = (row) => {
-        if (sortColumn === 'firstVisit') return parseVisitorDateTime(row.firstVisit);
-        if (sortColumn === 'duration') return parseDurationMinutes(row.duration);
-        if (sortColumn === 'collectedArtifacts') return parseVisitorCount(row.collectedArtifacts);
-        if (sortColumn === 'routeCompleted') return parseVisitorCount(row.routeCompleted);
-        return String(row[sortColumn] || '').toLocaleLowerCase('ru');
-      };
-
-      const leftValue = getValue(left);
-      const rightValue = getValue(right);
-
-      if (leftValue < rightValue) return -1 * direction;
-      if (leftValue > rightValue) return 1 * direction;
-      return 0;
-    });
-
-    return rows;
-  }, [sortColumn, sortDirection, visitorRows]);
-
-  const totalPages = Math.max(1, Math.ceil(sortedVisitors.length / itemsPerPage));
-  const visibleVisitors = sortedVisitors.length <= itemsPerPage ? sortedVisitors : sortedVisitors.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
+  const sortedVisitors = loading ? [] : visitorRows;
+  const total = loading ? 0 : loadState.total;
+  const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+  const visibleVisitors = sortedVisitors;
   const exportVisitorsCsv = () => {
     const columns = VISITOR_TABLE_COLUMNS.map((column) => column.title);
     const fields = VISITOR_TABLE_COLUMNS.map((column) => column.id);
@@ -217,17 +205,19 @@ export function VisitorsView({AttendanceChart}) {
 
       <div className="visitors-toolbar">
         <div className="visitors-filters">
-          <Button view="outlined" size="l">14.04.2024 – 14.05.2024</Button>
-          <Select size="l" value={['all-routes']} options={[{value: 'all-routes', content: 'Все маршруты'}]} />
-          <Select size="l" value={['all-teams']} options={[{value: 'all-teams', content: 'Все команды'}]} />
-          <Button view="outlined" size="l">Фильтры</Button>
+          <Button view="outlined" size="l" disabled>Календарный период · UTC</Button>
+          <Select disabled size="l" value={['all-routes']} options={[{value: 'all-routes', content: 'Все маршруты'}]} />
+          <Select disabled size="l" value={['all-teams']} options={[{value: 'all-teams', content: 'Все команды'}]} />
+          <Button disabled view="outlined" size="l">Фильтры</Button>
         </div>
 
-        <InlineTabs compact className="section-tabs-inline" value={period} items={[{id: 'day', title: 'День'}, {id: 'week', title: 'Неделя'}, {id: 'month', title: 'Месяц'}, {id: 'year', title: 'Год'}]} onChange={setPeriod} />
+        <InlineTabs compact className="section-tabs-inline" value={period} items={[{id: 'day', title: 'День'}, {id: 'week', title: 'Неделя'}, {id: 'month', title: 'Месяц'}, {id: 'year', title: 'Год'}]} onChange={(value) => { setPeriod(value); setCurrentPage(1); }} />
       </div>
 
+      {loading ? <p role="status">Загружаем аналитику…</p> : loadState.errors.length ? <div role="alert"><p>Не удалось загрузить: {loadState.errors.join(', ')}.</p><Button onClick={() => setRetry((value) => value + 1)}>Повторить</Button></div> : null}
+      {!loading && loadState.meta ? <p>Период: {loadState.meta.from} — {loadState.meta.to} ({loadState.meta.timezone}). Фильтры по маршрутам и командам пока недоступны.</p> : null}
       <div className="stats-grid">
-        {summaryCards.map((item) => {
+        {(loading ? [] : summaryCards).map((item) => {
           const StatIcon = item.icon;
           return (
             <Card key={item.title} className="stat-card visitor-stat-card" view="filled">
@@ -241,22 +231,22 @@ export function VisitorsView({AttendanceChart}) {
       <div className="visitors-analytics">
         <Card className="panel panel-large" view="filled">
           <div className="panel-header"><h3>Динамика посетителей</h3></div>
-          <div className="chart visitors-chart"><AttendanceChart labels={visitorsData.labels} values={visitorsData.visitors} tooltipLabel="Посетителей" /></div>
+          <div className="chart visitors-chart"><AttendanceChart labels={loading ? [] : visitorsData.labels} values={loading ? [] : visitorsData.visitors} tooltipLabel="Посетителей" /></div>
         </Card>
 
         <Card className="panel visitors-mini-chart-card" view="filled">
           <div className="panel-header">
             <SegmentedRadioGroup size="m" value={series} options={[{value: 'visitors', content: 'Посетители'}, {value: 'newVisitors', content: 'Новые'}]} onUpdate={setSeries} />
           </div>
-          <div className="chart visitors-mini-chart"><AttendanceChart labels={visitorsData.labels} values={visitorsData[series] || visitorsData.visitors} tooltipLabel={series === 'visitors' ? 'Посетителей' : 'Новых посетителей'} /></div>
+          <div className="chart visitors-mini-chart"><AttendanceChart labels={loading ? [] : visitorsData.labels} values={loading ? [] : visitorsData[series]} tooltipLabel={series === 'visitors' ? 'Посетителей' : 'Новых посетителей'} /></div>
         </Card>
 
         <Card className="panel visitors-sources-card" view="filled">
           <div className="panel-header"><h3>Источники посетителей</h3></div>
           <div className="visitors-sources-layout">
-            <div className="visitors-donut-shell"><VisitorsSourcesChart items={visitorSources} /><DonutCenter value="100%" label="Источники" /></div>
+            <div className="visitors-donut-shell"><VisitorsSourcesChart items={loading ? [] : visitorSources} /><DonutCenter value={!loading && visitorSources.some((item) => item.count > 0) ? '100%' : '—'} label="Источники" /></div>
             <div className="visitors-sources-list">
-              {visitorSources.map((item) => (
+              {(loading ? [] : visitorSources).map((item) => (
                 <div className="visitors-source-row" key={item.label}>
                   <div className="visitors-source-label"><span className="visitors-source-dot" style={{backgroundColor: item.color}} /><span>{item.label}</span></div>
                   <strong>{item.value}% ({item.count})</strong>
@@ -270,10 +260,10 @@ export function VisitorsView({AttendanceChart}) {
       <Card className="panel visitors-table-panel" view="filled">
         <div className="panel-header">
           <h3>Посетители</h3>
-          <Button view="outlined" size="m" className="visitors-export-button" onClick={exportVisitorsCsv}><ArrowDownToLine />Экспортировать CSV</Button>
+          <Button view="outlined" size="m" className="visitors-export-button" disabled={loading || !visibleVisitors.length} onClick={exportVisitorsCsv}><ArrowDownToLine />CSV текущей страницы</Button>
         </div>
         {sortedVisitors.length === 0 ? (
-          <div className="visitors-empty-state"><strong>Пока еще посетителей нет, но они скоро появятся :)</strong></div>
+          <div className="visitors-empty-state"><strong>За выбранный период список пуст или недоступен.</strong></div>
         ) : (
           <>
             <div className="table-shell visitors-table-shell">
@@ -282,7 +272,7 @@ export function VisitorsView({AttendanceChart}) {
                   const isActive = sortColumn === column.id;
                   const sortLabel = isActive && sortDirection === 'desc' ? 'Я - А' : 'А - Я';
                   return (
-                    <button key={column.id} type="button" className={`visitors-sort-button ${isActive ? 'is-active' : ''}`} onClick={() => handleSort(column.id)} aria-label={`Сортировать по столбцу ${column.title}, ${sortLabel}`} title={`${column.title}, ${sortLabel}`}>
+                    <button key={column.id} type="button" className={`visitors-sort-button ${isActive ? 'is-active' : ''}`} disabled={column.id === "route" || column.id === "routeCompleted"} onClick={() => handleSort(column.id)} aria-label={`Сортировать по столбцу ${column.title}, ${sortLabel}`} title={`${column.title}, ${sortLabel}`}>
                       <span className="visitors-sort-title">{column.title}</span>
                       <span className="visitors-sort-meta"><ArrowUpArrowDown /><span>{sortLabel}</span></span>
                     </button>
@@ -290,7 +280,7 @@ export function VisitorsView({AttendanceChart}) {
                 })}
               </div>
               {visibleVisitors.map((row) => (
-                <div className="table-row visitors-table-row" key={row.name}>
+                <div className="table-row visitors-table-row" key={row.id}>
                   <span className="table-ellipsis" title={row.name}>{row.name}</span>
                   <span className="table-ellipsis" title={row.route}>{row.route}</span>
                   <span className="table-ellipsis" title={row.firstVisit}>{row.firstVisit}</span>
@@ -301,7 +291,7 @@ export function VisitorsView({AttendanceChart}) {
               ))}
             </div>
             <div className="visitors-table-footer">
-              <span>Показано {sortedVisitors.length <= itemsPerPage ? sortedVisitors.length : `${(currentPage - 1) * itemsPerPage + 1}–${Math.min(currentPage * itemsPerPage, sortedVisitors.length)}`} из {sortedVisitors.length}</span>
+              <span>Показано {sortedVisitors.length <= itemsPerPage ? sortedVisitors.length : `${(currentPage - 1) * itemsPerPage + 1}–${Math.min(currentPage * itemsPerPage, total)}`} из {total}</span>
               {totalPages > 1 ? (
                 <div className="visitors-pagination">
                   {paginationItems.map((item) => typeof item === 'number' ? <button type="button" key={item} className={`visitors-page ${currentPage === item ? 'is-active' : ''}`} onClick={() => setCurrentPage(item)}>{item}</button> : <span key={item}>…</span>)}
@@ -314,3 +304,5 @@ export function VisitorsView({AttendanceChart}) {
     </section>
   );
 }
+
+

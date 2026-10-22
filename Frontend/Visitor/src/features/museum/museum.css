@@ -747,6 +747,23 @@
   padding-top: 6px;
 }
 
+.museum-address { border-bottom: 1px solid rgba(24, 24, 27, 0.06); }
+.museum-address:last-child { border-bottom: 0; }
+.museum-address summary { cursor: pointer; list-style: none; border-bottom: 0; min-height: 56px; }
+.museum-address summary::-webkit-details-marker { display: none; }
+.museum-address-label { display: grid; gap: 3px; flex: 1; min-width: 0; color: #5141c9; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.museum-address-label small { color: #626a78; font-size: 12px; }
+.museum-address-chevron { color: #5141c9; margin-left: auto; }
+.museum-address[open] .museum-address-chevron { transform: rotate(180deg); }
+.museum-address summary:focus-visible { outline: 2px solid #695bff; outline-offset: -3px; border-radius: 12px; }
+.museum-map-picker { padding: 0 16px 12px 60px; }
+.museum-map-picker p { margin: 0 0 8px; font-size: 13px; line-height: 1.5; color: #626a78; }
+.museum-map-picker a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 8px 0; color: #5141c9; font-size: 14px; text-decoration: none; border-bottom: 1px solid rgba(24, 24, 27, 0.06); }
+.museum-map-picker a:last-child { border-bottom: 0; }
+.museum-map-picker a:hover { text-decoration: underline; }
+.museum-map-picker a:focus-visible { outline: 2px solid #695bff; outline-offset: 2px; }
+.museum-modal-row-text { overflow-wrap: anywhere; min-width: 0; }
+
 /* Website CTA */
 .museum-modal-cta {
   display: flex;
