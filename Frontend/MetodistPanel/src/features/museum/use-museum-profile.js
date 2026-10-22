@@ -36,10 +36,16 @@ export function useMuseumProfile() {
     setMuseumProfileSaved(nextProfile);
   };
 
-  const saveMuseumProfile = async (profile, creating) => {
+  const saveMuseumProfile = async (profile, creating, imageFile) => {
     setMuseumProfileSaving(true); setMuseumProfileError('');
     try {
-      const body = {name: profile.name, short_description: profile.shortDescription, description: profile.description, website: normalizeWebsite(profile.website).value, address: profile.address, logo_url: profile.logoUrl};
+      let imageUrl = profile.logoUrl;
+      if (imageFile) {
+        const uploaded = await museumApi.uploadImage(imageFile);
+        if (!uploaded?.image_url) throw new Error('image_upload_failed');
+        imageUrl = uploaded.image_url;
+      }
+      const body = {name: profile.name, short_description: profile.shortDescription, description: profile.description, website: normalizeWebsite(profile.website).value, address: profile.address, logo_url: imageUrl};
       const response = creating ? await createProfileWithRecovery(body, museumApi) : await museumApi.updateProfile(body);
       applyMuseumProfile(mapMuseumProfileData(response.museum));
       setMuseumProfileLoadState((state) => getMuseumProfileLoadState(state, {type: 'success'}));

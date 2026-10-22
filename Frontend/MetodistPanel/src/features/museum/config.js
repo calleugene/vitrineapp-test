@@ -34,21 +34,19 @@ export const MUSEUM_INFO_CARD = {
   descriptionCounter: (length, limit) => `${length} / ${limit}`,
 };
 
-/* Три состояния блока логотипа: сохранён на сервере / выбран локально / пусто.
-   Локально выбранный файл пока не отправляется — endpoint загрузки
-   логотипа в museumApi отсутствует, поэтому обещаний «сохранено» нет. */
+/* UI uses a museum photograph; logo_url remains a compatible API field. */
 export const MUSEUM_LOGO = {
-  title: 'Логотип музея',
-  pickLabel: 'Выбрать логотип музея',
-  removeLabel: 'Удалить логотип',
-  upload: 'Загрузить логотип',
+  title: 'Изображение музея',
+  pickLabel: 'Выбрать изображение музея',
+  removeLabel: 'Удалить изображение',
+  upload: 'Загрузить фото',
   placeholder: 'Перетащите изображение сюда или выберите файл вручную.',
-  note: 'Рекомендуемый размер: 512×512 px или больше. Форматы: PNG, JPG, SVG.',
-  previewAlt: 'Превью логотипа музея',
+  note: 'JPG, PNG или WebP · до 10 МБ. Рекомендуем горизонтальное фото от 1200×675 px.',
+  previewAlt: 'Изображение музея',
   badge: {
-    saved: 'Текущий логотип',
+    saved: 'Текущее изображение',
     selected: 'Новый файл',
-    empty: 'Логотип не загружен',
+    empty: 'Фото не загружено',
   },
   status: {
     saved: 'Сохранён в профиле',
@@ -56,7 +54,7 @@ export const MUSEUM_LOGO = {
     empty: 'Файл не выбран',
   },
   errors: {
-    type: 'Нужен файл изображения: PNG, JPG или SVG.',
+    type: 'Выберите фотографию в формате JPG, PNG или WebP.',
     size: (limitMb) => `Файл больше ${limitMb} МБ. Выберите изображение меньшего размера.`,
   },
 };
@@ -80,5 +78,5 @@ export const MUSEUM_ERRORS = {
   unauthorized: 'Сессия истекла или нет доступа к музею. Адрес и другие изменения не сохранены. Войдите заново и повторите сохранение.',
 };
 
-export const MUSEUM_LOGO_ACCEPT = ['image/png', 'image/jpeg', 'image/svg+xml'];
-export const MUSEUM_LOGO_MAX_MB = 5;
+export const MUSEUM_LOGO_ACCEPT = ['image/png', 'image/jpeg', 'image/webp'];
+export const MUSEUM_LOGO_MAX_MB = 10;

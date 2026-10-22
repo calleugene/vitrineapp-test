@@ -2,12 +2,8 @@ import {useEffect, useState} from 'react';
 import {MUSEUM_LOGO, MUSEUM_LOGO_MAX_MB} from '../config';
 import {validateLogoFile} from '../utils';
 
-/* Логотип музея: локально выбранный файл, состояние drag&drop и ошибка.
-
-   blob-URL превью обязательно отзывается при замене файла и размонтировании.
-   Файл остаётся в состоянии экрана: endpoint загрузки логотипа в museumApi
-   (src/api.js) отсутствует — как только он появится, файл нужно отправлять
-   отсюда в saveMuseumProfile рядом с logo_url. */
+/* Draft museum photo: object URL is revoked on replacement/unmount.
+   saveMuseumProfile uploads the file before publishing its stable URL. */
 export function useMuseumLogo() {
   const [file, setFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);

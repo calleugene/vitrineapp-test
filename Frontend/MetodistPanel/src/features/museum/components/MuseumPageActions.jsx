@@ -8,13 +8,13 @@ export function MuseumPageActions({profile, saving, error, onCancel, onSave}) {
   return (
     <>
       <div className="museum-page-actions">
-        <Button view="outlined" size="xl" onClick={onCancel}>
+        <Button view="outlined" size="xl" onClick={onCancel} disabled={saving}>
           {MUSEUM_ACTIONS.cancel}
         </Button>
         <Button
           view="action"
           size="xl"
-          disabled={!canSaveProfile(profile)}
+          disabled={saving || !canSaveProfile(profile)}
           loading={saving}
           onClick={onSave}
         >

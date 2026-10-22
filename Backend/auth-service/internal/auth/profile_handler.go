@@ -26,6 +26,8 @@ var (
 
 func (s *Service) profileRoutes(mux *http.ServeMux) {
 	for _, prefix := range []string{"", "/api/v1"} {
+		mux.HandleFunc("GET "+prefix+"/auth/museums/members", s.museumMembers)
+		mux.HandleFunc("DELETE "+prefix+"/auth/museums/members/{userId}", s.museumMembers)
 		mux.HandleFunc("POST "+prefix+"/auth/deactivate", s.accountTransition(false))
 		mux.HandleFunc("POST "+prefix+"/auth/reactivate", s.accountTransition(true))
 		mux.HandleFunc("POST "+prefix+"/auth/museums/join", s.joinMuseum)

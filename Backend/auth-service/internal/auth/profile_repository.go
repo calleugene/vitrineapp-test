@@ -9,6 +9,8 @@ import (
 )
 
 type ProfileRepository interface {
+	MuseumMembers(context.Context, string) ([]museumMember, error)
+	RemoveMuseumMember(context.Context, string, string, string, time.Time) error
 	MuseumMemberships(context.Context, string) ([]museumAccess, error)
 	MuseumRole(context.Context, string, string) (string, error)
 	RotateMuseumCode(context.Context, string, string, time.Time) error

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Icon} from '@gravity-ui/uikit';
 import {CircleInfo} from '@gravity-ui/icons';
 import {MUSEUM_DETAIL} from '../config.js';
@@ -11,12 +11,13 @@ import {MuseumGlyph, PinIcon} from './icons.jsx';
    узлы: иконка, фото (имя музея уже есть в заголовке страницы) и
    дублирующее название поверх фото. */
 export function MuseumHero({museum, onOpenInfo}) {
-  const hasPhoto = Boolean(museum.cover_image_url);
+  const [failedPhoto, setFailedPhoto] = useState('');
+  const hasPhoto = Boolean(museum.cover_image_url) && failedPhoto !== museum.cover_image_url;
 
   return (
     <div className={`museum-hero-large${hasPhoto ? ' museum-hero-large--photo' : ''}`}>
       {hasPhoto ? (
-        <img className="museum-hero-photo" src={museum.cover_image_url} alt="" />
+        <img className="museum-hero-photo" src={museum.cover_image_url} onError={() => setFailedPhoto(museum.cover_image_url)} alt="" />
       ) : (
         <div className="museum-hero-large-icon" aria-hidden="true">
           <MuseumGlyph />

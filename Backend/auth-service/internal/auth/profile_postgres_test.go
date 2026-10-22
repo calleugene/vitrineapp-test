@@ -72,3 +72,47 @@ func TestPostgresProfileRepository(t *testing.T) {
 		t.Fatalf("deleted: %+v, %v", deleted, err)
 	}
 }
+
+func TestPostgresMuseumTeamRemoval(t *testing.T) {
+	dsn := os.Getenv("AUTH_PROFILE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("AUTH_PROFILE_TEST_DSN must point to an isolated test database")
+	}
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	if err = InitSchema(ctx, db, "pgx"); err != nil {
+		t.Fatal(err)
+	}
+	repo := NewPostgresRepository(db)
+	owner := createTestUser(t, repo, "pg-team-owner", "methodist")
+	member := createTestUser(t, repo, "pg-team-member", "methodist")
+	if _, err = db.Exec("UPDATE museum_memberships SET role='methodist' WHERE user_id=$1", member.ID); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	if err = repo.RotateMuseumCode(ctx, "other-team-museum", "team-hash", now.Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if err = repo.JoinMuseum(ctx, member.ID, "other-team-museum", "team-hash", now); err != nil {
+		t.Fatal(err)
+	}
+	if err = repo.RemoveMuseumMember(ctx, member.ID, "museum-1", owner.ID, now); err != ErrForbidden {
+		t.Fatalf("methodist removal: %v", err)
+	}
+	if err = repo.RemoveMuseumMember(ctx, owner.ID, "museum-1", member.ID, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = repo.MuseumRole(ctx, member.ID, "museum-1"); err == nil {
+		t.Fatal("membership remains")
+	}
+	if _, err = repo.MuseumRole(ctx, member.ID, "other-team-museum"); err != nil {
+		t.Fatalf("other membership lost: %v", err)
+	}
+	if _, err = repo.FindUserByID(ctx, member.ID); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -153,6 +153,8 @@ export const authApi = {
   selectMuseum: async (museumId) => normalizeTokenPayload(await request(AUTH_API_URL, `${API_PREFIX}/auth/museums/select`, jsonOptions('POST', {museum_id: museumId}))),
   createMuseumCode: () => request(AUTH_API_URL, `${API_PREFIX}/auth/museums/code`, {method: 'POST'}),
   revokeMuseumCode: () => request(AUTH_API_URL, `${API_PREFIX}/auth/museums/code`, {method: 'DELETE'}),
+  getMuseumMembers: () => request(AUTH_API_URL, `${API_PREFIX}/auth/museums/members`),
+  removeMuseumMember: (userId) => request(AUTH_API_URL, `${API_PREFIX}/auth/museums/members/${encodeURIComponent(userId)}`, {method: 'DELETE'}),
   requestEmailChange: (email) => request(AUTH_API_URL, `${API_PREFIX}/auth/email-change`, jsonOptions('POST', {email})),
   confirmEmailChange: (token) => request(AUTH_API_URL, `${API_PREFIX}/auth/email-change/confirm`, jsonOptions('POST', {token})),
   uploadAvatar: (userId, file) => {
@@ -232,6 +234,10 @@ function sessionAuthHeaders() {
 }
 
 export const museumApi = {
+  uploadImage: (file, museumId) => {
+    const body = new FormData(); body.append('file', file);
+    return request(ARTIFACTS_API_URL, `${API_PREFIX}/museums/profile/image`, {method: 'POST', body, headers: museumHeaders(museumId)});
+  },
   getProfile: (museumId) => request(ARTIFACTS_API_URL, `${API_PREFIX}/museums/profile`, {headers: museumHeaders(museumId)}),
   createProfile: (body, museumId) => request(ARTIFACTS_API_URL, `${API_PREFIX}/museums/profile`, {...jsonOptions('POST', body), headers: museumHeaders(museumId)}),
   updateProfile: (body, museumId) => request(ARTIFACTS_API_URL, `${API_PREFIX}/museums/profile`, {...jsonOptions('PATCH', body), headers: museumHeaders(museumId)}),
