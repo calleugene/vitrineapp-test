@@ -514,6 +514,13 @@ const largeFeatures = [
   'Выделенная поддержка',
   'Обучение команды',
 ];
+const monthlyMuseumPlusPrice = 9_990;
+const annualMuseumPlusTotal = monthlyMuseumPlusPrice * 12 * 0.75;
+const formatRubles = (value: number) =>
+  `${new Intl.NumberFormat('ru-RU', {
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(value)} ₽`;
 function PricingCard({
   title,
   description,
@@ -526,7 +533,7 @@ function PricingCard({
   title: string;
   description: string;
   price: ReactNode;
-  note: string;
+  note: ReactNode;
   features: string[];
   popular?: boolean;
   children: ReactNode;
@@ -581,16 +588,16 @@ function Pricing({
           </p>
           <fieldset className="billing-toggle" aria-label="Период оплаты">
             <button
-              aria-pressed={period === 'year'}
-              onClick={() => setPeriod('year')}
-            >
-              Год
-            </button>
-            <button
               aria-pressed={period === 'month'}
               onClick={() => setPeriod('month')}
             >
               Месяц
+            </button>
+            <button
+              aria-pressed={period === 'year'}
+              onClick={() => setPeriod('year')}
+            >
+              Год <span className="billing-discount">−25%</span>
             </button>
           </fieldset>
         </div>
@@ -614,13 +621,25 @@ function Pricing({
             description="Для музеев и растущих проектов."
             price={
               <>
-                <span>от </span>9 990 ₽
+                <span>от </span>
+                {formatRubles(
+                  period === 'year'
+                    ? annualMuseumPlusTotal / 12
+                    : monthlyMuseumPlusPrice,
+                )}
               </>
             }
             note={
-              period === 'year'
-                ? 'в месяц при оплате за год'
-                : 'в месяц при помесячной оплате'
+              period === 'year' ? (
+                <>
+                  в месяц при оплате за год
+                  <span className="pricing-year-total">
+                    Итого: от {formatRubles(annualMuseumPlusTotal)} за 12 месяцев
+                  </span>
+                </>
+              ) : (
+                'в месяц при помесячной оплате'
+              )
             }
             features={plusFeatures}
             popular
@@ -939,7 +958,7 @@ function StoryExample() {
 export default function App() {
   const [modal, setModal] = useState<ModalKind | null>(null);
   const [modalTitle, setModalTitle] = useState('');
-  const [period, setPeriod] = useState<BillingPeriod>('year');
+  const [period, setPeriod] = useState<BillingPeriod>('month');
   const [leadContext, setLeadContext] = useState<{
     source: string;
     plan?: string;

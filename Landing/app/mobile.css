@@ -59,6 +59,7 @@
   .pricing-card h3 { font-size: 32px; }
   .pricing-description { font-size: 15px; line-height: 1.6; margin-bottom: 20px; }
   .price { font-size: 44px; line-height: 1.15; }
+  .popular-card .price { font-size: clamp(37px, 11vw, 44px); }
   .pricing-card:last-child .price { font-size: 33px; }
   .price-note { font-size: 13px; line-height: 1.5; }
   .pricing-card ul { margin-block: 24px; gap: 12px; }
