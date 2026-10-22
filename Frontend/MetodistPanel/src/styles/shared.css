@@ -12,13 +12,8 @@
 .brand-logo {
   width: 40px;
   height: 40px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #ff5b37, #ff3d00);
-  color: var(--color-surface);
-  font-weight: var(--vl-weight-bold);
-  font-size: var(--vl-text-title);
+  flex: none;
+  object-fit: contain;
 }
 
 .brand-title {

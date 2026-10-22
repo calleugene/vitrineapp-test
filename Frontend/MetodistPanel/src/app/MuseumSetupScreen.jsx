@@ -2,12 +2,13 @@ import React from 'react';
 import {MuseumImage} from '../components/MuseumImage';
 import {Button} from '@gravity-ui/uikit';
 import './museum-setup-screen.css';
+import brandMark from '../../../shared/brand-mark.svg';
 
 export function MuseumSetupScreen({error, loading, onCreate, onLogout}) {
   return (
     <main className="museum-setup-screen">
       <section className="museum-setup-card" aria-labelledby="museum-setup-title">
-        <div className="museum-setup-brand"><span className="brand-logo">Я</span><span>Витрина</span></div>
+        <div className="museum-setup-brand"><img className="brand-logo" src={brandMark} alt="" /><span>Витрина</span></div>
         <MuseumImage className="museum-empty-illustration" alt="Универсальная иллюстрация музея" />
         <h1 id="museum-setup-title">Создайте свой музей</h1>
         <p>Ваш аккаунт ещё не связан с музеем. Создайте свой музей, затем заполните его профиль.</p>

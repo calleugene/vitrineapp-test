@@ -4,6 +4,7 @@ import {PageHeader, EmptyState, MuseumThumbIcon} from '../../components/ui.jsx';
 import {CollectionCard} from '../collection/views.jsx';
 import {formatMinutes, progressPercent} from '../../app/utils.js';
 import './profile.css';
+import brandMark from '../../../../shared/brand-mark.svg';
 
 // ==================
 // Info bottom-sheet modal
@@ -29,11 +30,11 @@ function HelpContent() {
       </div>
       <div className="info-section">
         <h3 className="info-section-title">Связаться с поддержкой</h3>
-        <a href="mailto:support@viralabs.ru" className="info-contact-link">
+        <a href="mailto:hello@vitrineapp.ru" className="info-contact-link">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          support@viralabs.ru
+          hello@vitrineapp.ru
         </a>
       </div>
     </>
@@ -67,7 +68,7 @@ function PrivacyContent() {
         <h3 className="info-section-title">Ваши права</h3>
         <p className="info-body-text">
           Удалить все данные можно через «Настройки → Удалить аккаунт». По вопросам:{' '}
-          <a href="mailto:privacy@viralabs.ru" className="info-inline-link">privacy@viralabs.ru</a>
+          <a href="mailto:legal@vitrineapp.ru" className="info-inline-link">legal@vitrineapp.ru</a>
         </p>
       </div>
     </>
@@ -111,7 +112,7 @@ function InfoModal({type, onClose}) {
 function ProfileHeader({onSettings}) {
   return (
     <header className="page-header">
-      <span className="page-header-logo">Витрина</span>
+      <img className="page-header-logo" src={brandMark} alt="Витрина" />
       <div className="page-header-right">
         {onSettings && (
           <button
@@ -402,7 +403,7 @@ export function PublicProfileView({data, navigate: _navigate}) {
     <section className="app-view app-shell is-active" aria-label="Публичный профиль">
       <div className="app-screen">
         <header className="page-header">
-          <span className="page-header-logo">Витрина</span>
+          <img className="page-header-logo" src={brandMark} alt="Витрина" />
           <div className="page-header-right" aria-hidden="true" />
         </header>
 
@@ -411,7 +412,7 @@ export function PublicProfileView({data, navigate: _navigate}) {
           <h1 className="public-profile-name">
             {profile?.display_name || 'Исследователь'}
           </h1>
-          <span className="public-profile-link">viralabs.ru/id{visitorId.slice(-3).padStart(3, '0')}</span>
+          <span className="public-profile-link">vitrineapp.ru/id{visitorId.slice(-3).padStart(3, '0')}</span>
         </div>
 
         <div className="section-head">
@@ -528,7 +529,7 @@ export function ProfileSettingsView({data, navigate, actions}) {
               {firstName || lastName ? `${firstName} ${lastName}`.trim() : 'Имя Фамилия'}
             </p>
             <span className="settings-profile-link">
-              viralabs.ru/id{visitorId.slice(-3).padStart(3, '0')}
+              vitrineapp.ru/id{visitorId.slice(-3).padStart(3, '0')}
             </span>
           </div>
         </div>

@@ -22,13 +22,7 @@
   width:36px;
   height:36px;
   min-width:36px;
-  border-radius:50%;
-  background:#ff4b20;
-  display:grid;
-  place-items:center;
-  color:white;
-  font-size: var(--vl-text-title);
-  font-weight: var(--vl-weight-bold)
+  object-fit:contain
 }
 .auth-centered .brand-title {
   font-size: var(--vl-text-lead);

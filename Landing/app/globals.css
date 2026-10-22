@@ -205,12 +205,14 @@ footer[id],
 }
 .wordmark {
   display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  font-size: 23px;
-  letter-spacing: 0.2em;
-  font-weight: 500;
-  white-space: nowrap;
+  align-items: center;
+  flex: none;
+}
+.wordmark img {
+  display: block;
+  width: 34px;
+  height: 42px;
+  object-fit: contain;
 }
 .brand-dot {
   width: 5px;
@@ -880,9 +882,14 @@ h1 em {
   gap: 24px;
 }
 .editor-logo {
-  font-size: 25px;
-  font-weight: 600;
-  letter-spacing: -0.09em;
+  display: inline-flex;
+  align-items: center;
+}
+.editor-logo img {
+  display: block;
+  width: 22px;
+  height: 28px;
+  object-fit: contain;
 }
 .editor-logo > span {
   color: var(--accent);

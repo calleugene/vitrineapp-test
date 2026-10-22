@@ -95,7 +95,7 @@ export function ProductMockup({ onPreview }: { onPreview: () => void }) {
     <div className="product-mockup">
       <div className="editor-topbar">
         <span className="editor-logo">
-          В<span>•</span>
+          <img src={`${import.meta.env.BASE_URL}brand-mark.svg`} alt="Витрина" />
         </span>
         <div className="editor-breadcrumb">
           Мой музей

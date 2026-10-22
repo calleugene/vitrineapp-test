@@ -1,1 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="42" fill="#695bff"/><path d="M48 65c0-9 7-16 16-16h64c9 0 16 7 16 16v62c0 9-7 16-16 16H64c-9 0-16-7-16-16V65Z" fill="#fff"/><path d="M72 91h48M72 116h30" stroke="#695bff" stroke-width="12" stroke-linecap="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" fill="none" role="img" aria-label="Знак Витрины">
+  <defs>
+    <linearGradient id="mark" x1="80" y1="50" x2="470" y2="600" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#695BFF"/>
+      <stop offset="1" stop-color="#5D5FEF"/>
+    </linearGradient>
+    <linearGradient id="opening" x1="230" y1="120" x2="230" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FAF9FF"/>
+      <stop offset="1" stop-color="#DCD9FF"/>
+    </linearGradient>
+  </defs>
+  <path d="M256 0C114.6 0 0 114.6 0 256v384h512V256C512 114.6 397.4 0 256 0Z" fill="url(#mark)"/>
+  <path d="M0 640 334 137c16-24 38-18 51-2 9 11 13 25 11 41L320 640H0Z" fill="url(#opening)"/>
+</svg>

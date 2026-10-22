@@ -1,1 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#171512"/><text x="32" y="46" text-anchor="middle" font-family="Georgia" font-size="42" fill="#FAF8F4">В</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" fill="none" role="img" aria-label="Знак Витрины">
+  <defs>
+    <linearGradient id="mark" x1="80" y1="50" x2="470" y2="600" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#695BFF"/>
+      <stop offset="1" stop-color="#5D5FEF"/>
+    </linearGradient>
+    <linearGradient id="opening" x1="230" y1="120" x2="230" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FAF9FF"/>
+      <stop offset="1" stop-color="#DCD9FF"/>
+    </linearGradient>
+  </defs>
+  <path d="M256 0C114.6 0 0 114.6 0 256v384h512V256C512 114.6 397.4 0 256 0Z" fill="url(#mark)"/>
+  <path d="M0 640 334 137c16-24 38-18 51-2 9 11 13 25 11 41L320 640H0Z" fill="url(#opening)"/>
+</svg>

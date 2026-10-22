@@ -1,6 +1,6 @@
 {
-  "name": "ViraLabs Visitor",
-  "short_name": "ViraLabs",
+  "name": "Витрина",
+  "short_name": "Витрина",
   "lang": "ru",
   "start_url": "/",
   "display": "standalone",

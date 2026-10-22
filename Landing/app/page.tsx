@@ -110,8 +110,7 @@ function Header({ onWaitlist }: { onWaitlist: Waitlist }) {
     <header className={`header ${scrolled ? 'is-scrolled' : ''}`}>
       <div className="container header-inner">
         <a href="#top" className="wordmark" aria-label="Витрина — начало">
-          ВИТРИНА
-          <span className="brand-dot" />
+          <img src={`${import.meta.env.BASE_URL}brand-mark.svg`} alt="" />
         </a>
         <nav
           id="main-navigation"
@@ -810,8 +809,7 @@ function Footer({
         <div className="footer-grid">
           <div className="footer-brand">
             <a className="wordmark" href="#top">
-              ВИТРИНА
-              <span className="brand-dot" />
+              <img src={`${import.meta.env.BASE_URL}brand-mark.svg`} alt="Витрина" />
             </a>
             <p>
               Платформа для создания и управления интерактивным опытом музеев.

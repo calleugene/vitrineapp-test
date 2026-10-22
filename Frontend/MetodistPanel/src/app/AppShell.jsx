@@ -3,6 +3,7 @@ import {Lock, CircleChevronRight} from '@gravity-ui/icons';
 import {Tooltip} from '@gravity-ui/uikit';
 import {MuseumSwitcher} from './MuseumSwitcher';
 import {PRODUCT_CAPABILITIES} from './capabilities';
+import brandMark from '../../../shared/brand-mark.svg';
 import {ARTIFACT_WIZARD_VIEWS, NAV_ITEMS, ROUTE_WIZARD_VIEWS} from './navigation';
 
 function UnavailableNavigationItem({item}) {
@@ -96,7 +97,7 @@ export function AppShell({
           onClick={() => handleNavigate('dashboard')}
           aria-label="На главную"
         >
-          <div className="brand-logo">Я</div>
+          <img className="brand-logo" src={brandMark} alt="" />
           <div className="brand-title">Витрина</div>
         </button>
       </header>
@@ -150,7 +151,7 @@ export function AppShell({
 
           <div className="sidebar-header sidebar-brand-footer">
             <button type="button" className="brand brand-button" onClick={() => handleNavigate('dashboard')} aria-label="На главную">
-              <div className="brand-logo">Я</div>
+              <img className="brand-logo" src={brandMark} alt="" />
               <div className="brand-copy">
                 <div className="brand-title">Витрина</div>
                 <div className="brand-subtitle">Кабинет методиста</div>

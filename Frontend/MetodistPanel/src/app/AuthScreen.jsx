@@ -3,6 +3,7 @@ import {Button} from '@gravity-ui/uikit';
 import {authApi} from '../api';
 import {LegalDocumentDialog} from './LegalDocument';
 import {useLegalDocuments} from './use-legal-documents';
+import brandMark from '../../../shared/brand-mark.svg';
 
 function Input({label, password = false, ...props}) {
   const id = useId();
@@ -47,7 +48,7 @@ export function AuthScreen({authTab = 'login', setAuthTab, authForm = {}, setAut
   };
   return <main className="auth-centered">
     <div className="auth-container">
-      <header className="auth-brand"><div className="brand-logo" aria-hidden="true">Я</div><div><div className="brand-title">Витрина</div><div className="brand-subtitle">Кабинет методиста</div></div></header>
+      <header className="auth-brand"><img className="brand-logo" src={brandMark} alt="" /><div><div className="brand-title">Витрина</div><div className="brand-subtitle">Кабинет методиста</div></div></header>
       {mode === 'auth' && <nav className="auth-tabs" aria-label="Авторизация"><button type="button" aria-current={login ? 'page' : undefined} className={`auth-tab ${login ? 'is-active' : ''}`} onClick={() => {setAuthTab('login'); setError('');}}>Вход</button><button type="button" aria-current={!login ? 'page' : undefined} className={`auth-tab ${!login ? 'is-active' : ''}`} onClick={() => {setAuthTab('register'); setError('');}}>Регистрация</button></nav>}
       <form className="auth-form" onSubmit={submit} onInvalid={(event) => event.currentTarget.querySelector(':invalid')?.focus()}>
         <div className="auth-form-heading"><h1>{mode === 'forgot' ? 'Восстановление пароля' : mode === 'reset' ? 'Новый пароль' : login ? 'Добро пожаловать!' : 'Создание аккаунта'}</h1><p>{mode === 'forgot' ? 'Введите электронную почту, указанную при регистрации. Мы отправим ссылку для восстановления доступа' : mode === 'reset' ? 'Придумайте пароль длиной не менее 12 символов.' : login ? 'Войдите в свой аккаунт, чтобы продолжить работу' : 'Заполните форму, чтобы начать работу в Витрине'}</p></div>

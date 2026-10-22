@@ -1,6 +1,7 @@
 import React from 'react';
 import {Skeleton, Button, Icon, Text} from '@gravity-ui/uikit';
 import {ArrowLeft} from '@gravity-ui/icons';
+import brandMark from '../../../shared/brand-mark.svg';
 
 export function MuseumThumbIcon() {
   return (
@@ -40,7 +41,7 @@ export function PageHeader({title, onBack, action = null}) {
 export function BrandHeader({action = null}) {
   return (
     <header className="page-header">
-      <span className="page-header-logo">Витрина</span>
+      <img className="page-header-logo" src={brandMark} alt="Витрина" />
       <div className="page-header-right">{action}</div>
     </header>
   );

@@ -13,7 +13,8 @@
     main { width: min(920px, calc(100% - 40px)); margin: 0 auto; padding: 58px 0 86px; }
     a { color: inherit; }
     .top { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e4ded6; padding-bottom: 28px; margin-bottom: 46px; font-size: 13px; }
-    .brand { letter-spacing: .14em; text-decoration: none; font-weight: 650; }
+    .brand { display: inline-flex; align-items: center; text-decoration: none; }
+    .brand img { display: block; width: 32px; height: 40px; object-fit: contain; }
     h1 { font-family: Cormorant, Georgia, serif; font-size: clamp(42px, 6vw, 66px); line-height: .98; font-weight: 500; letter-spacing: -.03em; margin: 0 0 42px; max-width: 760px; }
     h2 { font-family: Cormorant, Georgia, serif; font-size: 31px; line-height: 1.1; font-weight: 500; margin: 46px 0 16px; }
     p { max-width: 780px; margin: 0 0 17px; color: #403c37; font-size: 15px; line-height: 1.75; }
@@ -25,7 +26,7 @@
 </head>
 <body>
   <main>
-    <nav class="top" aria-label="Навигация"><a class="brand" href="../">ВИТРИНА</a><a href="../">Вернуться на сайт</a></nav>
+    <nav class="top" aria-label="Навигация"><a class="brand" href="../" aria-label="Витрина — на главную"><img src="../brand-mark.svg" alt="" /></a><a href="../">Вернуться на сайт</a></nav>
     <article>
       <h1>Согласие на получение рекламных рассылок</h1>
       <p>Редакция от 5 сентября 2026 года</p>

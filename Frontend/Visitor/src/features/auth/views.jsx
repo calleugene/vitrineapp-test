@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import './auth.css';
+import brandMark from '../../../../shared/brand-mark.svg';
 
 function EyeOpen() {
   return (
@@ -20,19 +21,7 @@ function EyeClosed() {
 }
 
 function BrandMark() {
-  return (
-    <svg width="44" height="44" viewBox="0 0 44 44" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="vl-grad" x1="6" y1="4" x2="38" y2="40" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#695bff"/>
-          <stop offset="1" stopColor="#9b8fff"/>
-        </linearGradient>
-      </defs>
-      <path d="M22 4L38 13V31L22 40L6 31V13L22 4Z" fill="url(#vl-grad)"/>
-      <path d="M22 4L38 13V31L22 40L6 31V13L22 4Z" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/>
-      <path d="M14 18l8 12 8-12" stroke="rgba(255,255,255,0.9)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
+  return <img src={brandMark} width="44" height="44" alt="" aria-hidden="true" />;
 }
 
 function InputField({label, id, type, value, onChange, onBlur, placeholder, autoComplete, error, showToggle, showPw, onTogglePw}) {
