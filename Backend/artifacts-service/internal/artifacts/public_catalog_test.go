@@ -34,3 +34,32 @@ func TestPublicCatalogListsAllCreatedMuseums(t *testing.T) {
 		t.Fatalf("missing museums: %s", response.Body.String())
 	}
 }
+
+func TestPublicCatalogHidesUnlistedMuseumWithoutRemovingProfile(t *testing.T) {
+	env := newTestEnv(t)
+	repo := NewSQLiteRepository(env.db)
+	_, err := repo.CreateMuseumProfile(context.Background(), MuseumProfile{MuseumID: "private-test", Name: "Private test", CreatedAt: time.Now(), UpdatedAt: time.Now()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := env.db.Exec(`UPDATE museum_profiles SET is_public = FALSE WHERE museum_id = ?`, "private-test"); err != nil {
+		t.Fatal(err)
+	}
+	response := httptest.NewRecorder()
+	env.handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/api/v1/public/museums", nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("status %d: %s", response.Code, response.Body.String())
+	}
+	var payload struct {
+		Museums []MuseumProfile `json:"museums"`
+	}
+	decodeResponse(t, response, &payload)
+	for _, museum := range payload.Museums {
+		if museum.MuseumID == "private-test" {
+			t.Fatal("unlisted museum is public")
+		}
+	}
+	if _, err := repo.GetMuseumProfile(context.Background(), "private-test"); err != nil {
+		t.Fatal("private profile was removed:", err)
+	}
+}

@@ -21,7 +21,7 @@ func (r *SQLiteRepository) ListMuseumProfiles(ctx context.Context) ([]MuseumProf
 }
 
 func listMuseumProfiles(ctx context.Context, db *sql.DB) ([]MuseumProfile, error) {
-	rows, err := db.QueryContext(ctx, `SELECT museum_id, name, short_description, description, website, address, logo_url FROM museum_profiles ORDER BY name, museum_id`)
+	rows, err := db.QueryContext(ctx, `SELECT museum_id, name, short_description, description, website, address, logo_url FROM museum_profiles WHERE is_public = TRUE ORDER BY name, museum_id`)
 	if err != nil {
 		return nil, err
 	}

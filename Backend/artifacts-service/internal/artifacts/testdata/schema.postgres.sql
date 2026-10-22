@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS museum_profiles (
     website TEXT NOT NULL DEFAULT '',
     address TEXT NOT NULL DEFAULT '',
     logo_url TEXT NOT NULL DEFAULT '',
+    is_public BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL
 );

@@ -71,7 +71,7 @@ const global = window;
 		return {
         id: museum.id,
         name: museum.title,
-        city: "Санкт-Петербург",
+        city: museum.city || "",
         description: museum.subtitle,
         cover_image_url: museum.coverImageUrl || "",
         total_artifacts: museum.artifacts.length,
@@ -150,12 +150,12 @@ const global = window;
           subtitle: profile.short_description || profile.description || 'Экспонаты музея.',
           durationLabel: `примерно ${Math.max(artifacts.length * 2, 1)} мин.`,
           heroCaption: profile.short_description || 'Экспозиция музея',
-          hours: 'Онлайн-экспозиция доступна круглосуточно',
+          hours: '',
           website: profile.website || '',
           address: profile.address || '',
           coverImageUrl: profile.logo_url || '',
-          category: 'Экспозиция Витрина',
-          about: profile.description || profile.short_description || 'Здесь собраны опубликованные экспонаты музея. Черновики остаются доступны только в панели методиста.',
+          category: '',
+          about: profile.description || profile.short_description || '',
           artifacts: artifacts.map((artifact) => ({
             id: artifact.id,
             title: artifact.title || 'Без названия',
@@ -200,7 +200,7 @@ const global = window;
         return {
           id: museum.id,
           name: museum.title,
-          city: "Санкт-Петербург",
+          city: museum.city || "",
           description: museum.subtitle,
           about: museum.about || "",
           category: museum.category || "",

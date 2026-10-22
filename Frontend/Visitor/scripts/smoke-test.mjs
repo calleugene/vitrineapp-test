@@ -20,6 +20,29 @@ const museums = await api.listMuseums(visitor.id);
 assert.ok(museums.length > 0, 'mock API returns museums');
 const museum = await api.getMuseum(museums[0].id, visitor.id);
 assert.ok(museum.artifacts.length > 0, 'museum contains artifacts');
+// Published museums must use profile values from Artifacts API without invented metadata.
+const publishedProfile = {
+  museum_id: 'mus_published', name: 'Луговой парк',
+  short_description: 'Профиль из API', description: '', address: '', website: '', logo_url: ''
+};
+window.fetch = globalThis.fetch = async (url) => ({
+  ok: true,
+  json: async () => url.endsWith('/public/museums')
+    ? {museums: [{museum_id: publishedProfile.museum_id}]}
+    : url.endsWith('/artifacts')
+      ? {artifacts: []}
+      : {museum: publishedProfile}
+});
+const publishedApi = createApiClient({apiMode: 'mock', publicCatalog: true, artifactsApiUrl: '/api/artifacts/api/v1'});
+const [publishedCard] = await publishedApi.listMuseums(visitor.id);
+const publishedMuseum = await publishedApi.getMuseum(publishedCard.id, visitor.id);
+assert.equal(publishedMuseum.name, publishedProfile.name);
+assert.equal(publishedMuseum.description, publishedProfile.short_description);
+assert.equal(publishedMuseum.about, publishedProfile.short_description);
+assert.equal(publishedMuseum.city, '');
+assert.equal(publishedMuseum.category, '');
+assert.equal(publishedMuseum.hours, '');
+assert.equal(publishedMuseum.address, '');
 // Museum-level code entry must find a later exhibit, preserve leading zeroes,
 // and never resolve an empty/malformed code to an unrelated exhibit.
 const codedMuseum = {artifacts: [
