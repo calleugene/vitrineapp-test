@@ -1,5 +1,5 @@
-import {useCallback, useEffect, useState} from 'react';
-import {authApi} from '../api';
+import {useCallback, useEffect, useEffectEvent, useState} from 'react';
+import {authApi, reconcileRefreshedSession, subscribeSessionRefresh} from '../api';
 import {ensureMuseumSession} from './museum-session';
 import {DEFAULT_VIEW} from './routes';
 import {createMockSession, isMockCredentials, isServiceUnavailableError, persistSession, readStoredSession} from './session-storage';
@@ -24,11 +24,22 @@ export function useSession({setView}) {
   const isAuthenticated = Boolean(session?.accessToken && (session?.isMock || session?.user?.role !== 'methodist' || session?.user?.museum_id));
   const needsMuseumContext = Boolean(session?.accessToken && session?.user?.role === 'methodist' && !session?.user?.museum_id && !session?.isMock);
   const currentUser = session?.user ?? null;
+  const hasAccessToken = Boolean(session?.accessToken);
+  const sessionIsMock = Boolean(session?.isMock);
+  const sessionUserId = session?.user?.id;
+  const sessionMuseumId = session?.user?.museum_id;
+  const getCurrentSession = useEffectEvent(() => session);
 
   const updateSession = useCallback((nextSession) => {
-    setSession(nextSession);
-    persistSession(nextSession);
+    const reconciled = reconcileRefreshedSession(nextSession);
+    setSession(reconciled);
+    persistSession(reconciled);
   }, []);
+
+  useEffect(() => subscribeSessionRefresh((nextSession) => {
+    setSession(nextSession);
+    if (!nextSession) setAuthError('Сессия завершена. Войдите снова.');
+  }), []);
 
   const clearSession = useCallback(({authErrorMessage = '', resetAuthTab = false} = {}) => {
     setSession(null);
@@ -44,18 +55,22 @@ export function useSession({setView}) {
   }, []);
 
   useEffect(() => {
+    const session = getCurrentSession();
     if (!session?.accessToken || session.isMock) {setSessionChecking(false); return undefined;}
     let cancelled = false;
     setSessionChecking(true); setSessionCheckError('');
-    authApi.me(session.accessToken).then(({user}) => {if (!cancelled) updateSession({...session, user});}).catch((error) => {
+    authApi.me(session.accessToken).then(({user}) => {
+      const current = readStoredSession();
+      if (!cancelled && current?.user?.id === session.user.id && current?.user?.museum_id === session.user.museum_id) updateSession({...current, user});
+    }).catch((error) => {
       if (cancelled) return;
-      if (error?.status === 401 || error?.status === 403) clearSession({authErrorMessage:'Сессия завершена. Войдите снова.'});
+      if (readStoredSession()?.accessToken !== session.accessToken) return;
+      if (error?.status === 401) clearSession({authErrorMessage:'Сессия завершена. Войдите снова.'});
       else setSessionCheckError('Не удалось проверить статус аккаунта. Повторите попытку.');
     }).finally(() => {if (!cancelled) setSessionChecking(false);});
     return () => {cancelled = true;};
-  // A token changes only on login, refresh or switching museum; profile edits do not restart this check.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.accessToken, checkRevision, updateSession, clearSession]);
+  // Rotation does not restart bootstrap requests; login and museum changes do.
+  }, [hasAccessToken, sessionIsMock, sessionUserId, sessionMuseumId, checkRevision, updateSession, clearSession]);
 
   const handleLogin = useCallback(async (credentials) => {
     setAuthLoading(true);
@@ -151,20 +166,22 @@ export function useSession({setView}) {
   }, [authForm.registerEmail, authForm.registerFullName, authForm.registerPassword, handleLogin]);
 
   const handleLogout = useCallback(async () => {
-    const accessToken = session?.accessToken;
-    const refreshToken = session?.refreshToken;
+    const current = readStoredSession();
+    const accessToken = current?.accessToken;
+    const refreshToken = current?.refreshToken;
+
+    // An in-flight refresh must not restore the account after logout.
+    clearSession({resetAuthTab: true});
+    setView(DEFAULT_VIEW, {replace: true});
 
     try {
-      if (accessToken && refreshToken && !session?.isMock) {
+      if (accessToken && refreshToken && !current?.isMock) {
         await authApi.logout(accessToken, refreshToken);
       }
     } catch {
       // Logout should still clear the local session even if the API is unavailable.
-    } finally {
-      clearSession({resetAuthTab: true});
-      setView(DEFAULT_VIEW, {replace: true});
     }
-  }, [clearSession, session, setView]);
+  }, [clearSession, setView]);
 
   return {
     session,

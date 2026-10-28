@@ -15,8 +15,10 @@ export function useArtifactsData({
   const loadConnectedDataEvent = useEffectEvent(loadConnectedData);
   const onUnauthorizedEvent = useEffectEvent(onUnauthorized);
   const refreshUserEvent = useEffectEvent((user) => onSessionRefresh({...session, user}));
-  const accessToken = session?.accessToken;
+  const currentAccessToken = useEffectEvent(() => session?.accessToken);
   const isMock = session?.isMock;
+  const userId = session?.user?.id;
+  const museumId = session?.user?.museum_id;
 
   const loadArtifacts = async () => {
     setArtifactsLoading(true);
@@ -33,6 +35,7 @@ export function useArtifactsData({
   };
 
   useEffect(() => {
+    const accessToken = currentAccessToken();
     if (!isAuthenticated || !accessToken) {
       return undefined;
     }
@@ -106,7 +109,7 @@ export function useArtifactsData({
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, accessToken, isMock]);
+  }, [isAuthenticated, userId, museumId, isMock]);
 
   return {
     artifacts,

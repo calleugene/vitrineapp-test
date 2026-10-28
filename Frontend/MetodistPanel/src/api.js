@@ -8,6 +8,98 @@ const ANALYTICS_API_URL = API_URLS.analytics;
 const FEEDBACK_API_URL = API_URLS.feedback;
 const NOTIFICATION_API_URL = API_URLS.notifications;
 const JSON_CONTENT_TYPE = 'application/json';
+const sessionListeners = new Set();
+let refreshInFlight = null;
+let lastRotation = null;
+const publicAuthPaths = new Set(['login', 'register', 'legal-documents', 'forgot-password', 'reset-password'].map((name) => `${API_PREFIX}/auth/${name}`));
+
+export function subscribeSessionRefresh(listener) {
+  sessionListeners.add(listener);
+  return () => sessionListeners.delete(listener);
+}
+
+function storedSession() {
+  try {
+    return JSON.parse(window.sessionStorage.getItem(SESSION_STORAGE_KEY) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function sameCredentials(left, right) {
+  return Boolean(left?.accessToken && right?.accessToken && left.accessToken === right.accessToken && left.refreshToken === right.refreshToken);
+}
+
+function publishSession(session) {
+  if (session) window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+  else window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  for (const listener of sessionListeners) listener(session);
+}
+
+// A profile request started before rotation must not restore its captured tokens.
+export function reconcileRefreshedSession(nextSession) {
+  if (!nextSession || !lastRotation || nextSession.refreshToken !== lastRotation.before.refreshToken) return nextSession;
+  const current = storedSession();
+  if (!sameCredentials(current, lastRotation.after)) return current;
+  return {
+    ...nextSession,
+    accessToken: nextSession.accessToken === lastRotation.before.accessToken ? current.accessToken : nextSession.accessToken,
+    refreshToken: current.refreshToken,
+  };
+}
+
+async function refreshSession(before) {
+  const current = storedSession();
+  if (!sameCredentials(current, before)) {
+    return sameCredentials(before, lastRotation?.before) && sameCredentials(current, lastRotation?.after) ? current : null;
+  }
+  if (!before.refreshToken) {
+    publishSession(null);
+    return null;
+  }
+  if (refreshInFlight && sameCredentials(refreshInFlight.session, before)) return refreshInFlight.promise;
+
+  const pending = {session: before, promise: null};
+  pending.promise = (async () => {
+    const response = await fetch(`${AUTH_API_URL}${API_PREFIX}/auth/refresh`, {
+      method: 'POST',
+      headers: {'Content-Type': JSON_CONTENT_TYPE},
+      body: JSON.stringify({refresh_token: before.refreshToken}),
+    });
+    const payload = await parseResponseBody(response);
+    // Logout, login or museum switching while refreshing takes precedence.
+    if (!sameCredentials(storedSession(), before)) return null;
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) publishSession(null);
+      throw responseError(response, payload);
+    }
+    const tokens = normalizeTokenPayload(payload);
+    if (typeof tokens?.accessToken !== 'string' || !tokens.accessToken || typeof tokens?.refreshToken !== 'string' || !tokens.refreshToken) throw new ApiError('service_unavailable', {code: 'service_unavailable'});
+    const after = {...storedSession(), accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, tokenType: tokens.tokenType};
+    lastRotation = {before, after};
+    publishSession(after);
+    return after;
+  })().finally(() => {
+    if (refreshInFlight === pending) refreshInFlight = null;
+  });
+  refreshInFlight = pending;
+  return pending.promise;
+}
+
+async function sessionFetch(url, options, allowRefresh) {
+  const before = storedSession();
+  const headers = {...options.headers};
+  if (sameCredentials(before, lastRotation?.after) && headers.Authorization === `Bearer ${lastRotation.before.accessToken}`) {
+    headers.Authorization = `Bearer ${before.accessToken}`;
+  }
+  const response = await fetch(url, {...options, headers});
+  if (!allowRefresh || response.status !== 401 || !before || before.isMock || headers.Authorization !== `Bearer ${before.accessToken}`) return response;
+  const after = await refreshSession(before);
+  if (!after || !sameCredentials(storedSession(), after)) return response;
+  const retried = await fetch(url, {...options, headers: {...headers, Authorization: `Bearer ${after.accessToken}`}});
+  if (retried.status === 401 && sameCredentials(storedSession(), after)) publishSession(null);
+  return retried;
+}
 
 class ApiError extends Error {
   constructor(message, options = {}) {
@@ -75,6 +167,17 @@ function jsonOptions(method, body, headers = {}) {
   };
 }
 
+function responseError(response, payload) {
+  const message =
+    (payload && typeof payload === 'object' && (payload.error?.message || payload.error?.code || payload.error || payload.message)) ||
+    (typeof payload === 'string' && payload) || `HTTP ${response.status}`;
+  return new ApiError(message, {
+    code: typeof payload === 'object' ? (payload?.code ?? payload?.error?.code ?? payload?.error) : null,
+    status: response.status,
+    payload,
+  });
+}
+
 async function request(baseUrl, path, options = {}) {
   let response;
   const {query, headers: headersFromOptions = {}, body, ...restOptions} = options;
@@ -85,12 +188,13 @@ async function request(baseUrl, path, options = {}) {
   }
 
   try {
-    response = await fetch(`${baseUrl}${path}${createQueryString(query)}`, {
+    response = await sessionFetch(`${baseUrl}${path}${createQueryString(query)}`, {
       ...restOptions,
       body,
       headers,
-    });
+    }, !(baseUrl === AUTH_API_URL && (publicAuthPaths.has(path) || path === `${API_PREFIX}/auth/logout`)));
   } catch (error) {
+    if (error instanceof ApiError) throw error;
     throw new ApiError('service_unavailable', {
       code: 'service_unavailable',
       cause: error,
@@ -99,16 +203,7 @@ async function request(baseUrl, path, options = {}) {
 
   const payload = await parseResponseBody(response);
   if (!response.ok) {
-    const message =
-      (payload && typeof payload === 'object' && (payload.error?.message || payload.error?.code || payload.error || payload.message)) ||
-      (typeof payload === 'string' && payload) ||
-      `HTTP ${response.status}`;
-
-    throw new ApiError(message, {
-      code: typeof payload === 'object' ? (payload?.code ?? payload?.error?.code ?? payload?.error) : null,
-      status: response.status,
-      payload,
-    });
+    throw responseError(response, payload);
   }
 
   return payload;
@@ -200,8 +295,9 @@ export const artifactsApi = {
   getQRCode: async (artifactId) => {
     let response;
     try {
-      response = await fetch(`${ARTIFACTS_API_URL}${API_PREFIX}/artifacts/${artifactId}/qr.png`, {headers: museumHeaders()});
+      response = await sessionFetch(`${ARTIFACTS_API_URL}${API_PREFIX}/artifacts/${artifactId}/qr.png`, {headers: museumHeaders()}, true);
     } catch (cause) {
+      if (cause instanceof ApiError) throw cause;
       throw new ApiError('service_unavailable', {code: 'service_unavailable', cause});
     }
     if (!response.ok) {
