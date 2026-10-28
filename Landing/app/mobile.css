@@ -1,5 +1,12 @@
 /* Phone layout: natural document flow, readable controls, no clipped sections. */
 @media (max-width: 767px) {
+  .experience-panels { grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 24px; }
+  .experience-panels article { padding: 24px; }
+  .experience-panels h3 { font-size: 30px; }
+  .experience-panels p { font-size: 15px; }
+  .header-cta { max-width: 150px; }
+}
+@media (max-width: 767px) {
   html, body { overflow-x: visible; -webkit-text-size-adjust: 100%; }
   html { scroll-padding-top: 80px; }
   .container { width: 100%; max-width: 100%; padding-inline: max(20px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-right)); }

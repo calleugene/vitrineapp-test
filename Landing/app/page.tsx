@@ -2,10 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ArrowRight,
   ArrowUpRight,
-  Play,
   Box,
   QrCode,
-  ChartNoAxesColumnIncreasing,
   Layers3,
   Menu,
   X,
@@ -13,7 +11,6 @@ import {
   MapPin,
   FileText,
   UsersRound,
-  Clock3,
   Pencil,
   Link2,
   Check,
@@ -50,7 +47,7 @@ const nav = [
   ['Тарифы', 'pricing'],
   ['FAQ', 'faq'],
 ];
-type ModalKind = 'demo' | 'video' | 'story' | 'coming';
+type ModalKind = 'demo' | 'story';
 type OpenModal = (kind: ModalKind, title?: string) => void;
 type Waitlist = (source: string, plan?: string) => void;
 function SectionLabel({ children }: { children: ReactNode }) {
@@ -79,7 +76,7 @@ function Button({
     </button>
   );
 }
-function Header({ onWaitlist }: { onWaitlist: Waitlist }) {
+function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef<HTMLButtonElement>(null);
@@ -123,16 +120,13 @@ function Header({ onWaitlist }: { onWaitlist: Waitlist }) {
             </a>
           ))}
         </nav>
-        <button
+        <a
           className="button header-cta"
-          onClick={() => {
-            setMenuOpen(false);
-            onWaitlist('header');
-          }}
+          href="/methodist/"
         >
-          Лист ожидания
+          Кабинет методиста
           <ArrowUpRight aria-hidden="true" size={16} />
-        </button>
+        </a>
         <button
           ref={menuRef}
           className="menu-button"
@@ -147,29 +141,27 @@ function Header({ onWaitlist }: { onWaitlist: Waitlist }) {
     </header>
   );
 }
-function Hero({ onWaitlist, open }: { onWaitlist: Waitlist; open: OpenModal }) {
+function Hero({ onWaitlist }: { onWaitlist: Waitlist }) {
   return (
     <section className="hero container" aria-labelledby="hero-heading">
       <div className="hero-copy">
         <SectionLabel>МУЗЕЙ БЛИЖЕ, ЧЕМ КАЖЕТСЯ</SectionLabel>
         <h1 id="hero-heading">
           <span className="hero-title-line">Создавайте</span>{' '}
-          <span className="hero-title-line">интерактивные истории</span>{' '}
-          <em className="hero-title-line">для музейных экспонатов</em>
+          <span className="hero-title-line">музейные маршруты</span>{' '}
+          <em className="hero-title-line">для телефона посетителя</em>
         </h1>
         <p className="hero-description">
-          Витрина позволяет музейной команде создавать цифровые истории,
-          маршруты и публиковать их для посетителей через QR-код — без
-          разработки отдельного приложения.
+          Подготовьте маршрут в кабинете методиста и опубликуйте его.
+          Посетитель откроет историю музея по ссылке или QR-коду прямо
+          в браузере — без установки приложения.
         </p>
         <div className="hero-actions">
-          <Button onClick={() => onWaitlist('hero')}>Лист ожидания</Button>
-          <button className="video-button" onClick={() => open('video')}>
-            <span className="play-circle">
-              <Play aria-hidden="true" size={15} fill="currentColor" />
-            </span>
-            Смотреть видео
-          </button>
+          <Button onClick={() => onWaitlist('hero')}>Обсудить запуск</Button>
+          <a className="video-button" href="/visitor/">
+            Открыть панель посетителя
+            <ArrowUpRight aria-hidden="true" size={18} />
+          </a>
         </div>
       </div>
       <div className="hero-visual">
@@ -198,9 +190,9 @@ function Hero({ onWaitlist, open }: { onWaitlist: Waitlist; open: OpenModal }) {
         <div className="route-card">
           <MapPin aria-hidden="true" size={18} />
           <span>
-            Следующая остановка<strong>Зал итальянского искусства</strong>
+            Схема маршрута<strong>Экспонат → история → следующая точка</strong>
             <small>
-              2 мин пешком <ArrowRight aria-hidden="true" size={12} />
+              В браузере <ArrowRight aria-hidden="true" size={12} />
             </small>
           </span>
         </div>
@@ -208,9 +200,9 @@ function Hero({ onWaitlist, open }: { onWaitlist: Waitlist; open: OpenModal }) {
       <div className="hero-features">
         {[
           { icon: Box, label: 'Без разработки' },
-          { icon: Layers3, label: 'Готовые блоки' },
-          { icon: QrCode, label: 'Публикация по QR' },
-          { icon: ChartNoAxesColumnIncreasing, label: 'Аналитика' },
+          { icon: Layers3, label: 'Кабинет методиста' },
+          { icon: QrCode, label: 'Ссылка или QR-код' },
+          { icon: Route, label: 'Без установки приложения' },
         ].map(({ icon: Icon, label }) => (
           <span key={label}>
             <Icon aria-hidden="true" size={19} />
@@ -252,69 +244,64 @@ function ProductValue() {
         <div className="section-copy">
           <SectionLabel>ОДИН ИНСТРУМЕНТ ДЛЯ МУЗЕЯ</SectionLabel>
           <h2>
-            Витрина объединяет создание контента, публикацию маршрутов и{' '}
-            <em>аналитику.</em>
+            Музей создаёт маршрут.<br />
+            Посетитель открывает <em>историю.</em>
           </h2>
         </div>
         <div className="value-grid">
-          <FeatureCard icon={FileText} title="Создавайте контент">
-            Тексты, изображения, аудио, 3D и AR.
+          <FeatureCard icon={FileText} title="Подготовьте содержание">
+            Соберите материалы и последовательность точек маршрута.
           </FeatureCard>
-          <FeatureCard icon={QrCode} title="Публикуйте мгновенно">
-            Через QR-код для посетителей.
+          <FeatureCard icon={QrCode} title="Опубликуйте маршрут">
+            Поделитесь готовой историей по ссылке или QR-коду.
           </FeatureCard>
           <FeatureCard
-            icon={ChartNoAxesColumnIncreasing}
-            title="Анализируйте интерес"
+            icon={Route}
+            title="Откройте на телефоне"
           >
-            Статистика и поведение посетителей.
+            Посетитель проходит маршрут в мобильном браузере.
           </FeatureCard>
-          <FeatureCard icon={UsersRound} title="Развивайте аудиторию">
-            Новые форматы вовлечения.
+          <FeatureCard icon={UsersRound} title="Сохраните свой голос">
+            Содержание и авторский замысел остаются за командой музея.
           </FeatureCard>
         </div>
       </div>
     </section>
   );
 }
-const problems = [
+const scenarios = [
   {
-    icon: Clock3,
-    title: 'Долго создавать',
-    text: 'Создание интерактивного сценария может занимать недели или месяцы.',
+    icon: Box,
+    title: 'Постоянная экспозиция',
+    text: 'Объедините знакомые экспонаты в историю и предложите посетителю рассмотреть детали.',
   },
   {
     icon: Pencil,
-    title: 'Сложно обновлять',
-    text: 'Изменение текста, изображения или сценария не должно зависеть от разработчиков.',
+    title: 'Временная выставка',
+    text: 'Подготовьте маршрут к новой выставке и дополните встречу с экспозицией авторским рассказом.',
   },
   {
     icon: Link2,
-    title: 'Контент существует отдельно',
-    text: 'QR, мультимедиа, маршруты и интерактивы должны быть объединены.',
-  },
-  {
-    icon: ChartNoAxesColumnIncreasing,
-    title: 'Нет данных',
-    text: 'Музею важно понимать, какие цифровые сценарии используют посетители.',
+    title: 'Тематический маршрут',
+    text: 'Свяжите объекты одной эпохой, человеком или идеей и откройте новый взгляд на коллекцию.',
   },
 ];
-function Problems() {
+function Scenarios() {
   return (
     <section className="section problems">
       <div className="container problem-layout reveal">
         <div className="section-copy">
-          <SectionLabel>МЕНЬШЕ БАРЬЕРОВ. БОЛЬШЕ ВОЗМОЖНОСТЕЙ.</SectionLabel>
+          <SectionLabel>ДЛЯ ВАШИХ ИСТОРИЙ</SectionLabel>
           <h2>
-            Интерактивный контент не должен требовать отдельной разработки
+            Один музей.<br />Разные поводы <em>вернуться.</em>
           </h2>
           <p>
-            Мы убираем технические барьеры, чтобы музеи могли сосредоточиться на
-            главном — содержании.
+            Выберите тему, которая важна вашему музею. Цифровой маршрут
+            помогает выстроить последовательное знакомство с ней.
           </p>
         </div>
         <div className="problem-grid">
-          {problems.map(({ icon: Icon, title, text }) => (
+          {scenarios.map(({ icon: Icon, title, text }) => (
             <article key={title}>
               <span className="problem-icon">
                 <Icon aria-hidden="true" size={23} />
@@ -345,8 +332,22 @@ function EditorDemo({ open }: { open: OpenModal }) {
             </p>
           </div>
           <Button variant="outline-button" onClick={() => open('demo')}>
-            Записаться на демо
+            Обсудить запуск
           </Button>
+        </div>
+        <div className="experience-panels">
+          <article>
+            <span className="experience-label">ДЛЯ КОМАНДЫ МУЗЕЯ</span>
+            <h3>Кабинет методиста</h3>
+            <p>Подготовьте точки маршрута, проверьте содержание и опубликуйте готовую версию.</p>
+            <a className="text-link" href="/methodist/">Открыть кабинет <ArrowUpRight size={18} aria-hidden="true" /></a>
+          </article>
+          <article>
+            <span className="experience-label">ДЛЯ ПОСЕТИТЕЛЯ</span>
+            <h3>Панель посетителя</h3>
+            <p>Браузерный интерфейс для знакомства с опубликованным музейным маршрутом.</p>
+            <a className="text-link" href="/visitor/">Открыть панель <ArrowUpRight size={18} aria-hidden="true" /></a>
+          </article>
         </div>
         <figure className="service-photo-wrap">
           <img
@@ -362,7 +363,7 @@ function EditorDemo({ open }: { open: OpenModal }) {
               <QrCode size={16} aria-hidden="true" />
               Один QR-код открывает историю экспоната
             </span>
-            <span>Музейный опыт на экране посетителя</span>
+            <span>Иллюстрация сценария использования</span>
           </figcaption>
         </figure>
         <div className="editor-caption service-caption">
@@ -374,13 +375,13 @@ function EditorDemo({ open }: { open: OpenModal }) {
   );
 }
 const steps = [
-  { icon: FileText, title: 'Создайте контент', text: 'в визуальном редакторе' },
-  { icon: Route, title: 'Соберите маршрут', text: 'из экспонатов' },
-  { icon: QrCode, title: 'Опубликуйте', text: 'по QR-коду' },
+  { icon: FileText, title: 'Подготовьте', text: 'материалы и точки маршрута' },
+  { icon: Route, title: 'Проверьте', text: 'как маршрут увидит посетитель' },
+  { icon: QrCode, title: 'Опубликуйте', text: 'готовую версию маршрута' },
   {
-    icon: ChartNoAxesColumnIncreasing,
-    title: 'Получайте аналитику',
-    text: 'и развивайте проект',
+    icon: UsersRound,
+    title: 'Пригласите',
+    text: 'посетителя по ссылке или QR-коду',
   },
 ];
 function HowItWorks() {
@@ -613,7 +614,7 @@ function Pricing({
               variant="outline-button"
               onClick={() => onWaitlist('pricing', 'trial')}
             >
-              Лист ожидания
+              Обсудить тариф
             </Button>
           </PricingCard>
           <PricingCard
@@ -648,7 +649,7 @@ function Pricing({
               variant="light-button"
               onClick={() => onWaitlist('pricing', 'museum-plus')}
             >
-              Лист ожидания
+              Обсудить тариф
             </Button>
           </PricingCard>
           <PricingCard
@@ -672,6 +673,14 @@ function Pricing({
   );
 }
 const faqs = [
+  [
+    'Что подготовить для первого маршрута?',
+    'Выберите тему, составьте список точек и соберите материалы, которые раскрывают историю экспозиции. На встрече обсудим вашу задачу и подходящий первый маршрут.',
+  ],
+  [
+    'Нужно ли приложение или специальное оборудование?',
+    'Нет. Базовый маршрут открывается по ссылке или QR-коду в современном мобильном браузере. Устанавливать приложение и использовать AR или VR для его прохождения не требуется.',
+  ],
   [
     'Нужны ли разработчики для работы с платформой?',
     'Нет. Методист или куратор собирает цифровую историю из готовых блоков в визуальном редакторе. Для публикации истории через QR-код не нужно разрабатывать отдельное приложение.',
@@ -760,13 +769,9 @@ function FAQ() {
   );
 }
 function FinalCTA({
-  source,
-  plan,
-  period,
+  onWaitlist,
 }: {
-  source: string;
-  plan?: string;
-  period: BillingPeriod;
+  onWaitlist: Waitlist;
 }) {
   return (
     <section
@@ -786,21 +791,15 @@ function FinalCTA({
         <div className="cta-copy">
           <SectionLabel>СДЕЛАЕМ КУЛЬТУРУ ДОСТУПНЕЕ</SectionLabel>
           <h2 id="waitlist-heading">
-            Присоединяйтесь
-            <br />к листу ожидания
+            Какую историю<br />расскажет ваш музей?
           </h2>
           <p>
-            Станьте частью сообщества музеев, которые развивают культуру с
-            помощью технологий.
+            Расскажите о музее, экспозиции и вашей задаче.
+            Обсудим, с какого маршрута начать.
           </p>
-          <LeadForm
-            intent="waitlist"
-            source={source}
-            plan={plan}
-            billingPeriod={plan ? period : undefined}
-          />
+          <Button onClick={() => onWaitlist('final-cta')}>Обсудить запуск</Button>
           <p className="cta-note">
-            Мы напишем, когда откроем доступ, и поделимся новостями.
+            Или напишите нам: <a href="mailto:hello@vitrineapp.ru">hello@vitrineapp.ru</a>
           </p>
         </div>
         <div className="cta-side-note">
@@ -816,10 +815,8 @@ function FinalCTA({
   );
 }
 function Footer({
-  open,
   onWaitlist,
 }: {
-  open: OpenModal;
   onWaitlist: Waitlist;
 }) {
   return (
@@ -833,14 +830,6 @@ function Footer({
             <p>
               Платформа для создания и управления интерактивным опытом музеев.
             </p>
-            <div className="social-links">
-              {['VK', 'YouTube', 'Telegram'].map((name) => (
-                <button key={name} onClick={() => open('coming', name)}>
-                  {name}
-                  <ArrowUpRight size={12} aria-hidden="true" />
-                </button>
-              ))}
-            </div>
           </div>
           <div className="footer-column">
             <h3>Продукт</h3>
@@ -850,12 +839,9 @@ function Footer({
             <a href="#faq">FAQ</a>
           </div>
           <div className="footer-column">
-            <h3>О нас</h3>
-            {['О проекте', 'Команда', 'Блог'].map((name) => (
-              <button key={name} onClick={() => open('coming', name)}>
-                {name}
-              </button>
-            ))}
+            <h3>Начать работу</h3>
+            <a href="/methodist/">Кабинет методиста</a>
+            <a href="/visitor/">Панель посетителя</a>
             <a href="mailto:hello@vitrineapp.ru">Контакты</a>
           </div>
           <div className="footer-column">
@@ -883,7 +869,7 @@ function Footer({
             </a>
           </div>
           <div className="footer-contact">
-            <Button onClick={() => onWaitlist('footer')}>Лист ожидания</Button>
+            <Button onClick={() => onWaitlist('footer')}>Обсудить запуск</Button>
             <a href="mailto:hello@vitrineapp.ru">
               <Mail size={17} aria-hidden="true" />
               hello@vitrineapp.ru
@@ -956,30 +942,25 @@ function StoryExample() {
   );
 }
 export default function App() {
-  const [modal, setModal] = useState<ModalKind | null>(null);
-  const [modalTitle, setModalTitle] = useState('');
+  const [modal, setModal] = useState<ModalKind>('demo');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [period, setPeriod] = useState<BillingPeriod>('month');
   const [leadContext, setLeadContext] = useState<{
     source: string;
     plan?: string;
   }>({ source: 'final-cta' });
   const trigger = useRef<HTMLElement | null>(null);
-  const open: OpenModal = (kind, title = '') => {
-    if (!modal) trigger.current = document.activeElement as HTMLElement;
-    setModalTitle(title);
+  const open: OpenModal = (kind) => {
+    if (!isModalOpen) trigger.current = document.activeElement as HTMLElement;
+    if (kind === 'demo') setLeadContext({ source: 'demo-modal' });
     setModal(kind);
+    setIsModalOpen(true);
   };
   const waitlist: Waitlist = (source, plan) => {
+    if (!isModalOpen) trigger.current = document.activeElement as HTMLElement;
     setLeadContext({ source, plan });
-    document
-      .getElementById('waitlist')
-      ?.scrollIntoView({
-        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-          ? 'instant'
-          : 'smooth',
-        block: 'start',
-      });
-    document.getElementById('waitlist-email')?.focus({ preventScroll: true });
+    setModal('demo');
+    setIsModalOpen(true);
   };
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -1003,24 +984,22 @@ export default function App() {
       <a className="skip-link" href="#main">
         К содержанию
       </a>
-      <Header onWaitlist={waitlist} />
+      <Header />
       <main id="main">
-        <Hero onWaitlist={waitlist} open={open} />
+        <Hero onWaitlist={waitlist} />
         <ProductValue />
-        <Problems />
+        <Scenarios />
         <EditorDemo open={open} />
         <HowItWorks />
         <ExhibitStories open={open} />
         <Pricing period={period} setPeriod={setPeriod} onWaitlist={waitlist} />
         <FAQ />
-        <FinalCTA {...leadContext} period={period} />
+        <FinalCTA onWaitlist={waitlist} />
       </main>
-      <Footer open={open} onWaitlist={waitlist} />
+      <Footer onWaitlist={waitlist} />
       <Dialog
-        open={modal !== null}
-        onOpenChange={(value) => {
-          if (!value) setModal(null);
-        }}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
       >
         <DialogContent
           className={`vitrina-dialog ${modal === 'story' ? 'wide-dialog' : ''}`}
@@ -1040,33 +1019,15 @@ export default function App() {
           <DialogTitle className="dialog-heading">
             {modal === 'demo'
               ? 'Записаться на демо'
-              : modal === 'video'
-                ? 'Видео готовится'
-                : modal === 'story'
-                  ? 'У каждого экспоната — история'
-                  : 'Раздел готовится'}
+              : 'У каждого экспоната — история'}
           </DialogTitle>
           <DialogDescription className="dialog-description">
             {modal === 'demo'
               ? 'Оставьте контакты. Покажем, как Витрина может работать в вашем музее.'
-              : modal === 'video'
-                ? 'Скоро здесь появится короткое знакомство с Витриной. А пока приглашаем на личную демонстрацию.'
-                : modal === 'story'
-                  ? 'Так дополнительные материалы помогают посетителю увидеть больше.'
-                  : `${modalTitle ? `«${modalTitle}» скоро появится на сайте. ` : ''}Если у вас есть вопрос — напишите нам.`}
+              : 'Демонстрационный пример содержания. Так дополнительные материалы помогают посетителю увидеть больше.'}
           </DialogDescription>
-          {modal === 'demo' && <LeadForm intent="demo" source="demo-modal" />}
-          {modal === 'video' && (
-            <Button onClick={() => setModal('demo')}>Записаться на демо</Button>
-          )}
+          {modal === 'demo' && <LeadForm intent="demo" source={leadContext.source} plan={leadContext.plan} billingPeriod={leadContext.plan ? period : undefined} />}
           {modal === 'story' && <StoryExample />}
-          {modal === 'coming' && (
-            <a className="contact-link" href="mailto:hello@vitrineapp.ru">
-              <Mail size={18} />
-              hello@vitrineapp.ru
-              <ArrowUpRight size={18} />
-            </a>
-          )}
         </DialogContent>
       </Dialog>
     </>
