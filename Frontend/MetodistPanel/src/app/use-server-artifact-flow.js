@@ -139,10 +139,20 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate}) {
     catch (nextError) { setScreens(before); setError(messageFor(nextError)); }
     finally {setLoading(false);}
   }, [artifact, screens, loadScreens]);
-  const duplicateArtifact = useCallback(async (artifactId) => { try { await artifactsApi.duplicate(artifactId); await loadArtifacts(); setNotice('Экспонат продублирован.'); } catch (nextError) { setError(messageFor(nextError)); } }, [loadArtifacts]);
-	const archiveArtifact = useCallback(async (artifactId) => { try { await artifactsApi.archive(artifactId); await loadArtifacts(); setNotice('Экспонат перенесён в архив.'); } catch (nextError) { setError(messageFor(nextError)); } }, [loadArtifacts]);
-	const restoreArtifact = useCallback(async (artifactId) => { try { await artifactsApi.restore(artifactId); await loadArtifacts(); setNotice('Экспонат восстановлен в черновики.'); } catch (nextError) { setError(messageFor(nextError)); } }, [loadArtifacts]);
+  const listActionBusy = useRef(false);
+  const [listBusy, setListBusy] = useState(false);
+  const mutateArtifact = useCallback(async (action, artifactId, message) => {
+    if (listActionBusy.current) return false;
+    listActionBusy.current = true; setListBusy(true); setError(''); setNotice('');
+    try { await action(artifactId); await loadArtifacts(); setNotice(message); return true; }
+    catch (nextError) { setError(messageFor(nextError)); return false; }
+    finally { listActionBusy.current = false; setListBusy(false); }
+  }, [loadArtifacts]);
+  const duplicateArtifact = useCallback((id) => mutateArtifact(artifactsApi.duplicate, id, 'Экспонат продублирован.'), [mutateArtifact]);
+  const archiveArtifact = useCallback((id) => mutateArtifact(artifactsApi.archive, id, 'Экспонат перенесён в архив.'), [mutateArtifact]);
+  const restoreArtifact = useCallback((id) => mutateArtifact(artifactsApi.restore, id, 'Экспонат восстановлен в черновики.'), [mutateArtifact]);
+  const deleteArtifact = useCallback((id) => mutateArtifact(artifactsApi.remove, id, 'Экспонат удалён.'), [mutateArtifact]);
   const publish = useCallback(async () => { if (!artifact || publishing.current) return; publishing.current = true; setLoading(true); setError(''); setNotice(''); try { const result = await artifactsApi.publish(artifact.id, artifact.draft_revision); setPublication(result); setArtifact((current) => ({...current, status: 'published', published_revision: result.version, draft_revision: result.version, has_unpublished_changes: false, public_url: result.public_url || current.public_url, public_code: result.public_code || current.public_code})); setDirty(false); await loadArtifacts(); onNavigate('artifact-success'); } catch (nextError) { setError(messageFor(nextError)); } finally { publishing.current = false; setLoading(false); } }, [artifact, loadArtifacts, onNavigate]);
 
-	return useMemo(() => ({artifact, screens, draft, dirty, loading, error, notice, publication, select, start, change, save, saveAndGo, uploadCover, addTextScreen, updateScreen, uploadScreenImage, removeScreen, duplicateScreen, reorder, duplicateArtifact, archiveArtifact, restoreArtifact, publish, setError}), [artifact, screens, draft, dirty, loading, error, notice, publication, select, start, change, save, saveAndGo, uploadCover, addTextScreen, updateScreen, uploadScreenImage, removeScreen, duplicateScreen, reorder, duplicateArtifact, archiveArtifact, restoreArtifact, publish]);
+	return useMemo(() => ({artifact, screens, draft, dirty, loading, error, notice, publication, select, start, change, save, saveAndGo, uploadCover, addTextScreen, updateScreen, uploadScreenImage, removeScreen, duplicateScreen, reorder, duplicateArtifact, archiveArtifact, restoreArtifact, deleteArtifact, listBusy, publish, setError}), [artifact, screens, draft, dirty, loading, error, notice, publication, select, start, change, save, saveAndGo, uploadCover, addTextScreen, updateScreen, uploadScreenImage, removeScreen, duplicateScreen, reorder, duplicateArtifact, archiveArtifact, restoreArtifact, deleteArtifact, listBusy, publish]);
 }

@@ -4,7 +4,7 @@ export const VISITOR_STATS = [
   {icon: Persons, value: '1 248', title: 'Всего посетителей', delta: '+18% к прошлому месяцу', tone: 'violet'},
   {icon: Person, value: '342', title: 'Новые посетители', delta: '+12% к прошлому месяцу', tone: 'green'},
   {icon: Stopwatch, value: '18 мин', title: 'Среднее время на маршруте', delta: '+2 мин к прошлому месяцу', tone: 'amber'},
-  {icon: Eye, value: '3 826', title: 'Просмотров артефактов', delta: '+25% к прошлому месяцу', tone: 'blue'},
+  {icon: Eye, value: '3 826', title: 'Просмотров экспонатов', delta: '+25% к прошлому месяцу', tone: 'blue'},
 ];
 
 export const VISITORS_DYNAMICS = {
@@ -69,7 +69,7 @@ export const VISITOR_TABLE_COLUMNS = [
   {id: 'route', title: 'Маршрут'},
   {id: 'firstVisit', title: 'Первое посещение'},
   {id: 'duration', title: 'Время на маршруте'},
-  {id: 'collectedArtifacts', title: 'Собрано артефактов'},
+  {id: 'collectedArtifacts', title: 'Собрано экспонатов'},
   {id: 'routeCompleted', title: 'Маршрут пройден'},
 ];
 

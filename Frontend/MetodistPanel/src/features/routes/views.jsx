@@ -42,7 +42,7 @@ export function RoutesView({routeTab, setRouteTab, routeRows, routeSummary, rout
       <div className="page-heading">
         <div>
           <h1>Маршруты</h1>
-          <p>Создавайте и редактируйте маршруты, объединяйте артефакты и точки музея.</p>
+          <p>Создавайте и редактируйте маршруты, объединяйте экспонаты и точки музея.</p>
         </div>
       </div>
 
@@ -69,7 +69,7 @@ export function RoutesView({routeTab, setRouteTab, routeRows, routeSummary, rout
             <div className="table-head">
               <span>Название</span>
               <span>Статус</span>
-              <span>Артефакты</span>
+              <span>Экспонаты</span>
               <span>Обновлён</span>
               <span>Просмотры</span>
               <span>Действия</span>
@@ -116,7 +116,7 @@ export function RoutesView({routeTab, setRouteTab, routeRows, routeSummary, rout
 
           <Card className="panel" view="filled">
             <h3>Советы методиста</h3>
-            <p>Создавайте короткие маршруты: маршруты до 10 артефактов проходят на 23% чаще.</p>
+            <p>Создавайте короткие маршруты: маршруты до 10 экспонатов проходят на 23% чаще.</p>
           </Card>
         </div>
       </div>
@@ -231,7 +231,7 @@ export function RouteContentView({routeDraft, artifacts, goToRouteStep, toggleRo
       <div className="page-heading">
         <div>
           <h1>Контент маршрута</h1>
-          <p>Выберите артефакты, которые посетитель увидит в маршруте.</p>
+          <p>Выберите экспонаты, которые посетитель увидит в маршруте.</p>
         </div>
       </div>
 
@@ -239,8 +239,8 @@ export function RouteContentView({routeDraft, artifacts, goToRouteStep, toggleRo
 
       <div className="route-builder">
         <Card className="panel route-list" view="filled">
-          <h3>Артефакты</h3>
-          {artifacts.length === 0 ? <p>Сначала создайте экспонаты в разделе «Артефакты». Для публикации маршрута экспонаты тоже должны быть опубликованы.</p> : null}
+          <h3>Экспонаты</h3>
+          {artifacts.length === 0 ? <p>Сначала создайте экспонаты в разделе «Экспонаты». Для публикации маршрута экспонаты тоже должны быть опубликованы.</p> : null}
           {availableArtifacts.map((artifact) => (
             <Checkbox
               key={artifact.id}
@@ -255,7 +255,7 @@ export function RouteContentView({routeDraft, artifacts, goToRouteStep, toggleRo
 
         <Card className="panel route-order" view="filled">
           <h3>Порядок маршрута</h3>
-          {selectedArtifacts.length === 0 ? <p>Выберите хотя бы один артефакт, чтобы собрать маршрут.</p> : null}
+          {selectedArtifacts.length === 0 ? <p>Выберите хотя бы один экспонат, чтобы собрать маршрут.</p> : null}
           {selectedArtifacts.map((artifact, index) => (
             <div
               className={`table-row route-order-row ${draggedArtifactId === artifact.id ? 'is-dragging' : ''}`}
@@ -273,7 +273,7 @@ export function RouteContentView({routeDraft, artifacts, goToRouteStep, toggleRo
                 type="button"
                 className="story-drag-handle"
                 draggable
-                aria-label={`Перетащить артефакт ${index + 1}`}
+                aria-label={`Перетащить экспонат ${index + 1}`}
                 onDragStart={() => setDraggedArtifactId(artifact.id)}
                 onDragEnd={() => setDraggedArtifactId(null)}
               >
@@ -316,7 +316,7 @@ function routePublicationState(routeDraft) {
   const actionLabel = routeDraft.status === 'published' ? 'Опубликовать маршрут' : routeDraft.status === 'archived' ? 'Сохранить в архиве' : 'Сохранить черновик';
   const checks = [
     {label: 'Название маршрута', description: hasTitle ? 'Посетитель увидит его перед началом прохождения.' : 'Вернитесь к основной информации и укажите название.', ready: hasTitle},
-    {label: 'Экспонаты добавлены', description: hasContent ? `Выбрано: ${routeDraft.artifactIds.length}. Доступность и публикацию экспонатов проверим при сохранении.` : 'Добавьте хотя бы один артефакт на предыдущем шаге.', ready: hasContent},
+    {label: 'Экспонаты добавлены', description: hasContent ? `Выбрано: ${routeDraft.artifactIds.length}. Доступность и публикацию экспонатов проверим при сохранении.` : 'Добавьте хотя бы один экспонат на предыдущем шаге.', ready: hasContent},
   ];
   return {
     statusLabel,

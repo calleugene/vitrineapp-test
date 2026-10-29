@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -77,7 +76,7 @@ func (r *SQLiteRepository) UpdateMuseumProfile(ctx context.Context, profile Muse
 }
 
 func (r *SQLiteRepository) ListArtifacts(ctx context.Context, status, category, sort string, page, limit int, museumID *string) ([]Artifact, int, error) {
-	where := "WHERE 1=1"
+	where := "WHERE deleted_at IS NULL"
 	var args []any
 
 	if status != "" && status != "all" {
@@ -93,13 +92,7 @@ func (r *SQLiteRepository) ListArtifacts(ctx context.Context, status, category, 
 		args = append(args, *museumID)
 	}
 
-	var countQuery string
-	if strings.Contains(where, "?") {
-		// SQLite doesn't support $1, use ?
-		countQuery = "SELECT COUNT(*) FROM artifacts " + where
-	} else {
-		countQuery = "SELECT COUNT(*) FROM artifacts"
-	}
+	countQuery := "SELECT COUNT(*) FROM artifacts " + where
 
 	var total int
 	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
@@ -154,12 +147,12 @@ func (r *SQLiteRepository) CreateArtifact(ctx context.Context, artifact Artifact
 }
 
 func (r *SQLiteRepository) GetArtifact(ctx context.Context, artifactID string) (Artifact, error) {
-	row := r.db.QueryRowContext(ctx, artifactSelectColumns+" WHERE id = ?", artifactID)
+	row := r.db.QueryRowContext(ctx, artifactSelectColumns+" WHERE id = ? AND deleted_at IS NULL", artifactID)
 	return scanArtifactRow(row)
 }
 
 func (r *SQLiteRepository) GetArtifactByPublicCode(ctx context.Context, publicCode string) (Artifact, error) {
-	row := r.db.QueryRowContext(ctx, artifactSelectColumns+" WHERE public_code = ?", publicCode)
+	row := r.db.QueryRowContext(ctx, artifactSelectColumns+" WHERE public_code = ? AND deleted_at IS NULL", publicCode)
 	return scanArtifactRow(row)
 }
 
@@ -171,7 +164,7 @@ func (r *SQLiteRepository) CreatePublication(ctx context.Context, publication Pu
 func (r *SQLiteRepository) GetLatestPublication(ctx context.Context, publicCode string) (Publication, error) {
 	var publication Publication
 	var publishedAt any
-	err := r.db.QueryRowContext(ctx, `SELECT p.artifact_id, p.version, p.snapshot_json, p.published_at FROM artifact_publications p JOIN artifacts a ON a.id = p.artifact_id WHERE a.public_code = ? ORDER BY p.version DESC LIMIT 1`, publicCode).Scan(&publication.ArtifactID, &publication.Version, &publication.SnapshotJSON, &publishedAt)
+	err := r.db.QueryRowContext(ctx, `SELECT p.artifact_id, p.version, p.snapshot_json, p.published_at FROM artifact_publications p JOIN artifacts a ON a.id = p.artifact_id WHERE a.public_code = ? AND a.deleted_at IS NULL ORDER BY p.version DESC LIMIT 1`, publicCode).Scan(&publication.ArtifactID, &publication.Version, &publication.SnapshotJSON, &publishedAt)
 	if err == sql.ErrNoRows {
 		return Publication{}, ErrNotFound
 	}
@@ -201,7 +194,7 @@ func (r *SQLiteRepository) UpdateArtifact(ctx context.Context, artifact Artifact
 }
 
 func (r *SQLiteRepository) DeleteArtifact(ctx context.Context, artifactID string) error {
-	res, err := r.db.ExecContext(ctx, `DELETE FROM artifacts WHERE id = ?`, artifactID)
+	res, err := r.db.ExecContext(ctx, `UPDATE artifacts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`, artifactID)
 	if err != nil {
 		return err
 	}
@@ -225,13 +218,13 @@ func (r *SQLiteRepository) GetSummary(ctx context.Context, museumID *string) (su
 		args = append(args, *museumID)
 	}
 
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts"+where, args...).Scan(&summary.Total)
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE status = 'published'"+andMuseum(where), args...).Scan(&summary.Published)
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE status = 'draft'"+andMuseum(where), args...).Scan(&summary.Draft)
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE status = 'archived'"+andMuseum(where), args...).Scan(&summary.Archived)
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE status = 'moderation'"+andMuseum(where), args...).Scan(&summary.Moderation)
+	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE deleted_at IS NULL"+andMuseum(where), args...).Scan(&summary.Total)
+	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE deleted_at IS NULL AND status = 'published'"+andMuseum(where), args...).Scan(&summary.Published)
+	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE deleted_at IS NULL AND status = 'draft'"+andMuseum(where), args...).Scan(&summary.Draft)
+	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE deleted_at IS NULL AND status = 'archived'"+andMuseum(where), args...).Scan(&summary.Archived)
+	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE deleted_at IS NULL AND status = 'moderation'"+andMuseum(where), args...).Scan(&summary.Moderation)
 
-	catRows, err := r.db.QueryContext(ctx, "SELECT category, COUNT(*) FROM artifacts"+catsWhere(where)+" GROUP BY category", args...)
+	catRows, err := r.db.QueryContext(ctx, "SELECT category, COUNT(*) FROM artifacts WHERE deleted_at IS NULL"+andMuseum(where)+" GROUP BY category", args...)
 	if err == nil {
 		defer catRows.Close()
 		for catRows.Next() {
@@ -248,13 +241,6 @@ func (r *SQLiteRepository) GetSummary(ctx context.Context, museumID *string) (su
 func andMuseum(where string) string {
 	if where != "" {
 		return " AND museum_id = ?"
-	}
-	return ""
-}
-
-func catsWhere(where string) string {
-	if where != "" {
-		return " WHERE museum_id = ?"
 	}
 	return ""
 }

@@ -14,7 +14,7 @@ export const NAV_ITEMS = [
   {id: 'routes', label: 'Маршруты', icon: RouteIcon},
   {id: 'visitors', label: 'Посетители', icon: Persons},
   {id: 'stats', label: 'Статистика', icon: SquareChartBar},
-  {id: 'artifacts', label: 'Артефакты', icon: Boxes3},
+  {id: 'artifacts', label: 'Экспонаты', icon: Boxes3},
   {id: 'feedback', label: 'Обратная связь', icon: Megaphone},
 ];
 

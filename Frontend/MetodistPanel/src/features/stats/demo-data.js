@@ -6,7 +6,7 @@ export const STATS_TABS = [
   {id: 'content', title: 'Контент'},
   {id: 'routes', title: 'Маршруты'},
   {id: 'stories', title: 'Истории'},
-  {id: 'artifacts', title: 'Артефакты'},
+  {id: 'artifacts', title: 'Экспонаты'},
   {id: 'feedback', title: 'Обратная связь'},
 ];
 
@@ -124,13 +124,13 @@ export const STATS_TAB_CONTENT = {
     sideItems: [
       {label: 'Истории', value: 34, count: '9 768', color: '#5A4FF6'},
       {label: 'Маршруты', value: 27, count: '7 822', color: '#4D7EF1'},
-      {label: 'Артефакты', value: 21, count: '5 844', color: '#63C987'},
+      {label: 'Экспонаты', value: 21, count: '5 844', color: '#63C987'},
       {label: 'Коллекции', value: 11, count: '3 092', color: '#FFB01F'},
       {label: 'Медиаконтент', value: 7, count: '2 036', color: '#D2D5DE'},
     ],
     lowerSections: [
       {type: 'ranked', title: 'Самые просматриваемые истории', cta: 'Истории', items: STATS_POPULAR_STORIES, story: true},
-      {type: 'ranked', title: 'Самые сильные артефакты', cta: 'Артефакты', items: [
+      {type: 'ranked', title: 'Самые сильные экспонаты', cta: 'Экспонаты', items: [
         {rank: 1, title: 'Письмо с фронта', views: '2 884', delta: '+12%', tone: 'positive'},
         {rank: 2, title: 'Военный дневник', views: '2 116', delta: '+7%', tone: 'positive'},
         {rank: 3, title: 'Фотография госпиталя', views: '1 945', delta: '+6%', tone: 'positive'},
@@ -217,7 +217,7 @@ export const STATS_TAB_CONTENT = {
         {label: 'На планшете', share: 11},
       ], note: 'На каких устройствах читают истории'},
       {type: 'bars', title: 'Действия после прочтения', cta: 'Подробнее', items: [
-        {label: 'Переход к артефактам', share: 38},
+        {label: 'Переход к экспонатам', share: 38},
         {label: 'Продолжение маршрута', share: 34},
         {label: 'Сохранение', share: 17},
         {label: 'Шеринг', share: 11},
@@ -227,19 +227,19 @@ export const STATS_TAB_CONTENT = {
   },
   artifacts: {
     summary: [
-      {title: 'Открытия артефактов', value: '14 208', delta: '+19%', note: 'карточки и внутренние экраны', icon: Boxes3, tone: 'violet'},
+      {title: 'Открытия экспонатов', value: '14 208', delta: '+19%', note: 'карточки и внутренние экраны', icon: Boxes3, tone: 'violet'},
       {title: 'Сканирования QR', value: '8 942', delta: '+24%', note: 'от витрин и стендов', icon: Eye, tone: 'blue'},
       {title: 'Сохранения', value: '1 482', delta: '+7%', note: 'в личные подборки', icon: ChartPie, tone: 'green'},
-      {title: 'Средний интерес', value: '2.8 мин', delta: '+0.2', note: 'на один артефакт', icon: Clock, tone: 'amber'},
+      {title: 'Средний интерес', value: '2.8 мин', delta: '+0.2', note: 'на один экспонат', icon: Clock, tone: 'amber'},
     ],
-    chartTitle: 'Интерес к артефактам',
-    chartLabel: 'Открытия артефактов',
+    chartTitle: 'Интерес к экспонатам',
+    chartLabel: 'Открытия экспонатов',
     chartSeries: {
       day: {labels: ['12 мая', '16 мая', '19 мая', '23 мая', '26 мая', '30 мая', '2 июн', '7 июн', '9 июн'], values: [1210, 1380, 1290, 1560, 1420, 1690, 1580, 1820, 1710]},
       week: {labels: ['1 нед', '2 нед', '3 нед', '4 нед', '5 нед'], values: [6180, 6530, 6420, 7010, 7280]},
       month: {labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'], values: [7200, 7810, 8560, 9130, 14208, 13320]},
     },
-    sideTitle: 'Категории артефактов',
+    sideTitle: 'Категории экспонатов',
     sideButton: 'Все категории',
     sideItems: [
       {label: 'Письма и документы', value: 36, count: '5 115', color: '#5A4FF6'},
@@ -249,7 +249,7 @@ export const STATS_TAB_CONTENT = {
       {label: '3D-объекты', value: 9, count: '1 279', color: '#D2D5DE'},
     ],
     lowerSections: [
-      {type: 'ranked', title: 'Топ артефактов', cta: 'Все артефакты', items: [
+      {type: 'ranked', title: 'Топ экспонатов', cta: 'Все экспонаты', items: [
         {rank: 1, title: 'Письмо с фронта', views: '2 884', delta: '+12%', tone: 'positive'},
         {rank: 2, title: 'Военный дневник', views: '2 116', delta: '+7%', tone: 'positive'},
         {rank: 3, title: 'Фотография госпиталя', views: '1 945', delta: '+6%', tone: 'positive'},
@@ -261,15 +261,15 @@ export const STATS_TAB_CONTENT = {
         {label: 'Текст', share: 26},
         {label: 'Аудио', share: 18},
         {label: '3D', share: 17},
-      ], note: 'Какие представления артефактов чаще открывают'},
+      ], note: 'Какие представления экспонатов чаще открывают'},
       {type: 'bars', title: 'Пути входа', cta: 'Подробно', items: [
         {label: 'QR у витрины', share: 47},
         {label: 'Из маршрута', share: 29},
         {label: 'Из истории', share: 15},
         {label: 'Поиск', share: 9},
-      ], note: 'Откуда пользователи попадают в артефакты'},
+      ], note: 'Откуда пользователи попадают в экспонаты'},
     ],
-    footnote: 'Артефактные метрики показывают интерес к единичным объектам коллекции.',
+    footnote: 'Метрики экспонатов показывают интерес к единичным объектам коллекции.',
   },
   feedback: {
     summary: [
@@ -297,7 +297,7 @@ export const STATS_TAB_CONTENT = {
       {type: 'ranked', title: 'Чаще всего пишут про', cta: 'Все темы', items: [
         {rank: 1, title: 'Маршруты', views: '96', delta: '+14%', tone: 'positive'},
         {rank: 2, title: 'Истории', views: '58', delta: '+9%', tone: 'positive'},
-        {rank: 3, title: 'Артефакты', views: '47', delta: '+7%', tone: 'positive'},
+        {rank: 3, title: 'Экспонаты', views: '47', delta: '+7%', tone: 'positive'},
         {rank: 4, title: 'Доступность', views: '34', delta: '+4%', tone: 'positive'},
         {rank: 5, title: 'Приложение', views: '28', delta: '-2%', tone: 'negative'},
       ]},

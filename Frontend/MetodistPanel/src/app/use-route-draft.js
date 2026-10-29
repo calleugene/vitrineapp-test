@@ -111,7 +111,7 @@ export function useRouteDraft({onNavigate}) {
   const publishRoute = useCallback(async () => {
     if (publishing.current) return;
     if (!routeDraft.title?.trim() || (routeDraft.status === 'published' && !routeDraft.artifactIds?.length)) {
-      setRouteSyncError(new Error('Укажите название. Для публикации также добавьте хотя бы один артефакт.'));
+      setRouteSyncError(new Error('Укажите название. Для публикации также добавьте хотя бы один экспонат.'));
       return;
     }
     if (!ROUTE_API_ENABLED) {
@@ -138,10 +138,10 @@ export function useRouteDraft({onNavigate}) {
         nextRoute.serverSaved = true;
       } catch (error) {
         const messages = {
-          artifact_not_published: 'Один из артефактов ещё не опубликован. Опубликуйте все выбранные артефакты и повторите попытку.',
-          artifact_not_in_museum: 'Один из артефактов недоступен вашей команде. Проверьте состав маршрута.',
-          artifacts_unavailable: 'Сервер не смог проверить артефакты. Попробуйте сохранить маршрут позже.',
-          empty_route: 'Добавьте хотя бы один артефакт для публикации маршрута.',
+          artifact_not_published: 'Один из экспонатов ещё не опубликован. Опубликуйте все выбранные экспонаты и повторите попытку.',
+          artifact_not_in_museum: 'Один из экспонатов недоступен вашей команде. Проверьте состав маршрута.',
+          artifacts_unavailable: 'Сервер не смог проверить экспонаты. Попробуйте сохранить маршрут позже.',
+          empty_route: 'Добавьте хотя бы один экспонат для публикации маршрута.',
           invalid_route: 'Проверьте название и настройки маршрута: сервер отклонил данные.',
           version_conflict: 'Маршрут изменился на сервере. Откройте его заново, чтобы не перезаписать новые изменения.',
           service_unavailable: 'Сервер временно недоступен. Изменения сохранены в локальном черновике; повторите попытку позже.',

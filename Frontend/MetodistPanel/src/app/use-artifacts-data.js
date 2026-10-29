@@ -1,5 +1,6 @@
 import {useEffect, useEffectEvent, useState} from 'react';
 import {artifactsApi, authApi} from '../api';
+import {loadAllArtifacts} from './artifact-list-data';
 
 export function useArtifactsData({
   session,
@@ -24,11 +25,11 @@ export function useArtifactsData({
     setArtifactsLoading(true);
     setArtifactsError('');
     try {
-      const response = await artifactsApi.list();
+      const response = await loadAllArtifacts(artifactsApi.list);
       setArtifacts(response?.artifacts ?? []);
     } catch {
       setArtifacts([]);
-      setArtifactsError('Не удалось загрузить артефакты. Проверьте, что ArtifactsService запущен на 8081 порту.');
+      setArtifactsError('Не удалось загрузить экспонаты. Проверьте, что ArtifactsService запущен на 8081 порту.');
     } finally {
       setArtifactsLoading(false);
     }
@@ -47,7 +48,7 @@ export function useArtifactsData({
       const connectedData = loadConnectedDataEvent();
       if (isMock) {
         try {
-          const [artifactsResponse] = await Promise.all([artifactsApi.list(), connectedData]);
+          const [artifactsResponse] = await Promise.all([loadAllArtifacts(artifactsApi.list), connectedData]);
 
           if (cancelled) {
             return;
@@ -72,7 +73,7 @@ export function useArtifactsData({
       try {
         const [meResponse, artifactsResponse] = await Promise.all([
           authApi.me(accessToken),
-          artifactsApi.list(),
+          loadAllArtifacts(artifactsApi.list),
         ]);
 
         await connectedData;
@@ -95,7 +96,7 @@ export function useArtifactsData({
         }
 
         setArtifacts([]);
-        setArtifactsError('Не удалось загрузить артефакты. Проверьте, что AuthService и ArtifactsService доступны.');
+        setArtifactsError('Не удалось загрузить экспонаты. Проверьте, что AuthService и ArtifactsService доступны.');
       } finally {
         if (!cancelled) {
           setArtifactsLoading(false);

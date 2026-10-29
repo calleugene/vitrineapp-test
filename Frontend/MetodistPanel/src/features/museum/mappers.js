@@ -46,7 +46,7 @@ export function mapMuseumStatsData(stats) {
   }
 
   return [
-    {title: 'Артефактов', value: String(stats.artifacts_count ?? 0)},
+    {title: 'Экспонатов', value: String(stats.artifacts_count ?? 0)},
     {title: 'Маршрутов', value: String(stats.routes_count ?? 0)},
     {title: 'Посетителей', value: String(stats.visitors_count ?? 0)},
   ];

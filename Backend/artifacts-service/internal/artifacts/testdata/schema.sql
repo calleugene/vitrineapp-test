@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS artifacts (
     story_id TEXT DEFAULT '',
     found_count INTEGER DEFAULT 0,
     published_at TEXT,
+    deleted_at TEXT NULL,
     archived_at TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL

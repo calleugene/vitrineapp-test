@@ -31,11 +31,11 @@ export const VIEW_TITLE_MAP = {
   'route-content': 'Маршруты: Контент',
   'route-publish': 'Маршруты: Публикация',
   'route-success': 'Маршруты: Успешно',
-  artifacts: 'Артефакты',
-  'artifact-basic': 'Артефакты: Основное',
-  'artifact-content': 'Артефакты: Контент',
-  'artifact-publish': 'Артефакты: Публикация',
-  'artifact-success': 'Артефакты: Успешно',
+  artifacts: 'Экспонаты',
+  'artifact-basic': 'Экспонаты: Основное',
+  'artifact-content': 'Экспонаты: Контент',
+  'artifact-publish': 'Экспонаты: Публикация',
+  'artifact-success': 'Экспонаты: Успешно',
 };
 
 const ROUTE_VIEW_ENTRIES = Object.entries(VIEW_ROUTE_MAP)

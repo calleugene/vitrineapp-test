@@ -147,3 +147,7 @@
   .server-inline-editor__actions,
   .server-flow-footer .g-button { width: 100%; }
 }
+
+.server-artifact-archive { grid-column: 1 / -1; }
+.server-artifact-selector .panel-header h2 { margin: 0; font-size: var(--vl-text-subheading); }
+.server-artifact-select:disabled { cursor: wait; }

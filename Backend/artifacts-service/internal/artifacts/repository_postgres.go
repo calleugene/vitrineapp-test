@@ -50,7 +50,7 @@ func (r *PostgresRepository) UpdateMuseumProfile(ctx context.Context, profile Mu
 }
 
 func (r *PostgresRepository) ListArtifacts(ctx context.Context, status, category, sort string, page, limit int, museumID *string) ([]Artifact, int, error) {
-	where := "WHERE 1=1"
+	where := "WHERE deleted_at IS NULL"
 	var args []any
 	paramIdx := 1
 
@@ -125,12 +125,12 @@ func (r *PostgresRepository) CreateArtifact(ctx context.Context, artifact Artifa
 }
 
 func (r *PostgresRepository) GetArtifact(ctx context.Context, artifactID string) (Artifact, error) {
-	row := r.db.QueryRowContext(ctx, artifactSelectColumnsPG+" WHERE id = $1", artifactID)
+	row := r.db.QueryRowContext(ctx, artifactSelectColumnsPG+" WHERE id = $1 AND deleted_at IS NULL", artifactID)
 	return scanArtifactRow(row)
 }
 
 func (r *PostgresRepository) GetArtifactByPublicCode(ctx context.Context, publicCode string) (Artifact, error) {
-	row := r.db.QueryRowContext(ctx, artifactSelectColumnsPG+" WHERE public_code = $1", publicCode)
+	row := r.db.QueryRowContext(ctx, artifactSelectColumnsPG+" WHERE public_code = $1 AND deleted_at IS NULL", publicCode)
 	return scanArtifactRow(row)
 }
 
@@ -142,7 +142,7 @@ func (r *PostgresRepository) CreatePublication(ctx context.Context, publication 
 func (r *PostgresRepository) GetLatestPublication(ctx context.Context, publicCode string) (Publication, error) {
 	var publication Publication
 	var publishedAt any
-	err := r.db.QueryRowContext(ctx, `SELECT p.artifact_id, p.version, p.snapshot_json::text, p.published_at FROM artifact_publications p JOIN artifacts a ON a.id = p.artifact_id WHERE a.public_code = $1 ORDER BY p.version DESC LIMIT 1`, publicCode).Scan(&publication.ArtifactID, &publication.Version, &publication.SnapshotJSON, &publishedAt)
+	err := r.db.QueryRowContext(ctx, `SELECT p.artifact_id, p.version, p.snapshot_json::text, p.published_at FROM artifact_publications p JOIN artifacts a ON a.id = p.artifact_id WHERE a.public_code = $1 AND a.deleted_at IS NULL ORDER BY p.version DESC LIMIT 1`, publicCode).Scan(&publication.ArtifactID, &publication.Version, &publication.SnapshotJSON, &publishedAt)
 	if err == sql.ErrNoRows {
 		return Publication{}, ErrNotFound
 	}
@@ -172,7 +172,7 @@ func (r *PostgresRepository) UpdateArtifact(ctx context.Context, artifact Artifa
 }
 
 func (r *PostgresRepository) DeleteArtifact(ctx context.Context, artifactID string) error {
-	res, err := r.db.ExecContext(ctx, `DELETE FROM artifacts WHERE id = $1`, artifactID)
+	res, err := r.db.ExecContext(ctx, `UPDATE artifacts SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL`, artifactID)
 	if err != nil {
 		return err
 	}
@@ -197,13 +197,13 @@ func (r *PostgresRepository) GetSummary(ctx context.Context, museumID *string) (
 		args = append(args, *museumID)
 	}
 
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE 1=1"+museumFilter, args...).Scan(&summary.Total)
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE status = 'published'"+museumFilter, args...).Scan(&summary.Published)
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE status = 'draft'"+museumFilter, args...).Scan(&summary.Draft)
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE status = 'archived'"+museumFilter, args...).Scan(&summary.Archived)
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE status = 'moderation'"+museumFilter, args...).Scan(&summary.Moderation)
+	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE deleted_at IS NULL"+museumFilter, args...).Scan(&summary.Total)
+	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE deleted_at IS NULL AND status = 'published'"+museumFilter, args...).Scan(&summary.Published)
+	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE deleted_at IS NULL AND status = 'draft'"+museumFilter, args...).Scan(&summary.Draft)
+	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE deleted_at IS NULL AND status = 'archived'"+museumFilter, args...).Scan(&summary.Archived)
+	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM artifacts WHERE deleted_at IS NULL AND status = 'moderation'"+museumFilter, args...).Scan(&summary.Moderation)
 
-	catQuery := "SELECT category, COUNT(*) FROM artifacts WHERE 1=1" + museumFilter + " GROUP BY category"
+	catQuery := "SELECT category, COUNT(*) FROM artifacts WHERE deleted_at IS NULL" + museumFilter + " GROUP BY category"
 	catRows, err := r.db.QueryContext(ctx, catQuery, args...)
 	if err == nil {
 		defer catRows.Close()

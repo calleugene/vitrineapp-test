@@ -178,14 +178,6 @@ func (s *Service) UpdateArtifact(ctx context.Context, artifactID string, req upd
 }
 
 func (s *Service) DeleteArtifact(ctx context.Context, artifactID string) error {
-	item, err := s.repo.GetArtifact(ctx, artifactID)
-	if err != nil {
-		return err
-	}
-	if item.PublishedRevision > 0 || item.Status == "published" {
-		_, err := s.ArchiveArtifact(ctx, artifactID)
-		return err
-	}
 	return s.repo.DeleteArtifact(ctx, artifactID)
 }
 
