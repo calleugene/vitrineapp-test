@@ -38,7 +38,18 @@
 		reverse_proxy artifacts-service:8081
 	}
 	redir /methodist /methodist/ 308
+	handle /embed/exhibits/* {
+		root * /srv/visitor
+		rewrite * /embed.html
+		header Content-Security-Policy "frame-ancestors *"
+		header Referrer-Policy no-referrer
+		header Permissions-Policy "camera=(), microphone=(), geolocation=(), xr-spatial-tracking=()"
+		header Cache-Control no-store
+		file_server
+	}
 	handle_path /methodist/* {
+		header Content-Security-Policy "frame-ancestors 'self'"
+		header X-Frame-Options SAMEORIGIN
 		root * /srv/methodist
 		try_files {path} /index.html
 		file_server

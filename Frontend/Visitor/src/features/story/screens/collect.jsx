@@ -4,7 +4,7 @@ import {safeHtml} from '../html';
 
 /* Экран сбора артефакта: появляется независимо от контента методиста,
    поэтому сам не решает ничего про навигацию — только показывает состояние сбора. */
-export function CollectScreen({title, text, artifactTitle, imageUrl, exitLabel, feedback, isCollected, isCollecting, collectError, onCollect, onExit}) {
+export function CollectScreen({title, text, artifactTitle, imageUrl, exitLabel, feedback, isCollected, isCollecting, collectError, onCollect, onExit, allowCollection = true, onRestart}) {
   const returnRef = useRef(null);
   const [imageFailed, setImageFailed] = useState(false);
   useEffect(() => {
@@ -25,8 +25,17 @@ export function CollectScreen({title, text, artifactTitle, imageUrl, exitLabel, 
         <h1 className="story-title" dangerouslySetInnerHTML={{__html: safeHtml(isCollected ? 'В вашей коллекции' : title)}} />
         <p className="story-text">{isCollected ? 'Экспонат сохранён. Вы сможете вернуться к его истории в своей коллекции.' : text || 'Сохраните экспонат, чтобы вернуться к его истории.'}</p>
       </div>
+      <CompletionActions returnRef={returnRef} allowCollection={allowCollection} isCollected={isCollected} isCollecting={isCollecting} collectError={collectError} exitLabel={exitLabel} onCollect={onCollect} onExit={onExit} onRestart={onRestart} />
+      {feedback && <div className="story-completion-feedback">{feedback}</div>}
+    </div>
+  );
+}
+
+function CompletionActions({returnRef, allowCollection, isCollected, isCollecting, collectError, exitLabel, onCollect, onExit, onRestart}) {
+  return (
       <div className="story-final-actions">
-        {!isCollected && <button className="story-cta-btn" type="button" onClick={onCollect} disabled={isCollecting} aria-busy={isCollecting}>
+        {onRestart && <button className="story-cta-btn" type="button" onClick={onRestart}>Посмотреть ещё раз</button>}
+        {allowCollection && !isCollected && <button className="story-cta-btn" type="button" onClick={onCollect} disabled={isCollecting} aria-busy={isCollecting}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M6 4h12v17l-6-4-6 4V4Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
           </svg>
@@ -37,7 +46,5 @@ export function CollectScreen({title, text, artifactTitle, imageUrl, exitLabel, 
         </button>
         {collectError && <p className="story-collect-error" role="alert">{collectError}</p>}
       </div>
-      {feedback && <div className="story-completion-feedback">{feedback}</div>}
-    </div>
   );
 }

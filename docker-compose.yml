@@ -49,6 +49,7 @@ services:
       ARTIFACTS_ASSET_DIR: /data/assets
       ARTIFACTS_ASSET_PUBLIC_URL: /media-files
       ARTIFACTS_PUBLIC_BASE_URL: "${PUBLIC_URL}"
+      ARTIFACTS_EMBED_COUNTING_ENABLED: "${ARTIFACTS_EMBED_COUNTING_ENABLED:-false}"
     volumes:
       - artifacts_service_data:/data
   visitor-service:

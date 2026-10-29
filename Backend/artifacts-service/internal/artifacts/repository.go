@@ -20,6 +20,8 @@ type Repository interface {
 	GetArtifactByPublicCode(ctx context.Context, publicCode string) (Artifact, error)
 	CreatePublication(ctx context.Context, publication Publication) error
 	GetLatestPublication(ctx context.Context, publicCode string) (Publication, error)
+	IncrementEmbedOpen(ctx context.Context, artifactID, day string) error
+	EmbedOpenTotal(ctx context.Context, artifactID string) (int64, error)
 
 	GetSummary(ctx context.Context, museumID *string) (summaryResponse, error)
 

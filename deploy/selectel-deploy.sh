@@ -21,6 +21,8 @@ test -f "$release/docker-compose.yml"
 test -f "$release/Landing/dist/send-lead.php"
 test -f "$release/Frontend/MetodistPanel/dist/index.html"
 test -f "$release/Frontend/Visitor/dist/index.html"
+test -f "$release/Frontend/Visitor/dist/embed.html"
+python3 "$release/deploy/install-embed-nginx.py" --revision "$revision"
 
 compose=(docker compose -p vitrineapp --env-file /opt/vitrineapp/.env -f "$release/docker-compose.yml" -f "$release/deploy/compose.selectel.yml")
 services=(auth-service artifacts-service visitor-service analytics-service route-service feedback-service notification-service dashboard-service)
@@ -37,11 +39,14 @@ for url in \
   https://vitrineapp.ru/ \
   https://vitrineapp.ru/methodist/ \
   https://vitrineapp.ru/visitor/ \
+  https://vitrineapp.ru/embed/exhibits/00000 \
   https://vitrineapp.ru/api/auth/api/v1/auth/legal-documents \
   https://vitrineapp.ru/api/artifacts/api/v1/public/museums \
   https://vitrineapp.ru/api/visitor/healthz; do
   curl --fail --silent --show-error --retry 10 --retry-delay 2 --retry-connrefused --retry-all-errors -o /dev/null "$url"
 done
+
+python3 "$release/deploy/verify-embed-release.py" --release "$release"
 
 printf '%s\n' "$revision" > /opt/vitrineapp/deployed-revision
 ln -sfn "$release" /opt/vitrineapp/current

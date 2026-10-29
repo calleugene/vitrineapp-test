@@ -3,9 +3,11 @@ package artifacts
 import "time"
 
 type Config struct {
-	Now           func() time.Time
-	PublicBaseURL string
-	AssetStore    AssetStore
+	// Enable only after the deployment logging/privacy review. No visitor records are stored.
+	EmbedCountingEnabled bool
+	Now                  func() time.Time
+	PublicBaseURL        string
+	AssetStore           AssetStore
 	// TokenSecret is shared with AuthService. An empty value is allowed only by
 	// explicit test configuration; the production entrypoint requires it.
 	TokenSecret    string

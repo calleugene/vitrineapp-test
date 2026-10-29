@@ -292,6 +292,7 @@ export const artifactsApi = {
   reorderScreens: (artifactId, items) => request(ARTIFACTS_API_URL, `${API_PREFIX}/artifacts/${artifactId}/screens/reorder`, {...jsonOptions('PUT', {items}), headers: museumHeaders()}),
   duplicateScreen: (artifactId, screenId) => request(ARTIFACTS_API_URL, `${API_PREFIX}/artifacts/${artifactId}/screens/${screenId}/duplicate`, {method: 'POST', headers: museumHeaders()}),
   publish: (artifactId, expectedDraftRevision) => request(ARTIFACTS_API_URL, `${API_PREFIX}/artifacts/${artifactId}/publish`, {...jsonOptions('POST', {expected_draft_revision: expectedDraftRevision}), headers: museumHeaders()}),
+  getEmbedOpens: (artifactId) => request(ARTIFACTS_API_URL, `${API_PREFIX}/artifacts/${artifactId}/embed-opens`, {headers: museumHeaders()}),
   getQRCode: async (artifactId) => {
     let response;
     try {

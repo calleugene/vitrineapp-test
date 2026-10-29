@@ -18,7 +18,7 @@ import {AuthView, ForgotPasswordView, ForgotPasswordSentView, ResetPasswordView,
 import {NotFoundView} from '../features/not-found/views.jsx';
 import {SkeletonCards} from '../components/ui.jsx';
 
-const StoryExperienceView = lazy(() => import('../features/story/views.jsx').then(m => ({default: m.StoryExperienceView})));
+const StoryExperienceView = lazy(() => import('../features/story/TrackedStoryExperience.jsx').then(m => ({default: m.TrackedStoryExperience})));
 
 export function ViewContent({data, navigate, actions}) {
   const {view} = data;

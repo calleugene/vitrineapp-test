@@ -433,3 +433,25 @@ func (r *SQLiteRepository) GetArtifactStatus(ctx context.Context, visitorID, art
 	row := r.db.QueryRowContext(ctx, `SELECT id, visitor_id, artifact_id, found, found_at, is_favorite, favorited_at, created_at, updated_at FROM artifact_visitor_status WHERE visitor_id = ? AND artifact_id = ?`, visitorID, artifactID)
 	return scanArtifactVisitorStatusRow(row)
 }
+
+// IncrementEmbedOpen stores only a daily aggregate; no request or visitor data.
+func (r *SQLiteRepository) IncrementEmbedOpen(ctx context.Context, artifactID, day string) error {
+	result, err := r.db.ExecContext(ctx, `INSERT INTO artifact_embed_opens (artifact_id, day, opens)
+ SELECT id, ?, 1 FROM artifacts WHERE id = ? AND deleted_at IS NULL
+ AND status <> 'archived' AND published_revision > 0
+ ON CONFLICT (artifact_id, day) DO UPDATE SET opens = artifact_embed_opens.opens + 1`, day, artifactID)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err == nil && n == 0 {
+		return ErrNotFound
+	}
+	return err
+}
+
+func (r *SQLiteRepository) EmbedOpenTotal(ctx context.Context, artifactID string) (int64, error) {
+	var total int64
+	err := r.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(opens), 0) FROM artifact_embed_opens WHERE artifact_id = ?`, artifactID).Scan(&total)
+	return total, err
+}

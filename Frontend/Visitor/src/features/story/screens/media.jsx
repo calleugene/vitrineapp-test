@@ -3,11 +3,13 @@ import {UI} from '../config';
 import {ArModelViewer} from '../ArModelViewer';
 import {MEDIA_ICON} from './icons';
 
-function StoryPhoto({src, isCover}) {
+function StoryPhoto({src, isCover, recoverable = false}) {
   const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  if (failed && recoverable) return <div className="story-media"><p className="story-model-status" role="status">Не удалось загрузить изображение.<button type="button" onClick={() => {setFailed(false); setAttempt(attempt + 1);}}>Повторить</button></p></div>;
   return (
     <div className="story-media" aria-hidden="true">
-      {!failed && <img className="story-photo" src={src} alt="" loading={isCover ? 'eager' : 'lazy'} decoding="async" onError={() => setFailed(true)} />}
+      {!failed && <img key={attempt} className="story-photo" src={src} alt="" loading={isCover ? 'eager' : 'lazy'} decoding="async" onError={() => setFailed(true)} />}
     </div>
   );
 }
@@ -15,7 +17,7 @@ function StoryPhoto({src, isCover}) {
 /* Медиа-слот слайда: выбирает фон по screen.media (image / ar / none).
    Живёт отдельно от форм контента, потому что медиа задаётся данными,
    а не тем, что методист написал в текстовом блоке. */
-export function SlideMedia({screen, onArInteraction}) {
+export function SlideMedia({screen, onArInteraction, allowAr = true}) {
   if (screen.media === 'none') {
     return <div className={`story-media story-media--plain story-media--${screen.type}`} aria-hidden="true" />;
   }
@@ -23,7 +25,7 @@ export function SlideMedia({screen, onArInteraction}) {
   const asset = screen.imageUrl || screen.modelUrl;
 
   if (screen.media === 'ar') {
-    if (screen.modelUrl) return <ArModelViewer key={screen.modelUrl} modelUrl={screen.modelUrl} onInteraction={onArInteraction} />;
+    if (screen.modelUrl) return <ArModelViewer key={screen.modelUrl} modelUrl={screen.modelUrl} onInteraction={onArInteraction} allowAr={allowAr} />;
     return (
       <div className="story-media story-media--ar" aria-hidden="true">
         <span className="story-ph-shimmer" />
@@ -51,7 +53,7 @@ export function SlideMedia({screen, onArInteraction}) {
   }
 
   if (asset && screen.media === 'image') {
-    return <StoryPhoto key={asset} src={asset} isCover={screen.type === 'cover'} />;
+    return <StoryPhoto key={asset} src={asset} isCover={screen.type === 'cover'} recoverable={!allowAr} />;
   }
 
   if (screen.media === 'image') return <div className="story-media story-media--plain" aria-hidden="true" />;

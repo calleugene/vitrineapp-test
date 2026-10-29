@@ -2,7 +2,15 @@ import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), {
+    name: 'embed-document',
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        if (req.url?.startsWith('/embed/')) req.url = '/embed.html';
+        next();
+      });
+    },
+  }],
   server: {
     port: parseInt(process.env.PORT || '5174'),
     strictPort: false,
@@ -32,6 +40,7 @@ export default defineConfig({
   },
   build: {
     rolldownOptions: {
+      input: {main: new URL("./index.html", import.meta.url).pathname, embed: new URL("./embed.html", import.meta.url).pathname},
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {

@@ -58,7 +58,7 @@ function DataLayer() {
 export function App() {
   const publicRouteId = window.location.pathname.match(/^\/routes\/(rte_[a-f0-9]{32})\/?$/)?.[1];
   if (publicRouteId) return <PublicRoute routeId={publicRouteId} />;
-  const publicCode = window.location.pathname.match(/^\/exhibits\/([A-Z0-9]{5})\/?$/i)?.[1];
+  const publicCode = window.location.pathname.match(/^\/exhibits\/((?:[A-Z0-9]{5}|[A-F0-9]{10}))\/?$/i)?.[1];
   if (publicCode) return <PublicArtifactStory code={publicCode.toUpperCase()} />;
   return (
     <ToastProvider>

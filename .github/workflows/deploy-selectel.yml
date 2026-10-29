@@ -43,7 +43,7 @@ jobs:
         run: |
           mkdir -p package/deploy package/Landing package/Frontend/MetodistPanel package/Frontend/Visitor
           cp -a Backend docker docker-compose.yml package/
-          cp deploy/compose.selectel.yml package/deploy/
+          cp deploy/compose.selectel.yml deploy/nginx.selectel.conf deploy/nginx-embed.locations.conf deploy/install-embed-nginx.py deploy/verify-embed-release.py package/deploy/
           cp -a Landing/dist package/Landing/
           cp -a Frontend/MetodistPanel/dist package/Frontend/MetodistPanel/
           cp -a Frontend/Visitor/dist package/Frontend/Visitor/

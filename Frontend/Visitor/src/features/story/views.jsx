@@ -1,5 +1,4 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {analyticsEvents} from '../../app/analytics-events.js';
 import './story.css';
 import {UI, MEDIA_LABEL, CONFETTI} from './config';
 import {stripHtmlTags} from './html';
@@ -135,6 +134,8 @@ function ScreenContent({
   collectError,
   onCollect,
   onExit,
+  embedded,
+  onRestart,
 }) {
   switch (screen.type) {
     case 'cover':
@@ -161,6 +162,8 @@ function ScreenContent({
     case 'collect':
       return (
         <CollectScreen
+          allowCollection={!embedded}
+          onRestart={onRestart}
           artifactTitle={artifactTitle}
           imageUrl={imageUrl}
           exitLabel={exitLabel}
@@ -181,7 +184,7 @@ function ScreenContent({
   }
 }
 
-export function StoryExperienceView({data, navigate, actions, publicStory = null, onExit, onCollect, onTrackEvent, onTrackEventOnce, feedback, exitLabel}) {
+export function StoryExperienceView({data, navigate, actions, publicStory = null, onExit, onCollect, onTrackEvent, onTrackEventOnce, feedback, exitLabel, embedded = false}) {
   const scrollRef = useRef(null);
   const progressRef = useRef(null);
   const slideRefs = useRef([]);
@@ -210,18 +213,16 @@ export function StoryExperienceView({data, navigate, actions, publicStory = null
     if (progress && marker) progress.scrollTo({top: marker.offsetTop - (progress.clientHeight - marker.clientHeight) / 2});
   }, [active]);
   const eventArtifactId = publicStory?.artifactId || data?.activeArtifactId;
-  const eventPublicCode = data?.museumDetail?.artifacts?.find((artifact) => artifact.id === eventArtifactId)?.publicCode || '';
   const trackerRef = useRef(null);
   const trackerOnceRef = useRef(null);
   useEffect(() => {
-    trackerRef.current = onTrackEvent || (eventPublicCode ? (type, payload) => analyticsEvents.track(type, {public_code: eventPublicCode, artifact_id: eventArtifactId, source: 'route', ...payload}) : null);
-    trackerOnceRef.current = onTrackEventOnce || (eventPublicCode ? (key, type, payload) => analyticsEvents.trackOnce(`${eventPublicCode}:${key}`, type, {public_code: eventPublicCode, artifact_id: eventArtifactId, source: 'route', ...payload}) : null);
-    if (eventPublicCode) analyticsEvents.trackOnce(`visit:${data?.selectedMuseumId || eventPublicCode}`, 'visit_start', {public_code: eventPublicCode, artifact_id: eventArtifactId, source: 'route'});
-  }, [onTrackEvent, onTrackEventOnce, eventPublicCode, eventArtifactId, data?.selectedMuseumId]);
+    trackerRef.current = embedded ? null : onTrackEvent;
+    trackerOnceRef.current = embedded ? null : onTrackEventOnce;
+  }, [embedded, onTrackEvent, onTrackEventOnce]);
 
   useEffect(() => {
     const screen = screens[active];
-    if (!screen || !eventArtifactId) return undefined;
+    if (embedded || !screen || !eventArtifactId) return undefined;
     const screenId = screen.id;
     const artifactId = eventArtifactId;
     if (document.visibilityState === 'visible') {
@@ -252,7 +253,7 @@ export function StoryExperienceView({data, navigate, actions, publicStory = null
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('pagehide', commit);
     };
-  }, [active, screens, eventArtifactId]);
+  }, [active, screens, eventArtifactId, embedded]);
 
   const exitStory = useCallback(() => {
     if (onExit) {
@@ -335,7 +336,7 @@ export function StoryExperienceView({data, navigate, actions, publicStory = null
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey ||
           document.querySelector('[aria-modal="true"]')) return;
       if (event.key === 'Escape') {
-        exitStory();
+        if (!embedded) exitStory();
         return;
       }
       if (target instanceof Element && target.closest('button, a, input, textarea, select, [contenteditable="true"], model-viewer')) return;
@@ -357,7 +358,7 @@ export function StoryExperienceView({data, navigate, actions, publicStory = null
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goNext, goPrev, exitStory, activeType, arActive, quizAnswer]);
+  }, [goNext, goPrev, exitStory, activeType, arActive, quizAnswer, embedded]);
 
   const handleQuiz = (option, idx, screen) => {
     if (quizAnswers[idx]) return;
@@ -424,9 +425,9 @@ export function StoryExperienceView({data, navigate, actions, publicStory = null
           })}
         </nav>
         <div className="story-topbar-row">
-          <button className="story-close" type="button" onClick={exitStory} aria-label={UI.closeStory}>
+          <button className="story-close" type="button" onClick={exitStory} aria-label={embedded ? 'Открыть экспонат отдельно' : UI.closeStory}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              <path d={embedded ? "M7 17 17 7M7 7h10v10" : "m6 6 12 12M18 6 6 18"} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
             </svg>
           </button>
         </div>
@@ -445,13 +446,15 @@ export function StoryExperienceView({data, navigate, actions, publicStory = null
               inert={idx !== active}
               ref={(el) => { slideRefs.current[idx] = el; }}
             >
-              <SlideMedia screen={screen} onArInteraction={handleArInteraction} />
+              <SlideMedia screen={screen} onArInteraction={handleArInteraction} allowAr={!embedded} />
               <div className={`story-scrim${hideForAr ? ' is-ar-hidden' : ''}`} aria-hidden="true" />
 
               <div className={`story-content${hideForAr ? ' is-ar-hidden' : ''}`}>
                 <div className="story-copy" tabIndex={idx === active && !hideForAr ? 0 : -1} role="region" aria-label="Содержание экрана">
                 <ScreenContent
                   screen={screen}
+                  embedded={embedded}
+                  onRestart={embedded ? () => {setQuizAnswers({}); scrollToSlide(0);} : undefined}
                   artifactTitle={screens[0]?.title}
                   imageUrl={screens.find((item) => item.imageUrl)?.imageUrl}
                   exitLabel={exitLabel}

@@ -1,10 +1,12 @@
 import React, {useRef, useState} from 'react';
 import {Button, Card, Dialog, DropdownMenu, Icon, Label} from '@gravity-ui/uikit';
-import {Archive, ArrowRotateLeft, Copy, EllipsisVertical, Pencil, Plus, TrashBin} from '@gravity-ui/icons';
+import {artifactPublicUrl} from '../../components/publication-utils.js';
+import {Archive, ArrowRotateLeft, Copy, EllipsisVertical, Link, Pencil, Plus, TrashBin} from '@gravity-ui/icons';
 
 function ArtifactActions({artifact, flow, onDelete}) {
   const disabled = flow.listBusy || flow.loading;
   const items = [
+    ...(artifactPublicUrl(artifact, null, window.location.origin) ? [{text:'Встроить на сайт', icon:<Icon data={Link} size={16} />, action:() => flow.select(artifact.id, 'artifact-publish'), disabled}] : []),
     {text: 'Редактировать', icon: <Icon data={Pencil} size={16} />, action: () => flow.select(artifact.id), disabled},
     {text: 'Дублировать', icon: <Icon data={Copy} size={16} />, action: () => flow.duplicateArtifact(artifact.id), disabled},
     {text: 'Удалить', icon: <Icon data={TrashBin} size={16} />, theme: 'danger', action: () => onDelete(artifact), disabled},
@@ -70,7 +72,7 @@ export function ArtifactList({artifacts, artifactsLoading, artifactsError, onRel
           <div className="panel-header server-artifact-list-header"><div><h2>Экспонаты</h2><p className="panel-subtitle">Выберите экспонат, чтобы продолжить редактирование.</p></div><Button view="action" size="l" disabled={flow.listBusy || flow.loading} onClick={flow.start}><Icon data={Plus} size={18} />Добавить экспонат</Button></div>
           {active.length ? <ArtifactTable artifacts={active} flow={flow} onDelete={askDelete} /> : <div className="server-empty"><p>Активных экспонатов пока нет</p><span>Добавьте новый или восстановите экспонат из архива.</span></div>}
         </Card>
-        <Card className="panel" view="filled"><div className="panel-header"><h2>Что дальше</h2></div><ol className="server-artifact-guide"><li>Добавьте основные сведения и обложку.</li><li>Соберите историю из экранов.</li><li>Опубликуйте и разместите QR-код рядом с экспонатом.</li></ol></Card>
+        <Card className="panel" view="filled"><div className="panel-header"><h2>Что дальше</h2></div><ol className="server-artifact-guide"><li>Добавьте основные сведения и обложку.</li><li>Соберите историю из экранов.</li><li>Опубликуйте и разместите QR-код рядом с экспонатом.</li><li>Для размещения на другом сайте выберите «Встроить на сайт» в меню опубликованного экспоната.</li></ol></Card>
         <Card className="panel server-artifact-panel server-artifact-archive" view="filled">
           <div className="panel-header"><div><h2>Экспонаты в архиве <span className="panel-subtitle">({archived.length})</span></h2><p className="panel-subtitle">Архивные экспонаты можно восстановить в черновики.</p></div></div>
           {archived.length ? <ArtifactTable artifacts={archived} flow={flow} onDelete={askDelete} /> : <p className="panel-subtitle">В архиве пока нет экспонатов.</p>}

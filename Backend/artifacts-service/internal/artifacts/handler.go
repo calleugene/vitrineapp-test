@@ -369,6 +369,7 @@ func NewHandler(service *Service) http.Handler {
 		_, _ = w.Write(png)
 	}
 	publicResolveHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
 		publication, err := service.ResolvePublic(r.Context(), r.PathValue("publicCode"))
 		if err != nil {
 			writeServiceError(w, err)
@@ -390,7 +391,6 @@ func NewHandler(service *Service) http.Handler {
 			return
 		}
 		publishedArtifact["museum_id"] = *artifact.MuseumID
-		w.Header().Set("Cache-Control", "public, max-age=60")
 		writeJSON(w, http.StatusOK, snapshot)
 	}
 	publicMuseumArtifactsHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -574,6 +574,38 @@ func NewHandler(service *Service) http.Handler {
 	registerRoute("DELETE /artifacts/{artifactId}/screens/{screenId}", deleteScreenHandler)
 	registerRoute("POST /artifacts/{artifactId}/screens/{screenId}/duplicate", duplicateScreenHandler)
 	registerRoute("PUT /artifacts/{artifactId}/screens/reorder", reorderScreensHandler)
+	mux.HandleFunc("POST /api/v1/public/artifacts/{publicCode}/embed-opens", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		// No JSON properties, visitor identity, referrer or device fields are accepted.
+		body, err := io.ReadAll(io.LimitReader(r.Body, 1))
+		if err != nil || len(body) != 0 {
+			writeError(w, 400, "empty_body_required")
+			return
+		}
+		if !service.config.EmbedCountingEnabled {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		publication, err := service.ResolvePublic(r.Context(), r.PathValue("publicCode"))
+		if err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		if err := service.repo.IncrementEmbedOpen(r.Context(), publication.ArtifactID, service.config.now().Format("2006-01-02")); err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("GET /api/v1/artifacts/{artifactId}/embed-opens", museumIDMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		total, err := service.repo.EmbedOpenTotal(r.Context(), r.PathValue("artifactId"))
+		if err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		writeJSON(w, 200, map[string]any{"enabled": service.config.EmbedCountingEnabled, "opens": total})
+	}))
 	mux.HandleFunc("GET /api/v1/public/artifacts/{publicCode}", publicResolveHandler)
 	mux.HandleFunc("POST /api/v1/public/artifacts/{publicCode}/collect", publicCollectHandler)
 	mux.HandleFunc("GET /api/v1/public/museums/{museumId}/artifacts", publicMuseumArtifactsHandler)
