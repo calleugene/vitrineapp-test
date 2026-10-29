@@ -13,13 +13,11 @@ import {
   UsersRound,
   Pencil,
   Link2,
-  Check,
   Plus,
   Mail,
   Image as ImageIcon,
   Headphones,
   Route,
-  Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -38,18 +36,16 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { photo } from '@/components/ProductMockup';
 import { LeadForm } from '@/components/LeadForm';
-import type { BillingPeriod } from '@/lib/leads';
 
 const nav = [
   ['О продукте', 'product'],
   ['Возможности', 'features'],
   ['Как это работает', 'how-it-works'],
-  ['Тарифы', 'pricing'],
   ['FAQ', 'faq'],
 ];
 type ModalKind = 'demo' | 'story';
 type OpenModal = (kind: ModalKind, title?: string) => void;
-type Waitlist = (source: string, plan?: string) => void;
+type Waitlist = (source: string) => void;
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
     <p className="section-label">
@@ -494,184 +490,6 @@ function ExhibitStories({ open }: { open: OpenModal }) {
     </section>
   );
 }
-const freeFeatures = [
-  'До 10 экспонатов',
-  'Базовые блоки контента',
-  'Публикация по QR-коду',
-  'Базовая аналитика',
-];
-const plusFeatures = [
-  'Безлимит экспонатов',
-  'Все типы контента',
-  '3D и AR',
-  'Публикация по QR',
-  'Расширенная аналитика',
-  'Командная работа',
-];
-const largeFeatures = [
-  'Мультиплощадочный доступ',
-  'Интеграции с вашими системами',
-  'Расширенная аналитика',
-  'Выделенная поддержка',
-  'Обучение команды',
-];
-const monthlyMuseumPlusPrice = 9_990;
-const annualMuseumPlusTotal = monthlyMuseumPlusPrice * 12 * 0.75;
-const formatRubles = (value: number) =>
-  `${new Intl.NumberFormat('ru-RU', {
-    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(value)} ₽`;
-function PricingCard({
-  title,
-  description,
-  price,
-  note,
-  features,
-  popular = false,
-  children,
-}: {
-  title: string;
-  description: string;
-  price: ReactNode;
-  note: ReactNode;
-  features: string[];
-  popular?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <article className={`pricing-card ${popular ? 'popular-card' : ''}`}>
-      {popular && (
-        <span className="popular-badge">
-          <Sparkles size={12} aria-hidden="true" />
-          Популярный
-        </span>
-      )}
-      <h3>{title}</h3>
-      <p className="pricing-description">{description}</p>
-      <div className="price">{price}</div>
-      <p className="price-note">{note}</p>
-      <ul>
-        {features.map((item) => (
-          <li key={item}>
-            <Check aria-hidden="true" size={16} />
-            {item}
-          </li>
-        ))}
-      </ul>
-      {children}
-    </article>
-  );
-}
-function Pricing({
-  period,
-  setPeriod,
-  onWaitlist,
-}: {
-  period: BillingPeriod;
-  setPeriod: (value: BillingPeriod) => void;
-  onWaitlist: Waitlist;
-}) {
-  return (
-    <section id="pricing" className="section pricing-section">
-      <div className="container reveal">
-        <div className="pricing-heading">
-          <SectionLabel>ТАРИФЫ</SectionLabel>
-          <h2>
-            Выберите формат,
-            <br />
-            который подходит вашему музею
-          </h2>
-          <p>
-            Все тарифы включают доступ к визуальному редактору,
-            <br className="desktop-break" /> публикацию через QR-код и базовую
-            аналитику.
-          </p>
-          <fieldset className="billing-toggle" aria-label="Период оплаты">
-            <button
-              aria-pressed={period === 'month'}
-              onClick={() => setPeriod('month')}
-            >
-              Месяц
-            </button>
-            <button
-              aria-pressed={period === 'year'}
-              onClick={() => setPeriod('year')}
-            >
-              Год <span className="billing-discount">−25%</span>
-            </button>
-          </fieldset>
-        </div>
-        <div className="pricing-grid">
-          <PricingCard
-            title="Пробный"
-            description="Для небольших проектов и тестирования."
-            price={<>0 ₽</>}
-            note="навсегда"
-            features={freeFeatures}
-          >
-            <Button
-              variant="outline-button"
-              onClick={() => onWaitlist('pricing', 'trial')}
-            >
-              Обсудить тариф
-            </Button>
-          </PricingCard>
-          <PricingCard
-            title="Музей+"
-            description="Для музеев и растущих проектов."
-            price={
-              <>
-                <span>от </span>
-                {formatRubles(
-                  period === 'year'
-                    ? annualMuseumPlusTotal / 12
-                    : monthlyMuseumPlusPrice,
-                )}
-              </>
-            }
-            note={
-              period === 'year' ? (
-                <>
-                  в месяц при оплате за год
-                  <span className="pricing-year-total">
-                    Итого: от {formatRubles(annualMuseumPlusTotal)} за 12 месяцев
-                  </span>
-                </>
-              ) : (
-                'в месяц при помесячной оплате'
-              )
-            }
-            features={plusFeatures}
-            popular
-          >
-            <Button
-              variant="light-button"
-              onClick={() => onWaitlist('pricing', 'museum-plus')}
-            >
-              Обсудить тариф
-            </Button>
-          </PricingCard>
-          <PricingCard
-            title="Большой музей"
-            description="Для крупных институций и сетей музеев."
-            price="Индивидуально"
-            note="под задачи вашего музея"
-            features={largeFeatures}
-          >
-            <a
-              className="button outline-button"
-              href="mailto:hello@vitrineapp.ru?subject=Витрина%20—%20Большой%20музей"
-            >
-              Связаться
-              <ArrowRight aria-hidden="true" />
-            </a>
-          </PricingCard>
-        </div>
-      </div>
-    </section>
-  );
-}
 const faqs = [
   [
     'Что подготовить для первого маршрута?',
@@ -694,24 +512,8 @@ const faqs = [
     'Музей публикует историю или маршрут и размещает QR-код рядом с экспонатом. Посетитель сканирует его камерой смартфона и открывает контент в браузере.',
   ],
   [
-    'Поддерживается ли 3D, AR и интерактивный контент?',
-    'В платформе предусмотрены блоки 3D, AR, галерей и квизов. Доступность типов контента зависит от тарифа; 3D и AR входят в «Музей+». Подходящий сценарий можно обсудить на демо.',
-  ],
-  [
-    'Можно ли работать командой?',
-    'Да, командная работа предусмотрена в тарифе «Музей+». На демонстрации мы покажем, как организовать совместную работу над музейными историями.',
-  ],
-  [
-    'Какие есть ограничения в пробном тарифе?',
-    'Пробный тариф включает до 10 экспонатов, базовые блоки контента, публикацию по QR-коду и базовую аналитику. Стоимость — 0 ₽ навсегда.',
-  ],
-  [
     'Можно ли перенести уже существующий контент?',
     'Существующие тексты и медиаматериалы можно использовать при создании историй. Возможность автоматического переноса зависит от исходного формата — напишите нам, чтобы обсудить ваши материалы.',
-  ],
-  [
-    'Как работает аналитика?',
-    'Аналитика помогает понять, какие цифровые истории и маршруты используют посетители, и оценить интерес к контенту. Базовая аналитика входит во все тарифы, расширенная — в «Музей+» и «Большой музей».',
   ],
 ];
 function FAQ() {
@@ -834,7 +636,6 @@ function Footer({
           <div className="footer-column">
             <h3>Продукт</h3>
             <a href="#features">Возможности</a>
-            <a href="#pricing">Тарифы</a>
             <a href="#stories">Примеры</a>
             <a href="#faq">FAQ</a>
           </div>
@@ -944,10 +745,8 @@ function StoryExample() {
 export default function App() {
   const [modal, setModal] = useState<ModalKind>('demo');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [period, setPeriod] = useState<BillingPeriod>('month');
   const [leadContext, setLeadContext] = useState<{
     source: string;
-    plan?: string;
   }>({ source: 'final-cta' });
   const trigger = useRef<HTMLElement | null>(null);
   const open: OpenModal = (kind) => {
@@ -956,9 +755,9 @@ export default function App() {
     setModal(kind);
     setIsModalOpen(true);
   };
-  const waitlist: Waitlist = (source, plan) => {
+  const waitlist: Waitlist = (source) => {
     if (!isModalOpen) trigger.current = document.activeElement as HTMLElement;
-    setLeadContext({ source, plan });
+    setLeadContext({ source });
     setModal('demo');
     setIsModalOpen(true);
   };
@@ -992,7 +791,6 @@ export default function App() {
         <EditorDemo open={open} />
         <HowItWorks />
         <ExhibitStories open={open} />
-        <Pricing period={period} setPeriod={setPeriod} onWaitlist={waitlist} />
         <FAQ />
         <FinalCTA onWaitlist={waitlist} />
       </main>
@@ -1026,7 +824,7 @@ export default function App() {
               ? 'Оставьте контакты. Покажем, как Витрина может работать в вашем музее.'
               : 'Демонстрационный пример содержания. Так дополнительные материалы помогают посетителю увидеть больше.'}
           </DialogDescription>
-          {modal === 'demo' && <LeadForm intent="demo" source={leadContext.source} plan={leadContext.plan} billingPeriod={leadContext.plan ? period : undefined} />}
+          {modal === 'demo' && <LeadForm intent="demo" source={leadContext.source} />}
           {modal === 'story' && <StoryExample />}
         </DialogContent>
       </Dialog>
