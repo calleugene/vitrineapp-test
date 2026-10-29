@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {artifactsApi} from '../api';
 
 const emptyDraft = {title: '', short_description: '', description: '', category: 'other'};
@@ -26,6 +26,7 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate}) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [publication, setPublication] = useState(null);
+  const publishing = useRef(false);
 
   useEffect(() => {
     const warnBeforeUnload = (event) => {
@@ -83,7 +84,7 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate}) {
     finally { setLoading(false); }
   }, [artifact, draft, loadArtifacts]);
 
-	const saveAndGo = useCallback(async (view) => { const item = await save(); if (item) onNavigate(view, {artifactId: item.id}); }, [onNavigate, save]);
+	const saveAndGo = useCallback(async (view) => { const item = artifact && !dirty ? artifact : await save(); if (item) onNavigate(view, {artifactId: item.id}); }, [artifact, dirty, onNavigate, save]);
   const uploadCover = useCallback(async (file) => {
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024) { setError('Допустимы JPG, PNG или WebP до 10 МБ.'); return; }
@@ -141,7 +142,7 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate}) {
   const duplicateArtifact = useCallback(async (artifactId) => { try { await artifactsApi.duplicate(artifactId); await loadArtifacts(); setNotice('Экспонат продублирован.'); } catch (nextError) { setError(messageFor(nextError)); } }, [loadArtifacts]);
 	const archiveArtifact = useCallback(async (artifactId) => { try { await artifactsApi.archive(artifactId); await loadArtifacts(); setNotice('Экспонат перенесён в архив.'); } catch (nextError) { setError(messageFor(nextError)); } }, [loadArtifacts]);
 	const restoreArtifact = useCallback(async (artifactId) => { try { await artifactsApi.restore(artifactId); await loadArtifacts(); setNotice('Экспонат восстановлен в черновики.'); } catch (nextError) { setError(messageFor(nextError)); } }, [loadArtifacts]);
-  const publish = useCallback(async () => { if (!artifact) return; setLoading(true); setError(''); try { const result = await artifactsApi.publish(artifact.id, artifact.draft_revision); setPublication(result); setArtifact((current) => ({...current, status: 'published', published_revision: result.version, draft_revision: result.version})); setDirty(false); await loadArtifacts(); onNavigate('artifact-success'); } catch (nextError) { setError(messageFor(nextError)); } finally { setLoading(false); } }, [artifact, loadArtifacts, onNavigate]);
+  const publish = useCallback(async () => { if (!artifact || publishing.current) return; publishing.current = true; setLoading(true); setError(''); setNotice(''); try { const result = await artifactsApi.publish(artifact.id, artifact.draft_revision); setPublication(result); setArtifact((current) => ({...current, status: 'published', published_revision: result.version, draft_revision: result.version, has_unpublished_changes: false, public_url: result.public_url || current.public_url, public_code: result.public_code || current.public_code})); setDirty(false); await loadArtifacts(); onNavigate('artifact-success'); } catch (nextError) { setError(messageFor(nextError)); } finally { publishing.current = false; setLoading(false); } }, [artifact, loadArtifacts, onNavigate]);
 
 	return useMemo(() => ({artifact, screens, draft, dirty, loading, error, notice, publication, select, start, change, save, saveAndGo, uploadCover, addTextScreen, updateScreen, uploadScreenImage, removeScreen, duplicateScreen, reorder, duplicateArtifact, archiveArtifact, restoreArtifact, publish, setError}), [artifact, screens, draft, dirty, loading, error, notice, publication, select, start, change, save, saveAndGo, uploadCover, addTextScreen, updateScreen, uploadScreenImage, removeScreen, duplicateScreen, reorder, duplicateArtifact, archiveArtifact, restoreArtifact, publish]);
 }

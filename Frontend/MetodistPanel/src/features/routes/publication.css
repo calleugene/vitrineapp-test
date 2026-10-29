@@ -1,0 +1,19 @@
+.route-publication-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.route-publication-layout > * { min-width: 0; }
+.route-publication .panel-form { width: 100%; }
+.route-publication-note { color: var(--publication-text-secondary, #667085); font-size: 13px; line-height: 1.6; margin: 10px 0 0; }
+.route-publication-error { border: 1px solid var(--g-color-line-danger); border-radius: 12px; padding: 16px 20px; color: var(--g-color-text-danger); background: var(--g-color-base-danger-light); }
+.route-publication-error p { margin: 8px 0 0; line-height: 1.6; overflow-wrap: anywhere; }
+.route-publication .page-action-bar { gap: 16px; }
+@media (max-width: 900px) {
+  .route-publication-layout { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .route-publication .page-action-bar { align-items: stretch; flex-direction: column; }
+  .route-publication .page-action-bar > button { width: 100%; }
+}

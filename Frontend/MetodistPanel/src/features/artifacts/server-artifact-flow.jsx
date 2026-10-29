@@ -1,7 +1,7 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {Button, Card, DropdownMenu, Icon, Label, TextArea, TextInput, Tooltip} from '@gravity-ui/uikit';
-import {Archive, ArrowRotateLeft, ArrowUpRight, Copy, EllipsisVertical, Eye, Plus} from '@gravity-ui/icons';
-import {artifactsApi} from '../../api';
+import {Archive, ArrowRotateLeft, Copy, EllipsisVertical, Eye, Plus} from '@gravity-ui/icons';
+import {ArtifactPublish, ArtifactSuccess} from './ArtifactPublication.jsx';
 import {ContentWorkspace} from './ContentWorkspace.jsx';
 
 import './server-artifact-flow.css';
@@ -77,14 +77,14 @@ function Selector({artifacts, artifactsLoading, artifactsError, onReload, flow})
   </section>;
 }
 
-function Header({step, flow, onNavigate, screenDirty = false}) {
+function Header({step, flow, onNavigate, screenDirty = false, title = 'Сведения об экспонате'}) {
   const dirty = flow.dirty || screenDirty;
   const label = screenDirty ? 'Есть несохранённый экран' : flow.dirty ? 'Сохранить изменения' : 'Все изменения сохранены';
   const leave = () => {
     if (flow.dirty && !window.confirm('Есть несохранённые изменения. Выйти без сохранения?')) return;
     onNavigate('artifacts');
   };
-	return <><div className="server-flow-header"><h1>Сведения об экспонате</h1><div><span className={dirty ? 'is-dirty' : ''}>{label}</span><Button view="outlined" disabled={flow.loading} onClick={leave}>К экспонатам</Button><Button view="action" disabled={!flow.dirty || flow.loading || screenDirty} loading={flow.loading} onClick={flow.save}>Сохранить изменения</Button></div></div><nav className="server-flow-tabs" aria-label="Разделы экспоната">{[['artifact-basic', 'Основная информация'], ['artifact-content', 'Контент'], ['artifact-publish', 'Публикация']].map(([view, title], index) => <button type="button" key={view} className={step === index ? 'is-active' : ''} disabled={flow.loading} onClick={() => flow.saveAndGo(view)}>{title}</button>)}</nav></>;
+	return <><div className="server-flow-header"><h1>{title}</h1><div><span className={dirty ? 'is-dirty' : ''}>{label}</span><Button view="outlined" disabled={flow.loading} onClick={leave}>К экспонатам</Button><Button view="action" disabled={!flow.dirty || flow.loading || screenDirty} loading={flow.loading} onClick={flow.save}>Сохранить изменения</Button></div></div><nav className="server-flow-tabs" aria-label="Разделы экспоната">{[['artifact-basic', 'Основная информация'], ['artifact-content', 'Контент'], ['artifact-publish', 'Публикация']].map(([view, title], index) => <button type="button" key={view} className={step === index ? 'is-active' : ''} disabled={flow.loading} onClick={() => flow.saveAndGo(view)}>{title}</button>)}</nav></>;
 }
 
 function Basic({flow, onNavigate}) {
@@ -96,31 +96,10 @@ function Cover({artifact, onUpload}) {
   return <div className="server-cover"><div className="server-cover-preview">{artifact?.cover_url ? <img src={artifact.cover_url} alt="Обложка экспоната" /> : <span>JPG, PNG или WebP до 10 МБ</span>}</div><input id={inputId} type="file" hidden accept="image/jpeg,image/png,image/webp" onChange={(event) => { onUpload(event.target.files?.[0]); event.currentTarget.value = ''; }} /><label htmlFor={inputId}><Button view="outlined" component="span">{artifact?.cover_url ? 'Заменить' : 'Загрузить обложку'}</Button></label></div>;
 }
 
-function Publish({flow, onNavigate}) { const ready = Boolean(flow.artifact && flow.screens.length); return <section className="page server-artifact-flow"><Header step={2} flow={flow} onNavigate={onNavigate} /><Card className="panel server-flow-card" view="filled"><h2>Публикация</h2>{ready ? <p>Экспонат готов к публикации. Ссылка и QR-код останутся постоянными.</p> : <p className="server-flow-message is-error">Сохраните сведения и добавьте хотя бы один экран.</p>}<FlowMessage flow={flow} /></Card><footer className="page-action-bar page-action-bar-split server-flow-footer"><Button view="outlined" size="xl" onClick={() => onNavigate('artifact-content')}>Назад</Button><Button view="action" size="xl" disabled={flow.loading || !ready} loading={flow.loading} onClick={flow.publish}>Опубликовать</Button></footer></section>; }
-
-function Success({flow, onNavigate}) {
-  const url = flow.publication?.public_url || flow.publication?.publicUrl;
-  const [qrURL, setQrURL] = useState('');
-  const [qrError, setQrError] = useState(false);
-  useEffect(() => {
-    let objectURL = '';
-    const artifactId = flow.artifact?.id;
-    if (!artifactId) return undefined;
-    artifactsApi.getQRCode(artifactId).then((blob) => {
-      objectURL = URL.createObjectURL(blob);
-      setQrURL(objectURL);
-      setQrError(false);
-    }).catch(() => setQrError(true));
-    return () => { if (objectURL) URL.revokeObjectURL(objectURL); };
-  }, [flow.artifact?.id]);
-  const copyLink = async () => { if (url) await navigator.clipboard?.writeText(url); };
-  return <section className="server-artifact-flow"><Card className="server-flow-card server-success-card" view="filled"><div className="server-success-grid"><div><h1>Экспонат опубликован</h1><p>Ссылка и QR-код останутся постоянными. Их можно разместить рядом с экспонатом.</p><label className="server-public-link">Ссылка на экспонат<TextInput value={url || 'Ссылка будет доступна после настройки публичного сервиса.'} readOnly endContent={<Button view="flat-secondary" size="s" disabled={!url} onClick={copyLink} aria-label="Скопировать ссылку"><Copy /></Button>} /></label><div className="server-success-actions"><Button view="outlined" onClick={() => onNavigate('artifacts')}>К экспонатам</Button>{url ? <Button view="action" onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}><ArrowUpRight />Открыть просмотр</Button> : null}</div></div><aside className="server-qr-card"><h2>QR-код</h2>{qrURL ? <img src={qrURL} alt="QR-код ссылки на экспонат" /> : <p>{qrError ? 'Не удалось загрузить QR-код.' : 'Генерируем QR-код…'}</p>}<small>Наведите камеру телефона, чтобы открыть историю.</small></aside></div><FlowMessage flow={flow} /></Card></section>;
-}
-
 export function ServerArtifactFlow({mode, artifacts, artifactsLoading, artifactsError, onReload, flow, onNavigate}) {
   if (mode === 'selector') return <Selector artifacts={artifacts} artifactsLoading={artifactsLoading} artifactsError={artifactsError} onReload={onReload} flow={flow} />;
   if (mode === 'basic') return <Basic flow={flow} onNavigate={onNavigate} />;
   if (mode === 'content') return <ContentWorkspace flow={flow} onNavigate={onNavigate} />;
-  if (mode === 'publish') return <Publish flow={flow} onNavigate={onNavigate} />;
-  return <Success flow={flow} onNavigate={onNavigate} />;
+  if (mode === 'publish') return <ArtifactPublish flow={flow} onNavigate={onNavigate} header={<Header title="Публикация экспоната" step={2} flow={flow} onNavigate={onNavigate} />} message={<FlowMessage flow={flow} />} />;
+  return <ArtifactSuccess flow={flow} onNavigate={onNavigate} message={<FlowMessage flow={flow} />} />;
 }

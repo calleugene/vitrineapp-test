@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {ROUTE_WIZARD_VIEWS} from './navigation';
 import {
   DEFAULT_ROUTE_DRAFT,
@@ -18,6 +18,7 @@ export function useRouteDraft({onNavigate}) {
   const [routeDraft, setRouteDraft] = useState(readStoredRouteDraft);
   const [createdRoute, setCreatedRoute] = useState(null);
   const [routeSyncError, setRouteSyncError] = useState(null);
+  const publishing = useRef(false);
 
   useEffect(() => {
     persistRouteDraft(routeDraft);
@@ -108,6 +109,16 @@ export function useRouteDraft({onNavigate}) {
   }, [onNavigate]);
 
   const publishRoute = useCallback(async () => {
+    if (publishing.current) return;
+    if (!routeDraft.title?.trim() || (routeDraft.status === 'published' && !routeDraft.artifactIds?.length)) {
+      setRouteSyncError(new Error('Укажите название. Для публикации также добавьте хотя бы один артефакт.'));
+      return;
+    }
+    if (!ROUTE_API_ENABLED) {
+      setRouteSyncError(new Error('Сохранение на сервере сейчас недоступно. Изменения остаются в локальном черновике; публикация и QR-код появятся после подключения сервера.'));
+      return;
+    }
+    publishing.current = true;
     const nextRoute = createPublishedRouteDraft(routeDraft);
     nextRoute.status = routeDraft.status;
     setRouteSyncError(null);
@@ -120,8 +131,26 @@ export function useRouteDraft({onNavigate}) {
         const persisted = response?.route || response;
         if (!persisted?.id) throw new Error('Сервер не подтвердил сохранение маршрута');
         nextRoute.id = persisted.id;
+        if (!['draft', 'published', 'archived'].includes(persisted.status)) throw new Error('Сервер не подтвердил статус маршрута. Повторите сохранение.');
+        if (!['public', 'private', 'team'].includes(persisted.visibility)) throw new Error('Сервер не подтвердил видимость маршрута. Повторите сохранение.');
+        nextRoute.status = persisted.status;
+        nextRoute.visibility = persisted.visibility === 'private' ? 'team' : persisted.visibility;
         nextRoute.serverSaved = true;
-      } catch (error) { setRouteSyncError(error); return; }
+      } catch (error) {
+        const messages = {
+          artifact_not_published: 'Один из артефактов ещё не опубликован. Опубликуйте все выбранные артефакты и повторите попытку.',
+          artifact_not_in_museum: 'Один из артефактов недоступен вашей команде. Проверьте состав маршрута.',
+          artifacts_unavailable: 'Сервер не смог проверить артефакты. Попробуйте сохранить маршрут позже.',
+          empty_route: 'Добавьте хотя бы один артефакт для публикации маршрута.',
+          invalid_route: 'Проверьте название и настройки маршрута: сервер отклонил данные.',
+          version_conflict: 'Маршрут изменился на сервере. Откройте его заново, чтобы не перезаписать новые изменения.',
+          service_unavailable: 'Сервер временно недоступен. Изменения сохранены в локальном черновике; повторите попытку позже.',
+          storage_unavailable: 'Сервер временно не может сохранить маршрут. Повторите попытку позже.',
+        };
+        setRouteSyncError(messages[error.code] ? new Error(messages[error.code]) : error);
+        return;
+      }
+      finally { publishing.current = false; }
     }
 
     setCreatedRoute(nextRoute);

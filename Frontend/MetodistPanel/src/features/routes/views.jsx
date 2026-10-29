@@ -1,9 +1,12 @@
-import React, {useState} from 'react';
+import React, {useCallback, useRef, useState} from 'react';
 import QRCode from 'qrcode';
 import {Button, Card, Checkbox, Dialog, Label, RadioGroup, Select, Switch, TextArea, TextInput} from '@gravity-ui/uikit';
 import {Grip, Pencil, Plus, TrashBin} from '@gravity-ui/icons';
 import {ROUTE_TABS} from './demo-data';
 import {Breadcrumbs, Field, InlineTabs, WizardSteps} from '../../components/ui';
+import {PublicationChecks, PublicationDelivery, PublicationIdentity} from '../../components/PublicationDelivery';
+import {routePublicUrl} from '../../components/publication-utils';
+import './publication.css';
 
 const ROUTE_STATUS_OPTIONS = [
   {value: 'draft', content: 'Черновик'},
@@ -306,82 +309,91 @@ export function RouteContentView({routeDraft, artifacts, goToRouteStep, toggleRo
   );
 }
 
+function routePublicationState(routeDraft) {
+  const hasTitle = Boolean(routeDraft.title?.trim());
+  const hasContent = Boolean(routeDraft.artifactIds?.length);
+  const statusLabel = ROUTE_STATUS_OPTIONS.find((item) => item.value === routeDraft.status)?.content || 'Черновик';
+  const actionLabel = routeDraft.status === 'published' ? 'Опубликовать маршрут' : routeDraft.status === 'archived' ? 'Сохранить в архиве' : 'Сохранить черновик';
+  const checks = [
+    {label: 'Название маршрута', description: hasTitle ? 'Посетитель увидит его перед началом прохождения.' : 'Вернитесь к основной информации и укажите название.', ready: hasTitle},
+    {label: 'Экспонаты добавлены', description: hasContent ? `Выбрано: ${routeDraft.artifactIds.length}. Доступность и публикацию экспонатов проверим при сохранении.` : 'Добавьте хотя бы один артефакт на предыдущем шаге.', ready: hasContent},
+  ];
+  return {
+    statusLabel,
+    actionLabel,
+    checks,
+    canSave: hasTitle && (routeDraft.status !== 'published' || hasContent),
+    title: routeDraft.title || 'Маршрут без названия',
+    description: routeDraft.subtitle || routeDraft.description,
+    meta: `Экспонатов: ${routeDraft.artifactIds?.length || 0}${routeDraft.duration ? ` · ${routeDraft.duration}` : ''}`,
+    visibilityDescription: routeDraft.visibility === 'public'
+      ? 'Публичная ссылка и QR-код появятся только после подтверждённой публикации.'
+      : 'Маршрут доступен команде. Публичная ссылка и QR-код не создаются.',
+  };
+}
+
 export function RoutePublishView({routeDraft, setRouteDraft, goToRouteStep, onPublishRoute, routeSyncError}) {
+  const [isSaving, setIsSaving] = useState(false);
+  const publication = routePublicationState(routeDraft);
+  const save = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try { await onPublishRoute(); }
+    finally { setIsSaving(false); }
+  };
   return (
-    <section className="page">
+    <section className="page route-publication">
       <Breadcrumbs path="Маршруты / Создание маршрута" />
-      <div className="page-heading"><div><h1>Публикация маршрута</h1><p>Проверьте настройки доступности перед публикацией.</p></div></div>
-      <WizardSteps current={3} onStepSelect={goToRouteStep} />
-      <div className="content-layout">
+      <div className="page-heading"><div><h1>Публикация маршрута</h1><p>Проверьте содержание и выберите, кому будет доступен маршрут.</p></div></div>
+      <WizardSteps current={3} onStepSelect={isSaving ? undefined : goToRouteStep} />
+      <PublicationIdentity title={publication.title} description={publication.description} meta={publication.meta} status={`После сохранения: ${publication.statusLabel}`} />
+      <div className="route-publication-layout">
         <Card className="panel panel-form" view="filled">
           <h3>Настройки публикации</h3>
           <Field label="Статус маршрута *">
-            <RadioGroup direction="vertical" value={routeDraft.status} onUpdate={(value) => setRouteDraft((prev) => ({...prev, status: value}))} options={ROUTE_STATUS_OPTIONS} />
+            <RadioGroup aria-label="Статус маршрута" disabled={isSaving} direction="vertical" value={routeDraft.status} onUpdate={(value) => setRouteDraft((prev) => ({...prev, status: value}))} options={ROUTE_STATUS_OPTIONS} />
           </Field>
           <Field label="Видимость *">
-            <Select size="xl" value={[routeDraft.visibility]} options={[{value: 'public', content: 'Публичный'}, {value: 'team', content: 'Только команда музея'}]} onUpdate={(value) => setRouteDraft((prev) => ({...prev, visibility: value[0]}))} />
+            <Select aria-label="Видимость маршрута" disabled={isSaving} size="xl" value={[routeDraft.visibility]} options={[{value: 'public', content: 'Публичный'}, {value: 'team', content: 'Только команда музея'}]} onUpdate={(value) => setRouteDraft((prev) => ({...prev, visibility: value[0]}))} />
+            <p className="route-publication-note">{publication.visibilityDescription}</p>
           </Field>
-          <Field label="Дополнительные настройки">
-            <div className="switch-list">
-              <div className="switch-row"><span>Карта маршрутов пока недоступна</span><Switch disabled checked={false} onUpdate={(value) => setRouteDraft((prev) => ({...prev, showOnMap: value}))} /></div>
-              <div className="switch-row"><span>Требовать QR-старт у первой точки</span><Switch checked={routeDraft.requireQr} onUpdate={(value) => setRouteDraft((prev) => ({...prev, requireQr: value}))} /></div>
-            </div>
+          <Field label="Начало прохождения">
+            <div className="switch-list"><div className="switch-row"><span>Требовать QR-старт у первой точки</span><Switch controlProps={{'aria-label':'Требовать QR-старт у первой точки'}} disabled={isSaving} checked={routeDraft.requireQr} onUpdate={(value) => setRouteDraft((prev) => ({...prev, requireQr: value}))} /></div></div>
           </Field>
         </Card>
-
-        <div className="stack">
-          <Card className="panel" view="filled">
-            <h3>Превью маршрута</h3>
-            <div className="artifact-preview-card"><div className="preview-thumb" /><div><Label theme="info" size="xs">{routeDraft.artifactIds.length} артефактов</Label><h4>{routeDraft.title}</h4><p>{routeDraft.subtitle}</p></div></div>
-          </Card>
-          <Card className="panel" view="filled"><h3>Проверка</h3><ul className="activity-list compact"><li>Название заполнено</li><li>Контент можно менять позже</li><li>Перед публикацией проверяется синхронизация с RouteService</li></ul></Card>
-        </div>
+        <Card className="publication-review" view="filled"><h2>Проверьте перед сохранением</h2><PublicationChecks items={publication.checks} /></Card>
       </div>
+      {routeSyncError ? <div role="alert" className="route-publication-error"><strong>Маршрут не сохранён</strong><p>{routeSyncError.message || 'Не удалось получить подтверждение сервера. Проверьте подключение и повторите попытку.'}</p></div> : null}
       <div className="page-action-bar">
-        <Button view="outlined" size="xl" onClick={() => goToRouteStep(2)}>Назад к контенту</Button>
-        {routeSyncError ? <span role="alert" className="form-error">Не удалось синхронизировать маршрут с сервером. Проверьте подключение и повторите попытку.</span> : null}
-        <Button view="action" size="xl" onClick={onPublishRoute}>Сохранить маршрут</Button>
+        <Button disabled={isSaving} view="outlined" size="xl" onClick={() => goToRouteStep(2)}>Назад к контенту</Button>
+        <Button disabled={!publication.canSave || isSaving} loading={isSaving} view="action" size="xl" onClick={save}>{isSaving ? 'Сохраняем на сервере…' : publication.actionLabel}</Button>
       </div>
     </section>
   );
 }
 
 export function RouteSuccessView({route, setView, onCreateAnotherRoute}) {
-  const isPublic = route?.status === 'published' && route?.visibility === 'public';
-  const publicUrl = `${window.location.origin}/routes/${route?.id || ''}`;
-  const [qrUrl, setQrUrl] = useState('');
-  React.useEffect(() => { QRCode.toDataURL(`${publicUrl}?source=qr`, {width: 480, margin: 2}).then(setQrUrl).catch(() => setQrUrl('')); }, [publicUrl]);
-  const copyLink = async () => {
-    if (navigator.share) { await navigator.share({title: route?.title || 'Маршрут Витрины', url: publicUrl}); return; }
-    try { await navigator.clipboard.writeText(publicUrl); }
-    catch { window.prompt('Скопируйте ссылку', publicUrl); }
-  };
-  const downloadQr = () => {
-    if (!qrUrl) return;
-    const link = document.createElement('a');
-    link.href = qrUrl;
-    link.download = `vitrina-route-${route?.id || 'demo'}-qr.png`;
-    link.click();
-  };
+  const headingRef = useRef(null);
+  React.useEffect(() => {headingRef.current?.focus();}, []);
+  const publicUrl = routePublicUrl(route, window.location.origin);
+  const loadQr = useCallback(async () => {
+    if (!publicUrl) throw new Error('Сначала опубликуйте маршрут с публичной видимостью.');
+    const qrTarget = new URL(publicUrl);
+    qrTarget.searchParams.set('source', 'qr');
+    return QRCode.toDataURL(qrTarget.href, {width: 480, margin: 2});
+  }, [publicUrl]);
+  const statusLabel = ROUTE_STATUS_OPTIONS.find((item) => item.value === route?.status)?.content || 'Не подтверждён';
+  const heading = publicUrl ? 'Маршрут опубликован' : route?.status === 'archived' ? 'Маршрут сохранён в архиве' : route?.status === 'draft' ? 'Черновик сохранён' : 'Маршрут сохранён для команды';
   return (
-    <section className="page">
+    <section className="page route-publication">
       <Breadcrumbs path="Маршруты / Создание маршрута" />
-      <div className="page-heading"><div><h1>Создание маршрута</h1></div></div>
-      <WizardSteps current={3} accent />
-      <Card className="panel success-hero" view="filled">
-        <div className="success-badge">✓</div>
-        <h2>Маршрут готов</h2>
-        <p>Маршрут «{route?.title || 'Новый маршрут'}» сохранён со статусом «{route?.status}».</p>
-        {isPublic ? <div className="success-grid">
-          <Card className="mini-panel" view="filled"><h4>QR-код маршрута</h4>{qrUrl ? <img className="qr-box" src={qrUrl} alt="QR-код маршрута" /> : <div className="qr-box">…</div>}<Button view="action" onClick={downloadQr}>Скачать QR-код</Button></Card>
-          <Card className="mini-panel" view="filled"><h4>Публичная ссылка</h4><TextInput size="xl" value={publicUrl} readOnly /><Button view="outlined" onClick={copyLink}>Скопировать ссылку</Button></Card>
-        </div>
-        : <p>Публичная ссылка доступна после публикации с публичной видимостью.</p>}
-        <div className="success-actions">
-          <Button view="outlined" size="l" onClick={onCreateAnotherRoute}>Создать ещё маршрут</Button>
-          <Button view="action" size="xl" onClick={() => setView('routes')}>К списку маршрутов</Button>
-        </div>
-      </Card>
+      <div className="page-heading"><div><h1 ref={headingRef} tabIndex={-1}>{heading}</h1><p>{route?.serverSaved === true ? 'Маршрут сохранён. Ниже — доступные способы открыть его для просмотра.' : 'Сохранение не подтверждено. Попробуйте сохранить маршрут ещё раз.'}</p></div></div>
+      <PublicationIdentity title={route?.title || 'Маршрут'} description={route?.subtitle || route?.description} meta={`Экспонатов: ${route?.artifactIds?.length || 0}`} status={route?.serverSaved ? statusLabel : 'Не подтверждён'} statusTheme={route?.serverSaved && route.status === 'published' ? 'success' : 'neutral'} />
+      <PublicationDelivery publicUrl={publicUrl} loadQr={loadQr} fileName={`vitrina-route-${route?.id || 'route'}-qr.png`} emptyMessage="Публичная ссылка и QR-код появятся после публикации с публичным доступом." linkNote="Откройте маршрут на телефоне и проверьте его перед размещением QR-кода." />
+      <div className="page-action-bar">
+        <Button view="outlined" size="l" onClick={onCreateAnotherRoute}>Создать ещё маршрут</Button>
+        <Button view="action" size="xl" onClick={() => setView('routes')}>К списку маршрутов</Button>
+      </div>
     </section>
   );
 }
