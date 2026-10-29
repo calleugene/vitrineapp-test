@@ -13,7 +13,7 @@ import {
 } from '../features/profile/views.jsx';
 import {MyMuseumsView, RouteResultView} from '../features/routes/views.jsx';
 import {ArtifactFoundView, ArtifactReceivedView, ArtifactCardView} from '../features/artifact/views.jsx';
-import {QrScannerView, SecretCodeView} from '../features/scanner/views.jsx';
+import {QrScannerView} from '../features/scanner/views.jsx';
 import {AuthView, ForgotPasswordView, ForgotPasswordSentView, ResetPasswordView, ResetPasswordSuccessView} from '../features/auth/views.jsx';
 import {NotFoundView} from '../features/not-found/views.jsx';
 import {SkeletonCards} from '../components/ui.jsx';
@@ -68,8 +68,6 @@ export function ViewContent({data, navigate, actions}) {
       return <ArtifactCardView data={data} navigate={navigate} actions={actions} />;
     case 'qrScanner':
       return <QrScannerView navigate={navigate} actions={actions} />;
-    case 'secretCode':
-      return <SecretCodeView data={data} navigate={navigate} actions={actions} />;
     case 'storyExperience':
       return (
         <Suspense fallback={<div style={{padding: '20px'}}><SkeletonCards count={3} /></div>}>

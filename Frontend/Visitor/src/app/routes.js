@@ -4,7 +4,6 @@ export const HIDDEN_CHROME_VIEWS = new Set([
   'onboarding',
   'storyExperience',
   'qrScanner',
-  'secretCode',
   'artifactFound',
   'artifactReceived',
   // Destructive account flows only (auth screens keep tab bar so user can dismiss)
@@ -19,7 +18,6 @@ export const TAB_MAP = {
   artifactFound: 'museumSelect',
   artifactReceived: 'museumSelect',
   qrScanner: 'museumSelect',
-  secretCode: 'museumSelect',
   profileCollection: 'profileCollection',
   artifactCard: 'profileCollection',
   profileHome: 'profileHome',

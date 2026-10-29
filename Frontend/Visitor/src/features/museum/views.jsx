@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 import {Text} from '@gravity-ui/uikit';
 import {BrandHeader, PageHeader, RetryState, SkeletonCards} from '../../components/ui.jsx';
 import {MUSEUM_DETAIL, MUSEUM_LIST} from './config.js';
-import {readArtifacts, readMuseumProgress} from './utils.js';
+import {readArtifacts} from './utils.js';
 import {useMuseumSearch} from './hooks/useMuseumSearch.js';
 import {MuseumCard} from './components/MuseumCard.jsx';
 import {MuseumSearchBar} from './components/MuseumSearchBar.jsx';
@@ -11,7 +11,7 @@ import {MuseumProgressCard} from './components/MuseumProgressCard.jsx';
 import {ArtifactListItem} from './components/ArtifactListItem.jsx';
 import {MuseumInfoModal} from './components/MuseumInfoModal.jsx';
 import {MuseumErrorState, MuseumLoadingState} from './components/MuseumDetailState.jsx';
-import {LockIcon, StarIcon} from './components/icons.jsx';
+import {StarIcon} from './components/icons.jsx';
 import './museum.css';
 import {MuseumRoutes} from '../public-artifact/PublicServices.jsx';
 
@@ -21,18 +21,6 @@ function MissionBanner({text}) {
     <div className="museum-mission-banner">
       <span className="museum-mission-icon" aria-hidden="true"><StarIcon /></span>
       <span className="museum-mission-text">{text}</span>
-    </div>
-  );
-}
-
-/* Липкая кнопка ввода кода экспоната. Скрывается, когда всё найдено. */
-function StickyCodeCta({onClick}) {
-  return (
-    <div className="museum-sticky-scan">
-      <button className="museum-scan-cta" type="button" onClick={onClick}>
-        <LockIcon />
-        {MUSEUM_DETAIL.enterCode}
-      </button>
     </div>
   );
 }
@@ -105,7 +93,6 @@ export function MuseumDetailView({data, navigate, actions}) {
   }
 
   const artifacts = readArtifacts(museum);
-  const {allFound} = readMuseumProgress(museum);
 
   return (
     <section className="app-view app-shell is-active" aria-label={MUSEUM_DETAIL.ariaLabel}>
@@ -129,8 +116,6 @@ export function MuseumDetailView({data, navigate, actions}) {
           </div>
         )}
       </div>
-
-      {!allFound && <StickyCodeCta onClick={() => navigate('secretCode')} />}
 
       {showInfo && <MuseumInfoModal museum={museum} onClose={() => setShowInfo(false)} />}
     </section>

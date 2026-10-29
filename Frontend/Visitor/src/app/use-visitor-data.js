@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {createApiClient, createVisitorAuthApi} from './api-client.js';
 import {appConfig} from './config.js';
-import {findArtifactBySecretCode, readQrArtifactId} from '../features/scanner/code-utils.js';
+import {readQrArtifactId} from '../features/scanner/code-utils.js';
 import {useToast} from '../components/Toast.jsx';
 import {analyticsEvents as analytics} from './analytics-events.js';
 
@@ -39,7 +39,7 @@ function getViewFromPath(path) {
   if (PATH_TO_VIEW[path]) return PATH_TO_VIEW[path];
   if (path.match(/^\/m\d+/)) return 'museumDetail';
   if (path.match(/^\/a\d+$/)) return 'artifactCard';
-  if (path.match(/^\/a\//)) return 'secretCode';
+  if (path.match(/^\/a\//)) return 'artifactFound';
   if (path.startsWith('/profile')) return 'profileHome';
   return 'notFound';
 }
@@ -193,7 +193,7 @@ export function useVisitorData() {
         window.location.assign(`/exhibits/${encodeURIComponent(artifact.publicCode)}`);
         return;
       }
-      patch({activeArtifactId: artifactId, view: 'secretCode'});
+      patch({activeArtifactId: artifactId, view: 'artifactFound'});
     },
     [patch, selectedDetail],
   );
@@ -242,7 +242,7 @@ export function useVisitorData() {
       const targetMuseum = museums.find((museum) => museum.artifacts?.some((artifact) => artifact.id === artifactId));
       if (!targetMuseum) return {success: false};
       await refreshMuseumDetail(targetMuseum.id);
-      patch({activeArtifactId: artifactId, view: 'secretCode'});
+      patch({activeArtifactId: artifactId, view: 'artifactFound'});
       return {success: true};
     },
     [patch, refreshMuseumDetail, selectedDetail],
@@ -289,20 +289,6 @@ export function useVisitorData() {
     patch({view: 'storyExperience'});
   }, [patch, loadStory, activeArtifact, selectedDetail]);
 
-  const enterSecretCode = useCallback(
-    async (code) => {
-      const museum = selectedDetail();
-      const artifact = findArtifactBySecretCode(museum, code);
-      if (!artifact) return {success: false};
-      // Preserve the current selection if loading the story fails.
-      await loadStory(museum.route_id, artifact.id);
-      analytics.track('scene_view', {route_id: museum.route_id, artifact_id: artifact.id});
-      patch({activeArtifactId: artifact.id, view: 'storyExperience'});
-      return {success: true};
-    },
-    [selectedDetail, loadStory, patch],
-  );
-
   // ---- bootstrap ----
   const bootstrap = useCallback(async () => {
     const wasError = get().loadError;
@@ -320,9 +306,11 @@ export function useVisitorData() {
         const targetMuseum = museums.find((m) => m.artifacts?.some((a) => a.id === artifactId));
         if (targetMuseum) {
           await refreshMuseumDetail(targetMuseum.id);
-          patch({activeArtifactId: artifactId, view: 'secretCode'});
+          patch({activeArtifactId: artifactId, view: 'artifactFound'});
           return;
         }
+        patch({view: 'notFound'});
+        return;
       }
 
       const firstMuseum = museums[0];
@@ -374,7 +362,6 @@ export function useVisitorData() {
       openArtifactFromCollection,
       collectActiveArtifact,
       resolveQrResult,
-      enterSecretCode,
       toggleFavorite,
       openStory,
       loadRouteResult,

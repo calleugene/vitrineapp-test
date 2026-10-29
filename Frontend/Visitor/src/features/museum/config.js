@@ -38,7 +38,6 @@ export const MUSEUM_DETAIL = {
   progressAriaLabel: 'Прогресс по экспонатам',
   allFound: 'Все экспонаты собраны!',
   remaining: (left, percent) => `Осталось ${left} · ${percent}% выполнено`,
-  enterCode: 'Ввести код экспоната',
 };
 
 export const MUSEUM_INFO = {
