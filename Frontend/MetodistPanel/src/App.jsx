@@ -61,7 +61,7 @@ function App() {
 	const {view, artifactId, setView} = useViewRouting({isAuthenticated});
   const trackMethodist = isAuthenticated && !session?.isMock && !sessionChecking &&
     !sessionCheckError && currentUser?.status?.toUpperCase() === 'ACTIVE';
-  const recordMetric = useMethodistMetrics(trackMethodist ? session.accessToken : null, currentUser?.id);
+  const recordMetric = useMethodistMetrics(trackMethodist, currentUser?.id);
 
   const navigate = (nextView, options) => {
     setUserMenuOpen(false);

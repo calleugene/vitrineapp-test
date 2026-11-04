@@ -12,7 +12,9 @@ import (
 func TestPublicStats(t *testing.T) {
 	s, handler := testServer(t)
 	s.authDB = s.artifactsDB
-	if _, err := s.artifactsDB.Exec(`CREATE TABLE museum_profiles (museum_id TEXT PRIMARY KEY);
+	if _, err := s.artifactsDB.Exec(`ALTER TABLE artifacts ADD COLUMN deleted_at TEXT;
+		INSERT INTO artifacts VALUES ('deleted', 'museum-a', '2026-10-17');
+		CREATE TABLE museum_profiles (museum_id TEXT PRIMARY KEY);
 		INSERT INTO museum_profiles VALUES ('museum-a');
 		CREATE TABLE users (role TEXT);
 		INSERT INTO users VALUES ('visitor'), ('visitor'), ('methodist'), ('moderator');`); err != nil {

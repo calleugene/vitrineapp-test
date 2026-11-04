@@ -29,7 +29,7 @@ func (s *server) publicStats(w http.ResponseWriter, r *http.Request) {
 	if s.artifactsDB != nil {
 		_ = s.artifactsDB.QueryRowContext(ctx, `SELECT
 			(SELECT COUNT(*) FROM museum_profiles),
-			(SELECT COUNT(*) FROM artifacts)`).Scan(&stats.Museums, &stats.Artifacts)
+			(SELECT COUNT(*) FROM artifacts WHERE deleted_at IS NULL)`).Scan(&stats.Museums, &stats.Artifacts)
 	}
 	if s.authDB != nil {
 		_ = s.authDB.QueryRowContext(ctx, `SELECT

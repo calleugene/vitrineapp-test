@@ -391,6 +391,10 @@ export const notificationApi = {
 };
 
 export const analyticsApi = {
+  recordMethodistMetric: (sample) =>
+    request(ANALYTICS_API_URL, `${API_PREFIX}/analytics/methodist-metrics`, {
+      ...jsonOptions('POST', sample, sessionAuthHeaders()), keepalive: true,
+    }),
   visitorsSummary: (period = 'month') =>
     request(ANALYTICS_API_URL, `${API_PREFIX}/visitors/summary`, {query: {period}, headers: sessionAuthHeaders()}),
   visitorsDynamics: (period = 'month', series = 'visitors') =>

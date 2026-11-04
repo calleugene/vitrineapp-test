@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Страница не найдена — Витрина</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      font-family: system-ui, sans-serif;
+      color: #201c32;
+      background: #f7f8fc;
+    }
+    body { margin: 0; }
+    main {
+      min-height: 100vh;
+      min-height: 100svh;
+      max-width: 68rem;
+      margin-inline: auto;
+      padding: clamp(1.5rem, 6vw, 4rem);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-content: center;
+      align-items: center;
+      gap: clamp(1.75rem, 6vw, 5rem);
+    }
+    .label {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      padding: .4rem .7rem;
+      border: 1px solid #d9d6fb;
+      border-radius: .25rem;
+      color: #4938a4;
+      background: #eeedff;
+      font-size: .875rem;
+      font-weight: 650;
+    }
+    .label span { font-variant-numeric: tabular-nums; }
+    h1 {
+      margin: 1rem 0;
+      font: 500 clamp(2.75rem, 5.6vw, 4.75rem)/.99 Georgia, serif;
+      letter-spacing: -.035em;
+      text-wrap: balance;
+    }
+    p { max-width: 32ch; margin: 0 0 1.5rem; color: #514c65; line-height: 1.6; }
+    a {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      min-height: 48px;
+      padding: .75rem 1.2rem;
+      border-radius: .65rem;
+      background: #4f42c6;
+      color: #fff;
+      font-weight: 650;
+      text-decoration: none;
+    }
+    a:hover { background: #3e33a4; }
+    a:focus-visible { outline: 3px solid #30247c; outline-offset: 4px; }
+    svg { display: block; width: 100%; height: auto; }
+    @media (max-width: 660px) {
+      main { grid-template-columns: 1fr; }
+      .illustration { width: min(100%, 23rem); margin-inline: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div>
+      <div class="label">Витрина <span aria-hidden="true">·</span> <span>404</span></div>
+      <h1>Здесь пустая витрина</h1>
+      <p>Страница не найдена. Возможно, изменился её адрес. Вернитесь на главную, чтобы продолжить прогулку.</p>
+      <a href="/"><span aria-hidden="true">←</span> На главную</a>
+    </div>
+    <div class="illustration" aria-hidden="true">
+      <svg viewBox="0 0 480 416" xmlns="http://www.w3.org/2000/svg" focusable="false">
+        <defs>
+          <linearGradient id="wall" x2="1" y2="1" gradientUnits="objectBoundingBox">
+            <stop stop-color="#f0efff"/>
+            <stop offset="1" stop-color="#dedafe"/>
+          </linearGradient>
+          <linearGradient id="glass" x2="1" y2="1" gradientUnits="objectBoundingBox">
+            <stop stop-color="#fff" stop-opacity=".9"/>
+            <stop offset="1" stop-color="#eeebff" stop-opacity=".3"/>
+          </linearGradient>
+          <clipPath id="room"><rect width="480" height="416" rx="28"/></clipPath>
+        </defs>
+        <g clip-path="url(#room)">
+          <rect width="480" height="416" fill="url(#wall)"/>
+          <path d="M112 0h248l71 335H36Z" fill="#fff" opacity=".4"/>
+          <path d="M0 328h480v88H0Z" fill="#d6d0f8"/>
+          <ellipse cx="245" cy="364" rx="155" ry="25" fill="#b7aceb" opacity=".48"/>
+          <path d="M130 269h220v84H130Z" fill="#a89ce8"/>
+          <path d="M130 269h220l-19 20H149Z" fill="#c5baf6"/>
+          <path d="M149 289h182v64H149Z" fill="#bbb0f0"/>
+          <rect x="184" y="305" width="112" height="32" rx="4" fill="#faf9ff"/>
+          <text x="240" y="327" fill="#51449b" font-family="Georgia, serif" font-size="19" text-anchor="middle" letter-spacing="5">404</text>
+          <path d="M153 266V133q0-13 13-13h148q13 0 13 13v133Z" fill="url(#glass)" stroke="#8170cc" stroke-width="2"/>
+          <path d="M169 133h130M181 144l-16 18m44-18-44 48" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+          <path d="M196 239c10-8 21-11 44-11s34 3 44 11" fill="none" stroke="#a193db" stroke-width="2" stroke-dasharray="3 6" stroke-linecap="round"/>
+          <path d="M125 269h230" stroke="#7564c2" stroke-width="4" stroke-linecap="round"/>
+          <path d="M372 134v22m-11-11h22M105 184v14m-7-7h14" stroke="#9b8add" stroke-width="2" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+  </main>
+</body>
+</html>
