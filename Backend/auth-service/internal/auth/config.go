@@ -9,6 +9,7 @@ import (
 type Config struct {
 	TrustedProxyCIDRs              []string
 	PlatformAdminEmail             string
+	PlatformAdminPreviousEmail     string
 	PlatformAdminOrigin            string
 	SendPasswordReset              func(context.Context, string, string) error
 	SendPlatformAdminPasswordReset func(context.Context, string, string) error

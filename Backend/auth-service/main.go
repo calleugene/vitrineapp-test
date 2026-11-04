@@ -46,6 +46,7 @@ func main() {
 	}
 	service := auth.NewService(repo, auth.Config{
 		PlatformAdminEmail:             strings.ToLower(strings.TrimSpace(os.Getenv("AUTH_PLATFORM_ADMIN_EMAIL"))),
+		PlatformAdminPreviousEmail:     strings.ToLower(strings.TrimSpace(os.Getenv("AUTH_PLATFORM_ADMIN_PREVIOUS_EMAIL"))),
 		PlatformAdminOrigin:            strings.TrimRight(os.Getenv("AUTH_PLATFORM_ADMIN_ORIGIN"), "/"),
 		SendPlatformAdminPasswordReset: auth.PlatformAdminPasswordResetSenderFromEnv(),
 		TrustedProxyCIDRs:              strings.Split(os.Getenv("AUTH_TRUSTED_PROXY_CIDRS"), ","),

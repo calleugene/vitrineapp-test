@@ -57,8 +57,8 @@ test "$(curl --silent --show-error --output "$error_page" --write-out '%{http_co
 cmp -s "$error_page" "$release/Landing/dist/404.html"
 
 test "$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://vitrineapp.ru/api/auth/api/v1/auth/admin/museums)" = 401
-admin_role="$("${compose[@]}" exec -T postgres psql -U viralabs -d viralabs_auth -Atc "SELECT role FROM users WHERE email = 'hello@vitrine.app'")"
-test "$admin_role" = platform_admin
+admin_email="$("${compose[@]}" exec -T postgres psql -U viralabs -d viralabs_auth -Atc "SELECT email FROM users WHERE role = 'platform_admin' AND email IN ('hello@vitrine.app', 'hello@vitrineapp.ru')")"
+test "$admin_email" = hello@vitrineapp.ru
 
 python3 "$release/deploy/verify-embed-release.py" --release "$release"
 

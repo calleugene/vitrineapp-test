@@ -27,8 +27,39 @@ func (r *profileRepository) RecordPlatformContext(ctx context.Context, id, userI
 	return err
 }
 
-// BootstrapPlatformAdmin provisions a reserved identity once. Existing accounts
-// can never be promoted implicitly or have their password reset during startup.
+func (r *profileRepository) MovePlatformAdminEmail(ctx context.Context, userID, previousEmail, email string, now time.Time) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var stamp any = now
+	if !r.postgres {
+		stamp = now.Format(time.RFC3339)
+	}
+	result, err := tx.ExecContext(ctx, r.query(`UPDATE users SET email=?, email_verified_at=NULL, updated_at=?,
+		status=CASE WHEN status='ACTIVE' THEN 'ADMIN_PENDING' ELSE status END
+		WHERE id=? AND email=? AND role='platform_admin'`), email, stamp, userID, previousEmail)
+	if err != nil {
+		return err
+	}
+	if err = ensureRows(result); err != nil {
+		return err
+	}
+	if _, err = tx.ExecContext(ctx, r.query(`UPDATE sessions SET revoked_at=? WHERE user_id=? AND revoked_at IS NULL`), stamp, userID); err != nil {
+		return err
+	}
+	if _, err = tx.ExecContext(ctx, r.query(`DELETE FROM password_reset_tokens WHERE user_id=?`), userID); err != nil {
+		return err
+	}
+	if _, err = tx.ExecContext(ctx, r.query(`DELETE FROM password_reset_mail WHERE email IN (?,?)`), previousEmail, email); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// BootstrapPlatformAdmin provisions the reserved identity or migrates an explicitly
+// configured previous administrator. It never promotes an ordinary account.
 func (s *Service) BootstrapPlatformAdmin(ctx context.Context) error {
 	email := s.config.PlatformAdminEmail
 	if email == "" {
@@ -36,6 +67,15 @@ func (s *Service) BootstrapPlatformAdmin(ctx context.Context) error {
 	}
 	if !validEmail(email) {
 		return ErrBadRequest
+	}
+	if previous := s.config.PlatformAdminPreviousEmail; previous != "" && previous != email {
+		old, err := s.repo.FindUserByEmail(ctx, previous)
+		if err == nil && old.Role == platformAdminRole {
+			return s.repo.MovePlatformAdminEmail(ctx, old.ID, previous, email, s.config.now())
+		}
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
 	}
 	current, err := s.repo.FindUserByEmail(ctx, email)
 	if err == nil {

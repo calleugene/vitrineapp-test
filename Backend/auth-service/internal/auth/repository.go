@@ -43,4 +43,5 @@ type Repository interface {
 
 	GetUserActivity(ctx context.Context, userID string) ([]userActivity, error)
 	RecordPlatformContext(ctx context.Context, id, userID, previousMuseum, museumID, reason string, now time.Time) error
+	MovePlatformAdminEmail(ctx context.Context, userID, previousEmail, email string, now time.Time) error
 }

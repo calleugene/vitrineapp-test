@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestPlatformAdminActivationAndContextIsolation(t *testing.T) {
@@ -111,4 +112,55 @@ func TestPlatformAdminActivationAndContextIsolation(t *testing.T) {
 	activate("admin example password 2")
 	request("GET", "/workspace?museum_id=hidden", "", "", selected, 401)
 	request("POST", "/login", login, s.config.PlatformAdminOrigin, nil, 401)
+}
+
+func TestMovePlatformAdminEmail(t *testing.T) {
+	s, repo := newTestService(t)
+	ctx := context.Background()
+	oldEmail, newEmail := "old-admin@example.test", "new-admin@example.test"
+	s.config.PlatformAdminEmail = oldEmail
+	if err := s.BootstrapPlatformAdmin(ctx); err != nil {
+		t.Fatal(err)
+	}
+	user, err := repo.FindUserByEmail(ctx, oldEmail)
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := s.config.now()
+	if err := repo.CreatePasswordResetToken(ctx, "first", user.ID, tokenHashString("first"), now.Add(time.Hour), now); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.ResetPassword(ctx, "first", "first admin password"); err != nil {
+		t.Fatal(err)
+	}
+	pair, err := s.login(ctx, loginRequest{Email: oldEmail, Password: "first admin password"}, platformAdminRole)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.CreatePasswordResetToken(ctx, "stale", user.ID, tokenHashString("stale"), now.Add(time.Hour), now); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.QueuePasswordReset(ctx, "old-mail", oldEmail, now); err != nil {
+		t.Fatal(err)
+	}
+	s.config.PlatformAdminPreviousEmail = oldEmail
+	s.config.PlatformAdminEmail = newEmail
+	for i := 0; i < 2; i++ {
+		if err := s.BootstrapPlatformAdmin(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}
+	moved, err := repo.FindUserByEmail(ctx, newEmail)
+	if err != nil || moved.ID != user.ID || moved.Status != "ADMIN_PENDING" || moved.EmailVerifiedAt != nil {
+		t.Fatalf("account not migrated correctly: %+v, %v", moved, err)
+	}
+	if _, _, err := s.Authenticate(ctx, pair.AccessToken); !errors.Is(err, ErrUnauthorized) {
+		t.Fatalf("old session still valid: %v", err)
+	}
+	if err := s.ResetPassword(ctx, "stale", "another admin password"); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("old recovery link still valid: %v", err)
+	}
+	if _, err := repo.LeasePasswordReset(ctx, now); err == nil {
+		t.Fatal("stale reset email still queued")
+	}
 }
