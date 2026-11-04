@@ -11,6 +11,8 @@ type Repository interface {
 	FinishPasswordReset(context.Context, string, time.Time, bool) error
 	ProfileRepository
 	AllowPasswordReset(context.Context, string, time.Time) (bool, error)
+	AllowPlatformAdminLogin(context.Context, string, time.Time) (bool, error)
+	ClearPlatformAdminLogin(context.Context, string) error
 	CreateUser(ctx context.Context, user User, passwordHash string) error
 	FindUserByEmail(ctx context.Context, email string) (User, error)
 	FindUserByID(ctx context.Context, userID string) (User, error)

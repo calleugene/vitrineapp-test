@@ -59,6 +59,11 @@ cmp -s "$error_page" "$release/Landing/dist/404.html"
 test "$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://vitrineapp.ru/api/auth/api/v1/auth/admin/museums)" = 401
 admin_email="$("${compose[@]}" exec -T postgres psql -U viralabs -d viralabs_auth -Atc "SELECT email FROM users WHERE role = 'platform_admin' AND email IN ('hello@vitrine.app', 'hello@vitrineapp.ru')")"
 test "$admin_email" = hello@vitrineapp.ru
+admin_status="$("${compose[@]}" exec -T postgres psql -U viralabs -d viralabs_auth -Atc "SELECT status FROM users WHERE role = 'platform_admin' AND email = 'hello@vitrineapp.ru'")"
+case "$admin_status" in
+  ACTIVE|ADMIN_PENDING) printf 'Platform administrator status: %s\n' "$admin_status" ;;
+  *) echo 'Platform administrator is unavailable' >&2 ;;
+esac
 
 python3 "$release/deploy/verify-embed-release.py" --release "$release"
 

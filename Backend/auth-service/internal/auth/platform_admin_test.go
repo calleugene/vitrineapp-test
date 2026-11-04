@@ -89,6 +89,9 @@ func TestPlatformAdminActivationAndContextIsolation(t *testing.T) {
 	login := `{"email":"admin@example.test","password":"admin example password 1"}`
 	request("POST", "/login", login, "https://elsewhere.test", nil, 403)
 	cookie := request("POST", "/login", login, s.config.PlatformAdminOrigin, nil, 204).Result().Cookies()[0]
+	for i := 0; i < 4; i++ {
+		request("POST", "/login", login, s.config.PlatformAdminOrigin, nil, 204)
+	}
 	if !cookie.Secure || !cookie.HttpOnly || cookie.SameSite != http.SameSiteStrictMode {
 		t.Fatal("unsafe admin session cookie")
 	}
@@ -112,6 +115,30 @@ func TestPlatformAdminActivationAndContextIsolation(t *testing.T) {
 	activate("admin example password 2")
 	request("GET", "/workspace?museum_id=hidden", "", "", selected, 401)
 	request("POST", "/login", login, s.config.PlatformAdminOrigin, nil, 401)
+}
+
+func TestPlatformAdminLoginRateLimit(t *testing.T) {
+	s, repo := newTestService(t)
+	ctx := context.Background()
+	now := s.config.now()
+	check := func(source string, at time.Time, want bool) {
+		t.Helper()
+		if allowed, err := repo.AllowPlatformAdminLogin(ctx, source, at); err != nil || allowed != want {
+			t.Fatalf("source %s: allowed=%v, want %v, error=%v", source, allowed, want, err)
+		}
+	}
+	for i := 0; i < 10; i++ {
+		check("one", now, true)
+	}
+	check("one", now, false)
+	check("two", now, true)
+	check("one", now.Add(15*time.Minute), true)
+	if err := repo.ClearPlatformAdminLogin(ctx, "two"); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 10; i++ {
+		check("two", now, true)
+	}
 }
 
 func TestMovePlatformAdminEmail(t *testing.T) {

@@ -20,7 +20,9 @@ async function request(path, body) {
     method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body),
   };
   const response = await fetch(root + path, {...options, cache: 'no-store', signal: AbortSignal.timeout(10000)});
-  if (!response.ok) throw Object.assign(new Error('Request failed'), {status: response.status});
+  if (!response.ok) throw Object.assign(new Error('Request failed'), {
+    status: response.status, retryAfter: Number(response.headers.get('Retry-After')),
+  });
   return response.status === 204 ? null : response.json();
 }
 
@@ -37,7 +39,8 @@ async function run(work, failure = 'Не удалось выполнить де�
       show('login');
       notify('Сессия завершена. Войдите снова.');
     } else {
-      notify(error.status === 429 ? 'Слишком много попыток. Попробуйте позже.' : failure);
+      const delay = error.retryAfter > 0 ? ` Попробуйте через ${Math.ceil(error.retryAfter / 60)} мин.` : ' Попробуйте позже.';
+      notify(error.status === 429 ? 'Слишком много попыток.' + delay : failure);
     }
   } finally {
     busy = false;

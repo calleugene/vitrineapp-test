@@ -132,17 +132,14 @@ func (s *Service) platformAdminLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	now := s.config.now()
-	key := "ip:platform-admin:" + tokenHashString(s.clientIP(r))
-	allowed, err := s.repo.AllowPasswordReset(ctx, key, now)
-	if err == nil && allowed && normalizeEmail(req.Email) == s.config.PlatformAdminEmail {
-		allowed, err = s.repo.AllowPasswordReset(ctx, "platform-admin:"+tokenHashString(s.config.PlatformAdminEmail), now)
-	}
+	source := tokenHashString(s.clientIP(r))
+	allowed, err := s.repo.AllowPlatformAdminLogin(ctx, source, s.config.now())
 	if err != nil {
 		writeServiceError(w, err)
 		return
 	}
 	if !allowed {
+		w.Header().Set("Retry-After", "900")
 		writeError(w, 429, "too_many_requests")
 		return
 	}
@@ -152,6 +149,11 @@ func (s *Service) platformAdminLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	pair, err := s.login(ctx, req, platformAdminRole)
 	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+	if err = s.repo.ClearPlatformAdminLogin(ctx, source); err != nil {
+		_ = s.Logout(ctx, pair.AccessToken, pair.RefreshToken)
 		writeServiceError(w, err)
 		return
 	}

@@ -68,14 +68,27 @@ func validateConsents(consents []consentInput) error {
 }
 
 func (r *profileRepository) AllowPasswordReset(ctx context.Context, key string, now time.Time) (bool, error) {
-	// Atomic persistent quota shared across service instances; unknown addresses use the same path.
-	var count int
-	err := r.db.QueryRowContext(ctx, r.query(`INSERT INTO password_reset_limits(key,window_start,attempts) VALUES(?,?,1)
- ON CONFLICT(key) DO UPDATE SET attempts=CASE WHEN password_reset_limits.window_start<=? THEN 1 ELSE password_reset_limits.attempts+1 END,
- window_start=CASE WHEN password_reset_limits.window_start<=? THEN excluded.window_start ELSE password_reset_limits.window_start END RETURNING attempts`), key, now.Format(time.RFC3339), now.Add(-30*time.Minute).Format(time.RFC3339), now.Add(-30*time.Minute).Format(time.RFC3339)).Scan(&count)
 	limit := 3
 	if strings.HasPrefix(key, "ip:") || strings.HasPrefix(key, "reset-ip:") {
 		limit = 30
 	}
+	return r.allowPasswordAttempt(ctx, key, now, 30*time.Minute, limit)
+}
+
+func (r *profileRepository) AllowPlatformAdminLogin(ctx context.Context, source string, now time.Time) (bool, error) {
+	return r.allowPasswordAttempt(ctx, "admin-login:"+source, now, 15*time.Minute, 10)
+}
+
+func (r *profileRepository) ClearPlatformAdminLogin(ctx context.Context, source string) error {
+	_, err := r.db.ExecContext(ctx, r.query(`DELETE FROM password_reset_limits WHERE key=?`), "admin-login:"+source)
+	return err
+}
+
+func (r *profileRepository) allowPasswordAttempt(ctx context.Context, key string, now time.Time, window time.Duration, limit int) (bool, error) {
+	// Atomic persistent quota shared across service instances; unknown addresses use the same path.
+	var count int
+	err := r.db.QueryRowContext(ctx, r.query(`INSERT INTO password_reset_limits(key,window_start,attempts) VALUES(?,?,1)
+ ON CONFLICT(key) DO UPDATE SET attempts=CASE WHEN password_reset_limits.window_start<=? THEN 1 ELSE password_reset_limits.attempts+1 END,
+ window_start=CASE WHEN password_reset_limits.window_start<=? THEN excluded.window_start ELSE password_reset_limits.window_start END RETURNING attempts`), key, now.Format(time.RFC3339), now.Add(-window).Format(time.RFC3339), now.Add(-window).Format(time.RFC3339)).Scan(&count)
 	return count <= limit, err
 }
