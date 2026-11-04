@@ -1,0 +1,94 @@
+.public-stats {
+  box-sizing: border-box;
+  width: min(100%, 1100px);
+  margin-inline: auto;
+  padding: clamp(24px, 5vw, 64px) clamp(16px, 4vw, 40px);
+  color: #1a1a1a;
+  line-height: 1.5;
+}
+
+.public-stats header a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #4d3bc6;
+}
+
+.public-stats h1 {
+  margin: 12px 0 4px;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  line-height: 1.12;
+}
+
+.public-stats p {
+  margin: 0 0 12px;
+  color: #55546b;
+}
+
+.public-stats section {
+  margin-top: 32px;
+}
+
+.public-stats h2 {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+}
+
+.public-stats dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.public-stats-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  background: #f6f5ff;
+  border: 1px solid #e6e3f6;
+  border-radius: 16px;
+}
+
+.public-stats-card dt {
+  font-weight: 600;
+}
+
+.public-stats-card dd {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  margin-top: auto;
+}
+
+.public-stats-card strong {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.public-stats-card .public-stats-empty,
+.public-stats-card small {
+  color: #55546b;
+}
+
+.public-stats-card .public-stats-empty {
+  font-size: 1.125rem;
+}
+
+.public-stats button {
+  min-height: 44px;
+  padding-inline: 16px;
+  color: #fff;
+  background: #4d3bc6;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .public-stats dl {
+    grid-template-columns: 1fr;
+  }
+}

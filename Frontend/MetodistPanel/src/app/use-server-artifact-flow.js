@@ -17,7 +17,8 @@ function messageFor(error) {
   return 'Не удалось выполнить действие. Попробуйте ещё раз.';
 }
 
-export function useServerArtifactFlow({loadArtifacts, onNavigate}) {
+export function useServerArtifactFlow({loadArtifacts, onNavigate, onArtifactAdded}) {
+  const creationStartedAt = useRef(null);
   const [artifact, setArtifact] = useState(null);
   const [screens, setScreens] = useState([]);
   const [draft, setDraft] = useState(emptyDraft);
@@ -63,6 +64,7 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate}) {
   }, [loadScreens, onNavigate]);
 
   const start = useCallback(() => {
+    creationStartedAt.current = performance.now();
 		setArtifact(null); setScreens([]); setDraft(emptyDraft); setDirty(false); setPublication(null); setError(''); setNotice(''); onNavigate('artifact-basic', {artifactId: null});
   }, [onNavigate]);
 
@@ -75,14 +77,19 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate}) {
     setLoading(true); setError('');
     const body = {title, short_description: draft.short_description.trim(), description: draft.description.trim() || draft.short_description.trim(), category: draft.category || 'other'};
     try {
+      const startedAt = creationStartedAt.current;
       const response = artifact ? await artifactsApi.update(artifact.id, body) : await artifactsApi.create(body);
       const item = response.artifact;
+      if (!artifact && startedAt !== null) {
+        creationStartedAt.current = null;
+        onArtifactAdded(item.id, performance.now() - startedAt);
+      }
       setArtifact(item); setDraft({title: item.title || '', short_description: item.short_description || '', description: item.description || '', category: item.category || 'other'}); setDirty(false);
       await loadArtifacts();
       return item;
     } catch (nextError) { setError(messageFor(nextError)); return null; }
     finally { setLoading(false); }
-  }, [artifact, draft, loadArtifacts]);
+  }, [artifact, draft, loadArtifacts, onArtifactAdded]);
 
 	const saveAndGo = useCallback(async (view) => { const item = artifact && !dirty ? artifact : await save(); if (item) onNavigate(view, {artifactId: item.id}); }, [artifact, dirty, onNavigate, save]);
   const uploadCover = useCallback(async (file) => {

@@ -72,6 +72,7 @@ services:
       ANALYTICS_AUTH_URL: http://auth-service:8080/api/v1
       ANALYTICS_ARTIFACTS_URL: http://artifacts-service:8081/api/v1
       ANALYTICS_ARTIFACTS_DB_DSN: "postgresql://viralabs:${POSTGRES_PASSWORD}@postgres:5432/viralabs_artifacts"
+      ANALYTICS_AUTH_DB_DSN: "postgresql://viralabs:${POSTGRES_PASSWORD}@postgres:5432/viralabs_auth"
   route-service:
     <<: *backend
     build:

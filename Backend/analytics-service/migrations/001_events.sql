@@ -21,3 +21,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS analytics_visit_once ON analytics_events (muse
 CREATE UNIQUE INDEX IF NOT EXISTS analytics_screen_once ON analytics_events (museum_id, session_id, artifact_id, screen_id) WHERE type = 'scene_view';
 CREATE UNIQUE INDEX IF NOT EXISTS analytics_completion_once ON analytics_events (museum_id, session_id, artifact_id) WHERE type = 'scene_complete';
 CREATE UNIQUE INDEX IF NOT EXISTS analytics_collect_once ON analytics_events (museum_id, visitor_key, artifact_id) WHERE type = 'artifact_collected';
+CREATE TABLE IF NOT EXISTS methodist_metrics (
+  kind TEXT NOT NULL,
+  id TEXT NOT NULL,
+  session_key TEXT NOT NULL,
+  duration_ms INTEGER NOT NULL,
+  PRIMARY KEY (kind, id)
+);

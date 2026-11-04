@@ -35,6 +35,7 @@ type server struct {
 	driver          string
 	artifactsDB     *sql.DB
 	artifactsDriver string
+	authDB          *sql.DB
 	secret          string
 	artifactsURL    string
 	authURL         string
@@ -138,6 +139,17 @@ func main() {
 		defer artifactsDB.Close()
 	}
 	s := &server{db: db, driver: driver, artifactsDB: artifactsDB, artifactsDriver: artifactsDriver, secret: os.Getenv("ANALYTICS_TOKEN_SECRET"), artifactsURL: strings.TrimRight(env("ANALYTICS_ARTIFACTS_URL", "http://artifacts-service:8081/api/v1"), "/"), authURL: strings.TrimRight(env("ANALYTICS_AUTH_URL", "http://auth-service:8080/api/v1"), "/"), client: &http.Client{Timeout: 4 * time.Second}, now: func() time.Time { return time.Now().UTC() }}
+	if source := os.Getenv("ANALYTICS_AUTH_DB_DSN"); source != "" {
+		authDriver := "sqlite"
+		if strings.HasPrefix(source, "postgres") {
+			authDriver = "pgx"
+		}
+		s.authDB, err = sql.Open(authDriver, source)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer s.authDB.Close()
+	}
 	if s.secret == "" {
 		log.Fatal("ANALYTICS_TOKEN_SECRET is required")
 	}
@@ -165,8 +177,10 @@ func (s *server) migrate() error {
 	if err != nil {
 		return err
 	}
-	_, err = s.db.Exec(string(script))
-	return err
+	if _, err = s.db.Exec(string(script)); err != nil {
+		return err
+	}
+	return addViewingDeviceColumn(s.db, s.driver)
 }
 func (s *server) bind(query string) string {
 	if s.driver != "pgx" {
@@ -216,6 +230,8 @@ func (s *server) routes() http.Handler {
 		jsonOut(w, 200, map[string]string{"status": "ready"})
 	})
 	mux.HandleFunc("POST /api/v1/analytics/events", s.ingest)
+	mux.HandleFunc("GET /api/v1/public/stats", s.publicStats)
+	mux.HandleFunc("POST /api/v1/analytics/methodist-metrics", s.recordMethodistMetric)
 	mux.HandleFunc("GET /api/v1/analytics/filter-options", s.read)
 	mux.HandleFunc("GET /api/v1/analytics/recent-activity", s.read)
 	mux.HandleFunc("GET /api/v1/visitors/{view}", s.read)
@@ -493,7 +509,11 @@ func (s *server) ingest(w http.ResponseWriter, r *http.Request) {
 	canonical, _ := json.Marshal(e)
 	hashBytes := sha256.Sum256(canonical)
 	contentHash := hex.EncodeToString(hashBytes[:])
-	result, err := s.db.ExecContext(r.Context(), s.bind(`INSERT INTO analytics_events (id,payload_hash,museum_id,artifact_id,artifact_title,public_code,visitor_key,session_id,type,screen_id,source,active_ms,quiz_correct,occurred_at,received_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING`), e.ID, contentHash, p.Artifact.MuseumID, p.Artifact.ID, p.Artifact.Title, e.PublicCode, e.VisitorKey, e.SessionID, e.Type, e.ScreenID, e.Source, e.Properties.ActiveMS, e.Properties.Correct, e.OccurredAt.UTC().UnixMilli(), now.UnixMilli())
+	device := ""
+	if e.Type == "scene_view" {
+		device = viewingDevice(r)
+	}
+	result, err := s.db.ExecContext(r.Context(), s.bind(`INSERT INTO analytics_events (id,payload_hash,museum_id,artifact_id,artifact_title,public_code,visitor_key,session_id,type,screen_id,source,active_ms,quiz_correct,occurred_at,received_at,device) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING`), e.ID, contentHash, p.Artifact.MuseumID, p.Artifact.ID, p.Artifact.Title, e.PublicCode, e.VisitorKey, e.SessionID, e.Type, e.ScreenID, e.Source, e.Properties.ActiveMS, e.Properties.Correct, e.OccurredAt.UTC().UnixMilli(), now.UnixMilli(), device)
 	if err != nil {
 		log.Printf("insert event: %v", err)
 		fail(w, 503, "storage_unavailable")

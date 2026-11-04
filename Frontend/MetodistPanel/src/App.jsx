@@ -18,6 +18,7 @@ import {useRouteDraft} from './app/use-route-draft';
 import {useSession} from './app/use-session';
 import {useViewRouting} from './app/use-view-routing';
 import {useStatsData} from './features/stats/use-stats-data';
+import {useMethodistMetrics} from './app/use-methodist-metrics';
 
 function App() {
   const {add:showToast} = useToaster();
@@ -58,6 +59,9 @@ function App() {
   });
 
 	const {view, artifactId, setView} = useViewRouting({isAuthenticated});
+  const trackMethodist = isAuthenticated && !session?.isMock && !sessionChecking &&
+    !sessionCheckError && currentUser?.status?.toUpperCase() === 'ACTIVE';
+  const recordMetric = useMethodistMetrics(trackMethodist ? session.accessToken : null, currentUser?.id);
 
   const navigate = (nextView, options) => {
     setUserMenuOpen(false);
@@ -111,6 +115,7 @@ function App() {
 	const serverArtifactFlow = useServerArtifactFlow({
     loadArtifacts,
     onNavigate: navigate,
+    onArtifactAdded: (id, duration) => recordMetric('artifact', id, duration),
 	});
 
 	useEffect(() => {
