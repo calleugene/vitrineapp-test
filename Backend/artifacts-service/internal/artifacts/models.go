@@ -34,6 +34,11 @@ type Artifact struct {
 }
 
 type MuseumProfile struct {
+	initialPublic    *bool
+	IsPublic         bool      `json:"is_public"`
+	AdminState       string    `json:"admin_state,omitempty"`
+	ContactEmail     string    `json:"contact_email"`
+	ContactPhone     string    `json:"contact_phone"`
 	MuseumID         string    `json:"museum_id"`
 	Code             string    `json:"code"`
 	Name             string    `json:"name"`

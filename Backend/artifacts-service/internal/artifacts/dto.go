@@ -137,12 +137,15 @@ type mediaResponse struct {
 }
 
 type museumProfileRequest struct {
-	Name             string `json:"name"`
-	ShortDescription string `json:"short_description"`
-	Description      string `json:"description"`
-	Website          string `json:"website"`
-	Address          string `json:"address"`
-	LogoURL          string `json:"logo_url"`
+	initialPublic    *bool
+	ContactEmail     *string `json:"contact_email,omitempty"`
+	ContactPhone     *string `json:"contact_phone,omitempty"`
+	Name             string  `json:"name"`
+	ShortDescription string  `json:"short_description"`
+	Description      string  `json:"description"`
+	Website          string  `json:"website"`
+	Address          string  `json:"address"`
+	LogoURL          string  `json:"logo_url"`
 }
 
 type museumProfileResponse struct {

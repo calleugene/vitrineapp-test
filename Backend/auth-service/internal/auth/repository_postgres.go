@@ -64,11 +64,19 @@ func (r *PostgresRepository) FindUserWithPasswordByEmail(ctx context.Context, em
 }
 
 func (r *PostgresRepository) UpdateUser(ctx context.Context, user User) error {
+	return r.updateUser(ctx, user, "LOWER(status)='active'")
+}
+
+func (r *PostgresRepository) UpdateAdminUser(ctx context.Context, user User) error {
+	return r.updateUser(ctx, user, "LOWER(status)<>'deleted' AND role<>'platform_admin'")
+}
+
+func (r *PostgresRepository) updateUser(ctx context.Context, user User, guard string) error {
 	res, err := r.db.ExecContext(ctx, `
 		UPDATE users SET full_name = $1, phone = $2, position = $3, about = $4, birth_date = $5,
 			gender = $6, timezone = $7, interface_language = $8, extra_languages = $9,
 			note = $10, notifications_enabled = $11, level = $12, is_guest = $13, locale = $14, updated_at = $15
-		WHERE id = $16 AND LOWER(status)='active'`,
+		WHERE id = $16 AND `+guard,
 		user.FullName, ns(user.Phone), ns(user.Position), ns(user.About), ns(user.BirthDate),
 		ns(user.Gender), ns(user.Timezone), ns(user.InterfaceLanguage), ns(user.ExtraLanguages),
 		ns(user.Note), user.NotificationsEnabled, user.Level, user.IsGuest, user.Locale, user.UpdatedAt, user.ID)
@@ -264,8 +272,8 @@ func (r *PostgresRepository) ConsumePasswordResetToken(ctx context.Context, toke
 		return err
 	}
 	res, err = tx.ExecContext(ctx, `UPDATE users SET password_hash = $1, updated_at = $2,
-		status = CASE WHEN role = 'platform_admin' AND status = 'ADMIN_PENDING' THEN 'ACTIVE' ELSE status END,
-		email_verified_at = CASE WHEN role = 'platform_admin' THEN COALESCE(email_verified_at, $2) ELSE email_verified_at END
+		status = CASE WHEN status IN ('INVITED', 'ADMIN_PENDING') THEN 'ACTIVE' ELSE status END,
+		email_verified_at = CASE WHEN role = 'platform_admin' OR status = 'INVITED' THEN COALESCE(email_verified_at, $2) ELSE email_verified_at END
 		WHERE id = $3 AND (role <> 'platform_admin' OR status IN ('ACTIVE', 'ADMIN_PENDING'))`, passwordHash, now, userID)
 	if err != nil {
 		return err

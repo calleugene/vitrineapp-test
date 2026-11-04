@@ -11,6 +11,8 @@ type Repository interface {
 	GetMuseumProfile(ctx context.Context, museumID string) (MuseumProfile, error)
 	CreateMuseumProfile(ctx context.Context, profile MuseumProfile) (MuseumProfile, error)
 	UpdateMuseumProfile(ctx context.Context, profile MuseumProfile) (MuseumProfile, error)
+	SetAdminMuseumState(ctx context.Context, museumID, action string) error
+	ListAdminExhibits(ctx context.Context, search string, offset int) ([]adminExhibitRow, error)
 
 	ListArtifacts(ctx context.Context, status, category, sort string, page, limit int, museumID *string) ([]Artifact, int, error)
 	CreateArtifact(ctx context.Context, artifact Artifact) error

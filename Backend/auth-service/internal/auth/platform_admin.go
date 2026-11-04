@@ -114,7 +114,11 @@ func (s *Service) platformAdminRoutes(mux *http.ServeMux) {
 				writeServiceError(w, ErrForbidden)
 				return
 			}
-			r.Body = http.MaxBytesReader(w, r.Body, 4096)
+			if strings.HasSuffix(r.URL.Path, "/avatar") {
+				r.Body = http.MaxBytesReader(w, r.Body, 6<<20)
+			} else if !strings.HasPrefix(r.URL.Path, "/api/v1/auth/admin/content/") {
+				r.Body = http.MaxBytesReader(w, r.Body, 32768)
+			}
 			handler(w, r)
 		})
 	}
@@ -123,6 +127,16 @@ func (s *Service) platformAdminRoutes(mux *http.ServeMux) {
 	handle("GET /api/v1/auth/admin/museums", s.platformAdminMuseums)
 	handle("POST /api/v1/auth/admin/context", s.platformAdminContext)
 	handle("GET /api/v1/auth/admin/workspace", s.platformAdminWorkspace)
+	handle("GET /api/v1/auth/admin/users", s.adminUsers)
+	handle("GET /api/v1/auth/admin/exhibits", s.adminExhibits)
+	handle("POST /api/v1/auth/admin/users", s.adminInviteUser)
+	handle("GET /api/v1/auth/admin/users/{userId}", s.adminUser)
+	handle("PATCH /api/v1/auth/admin/users/{userId}", s.adminUser)
+	handle("POST /api/v1/auth/admin/users/{userId}/{action}", s.adminUserAction)
+	handle("GET /api/v1/auth/admin/team", s.adminTeam)
+	handle("PUT /api/v1/auth/admin/team", s.adminTeam)
+	handle("POST /api/v1/auth/admin/museums", s.adminCreateMuseum)
+	handle("/api/v1/auth/admin/content/{path...}", s.adminContent)
 }
 
 func (s *Service) platformAdminLogin(w http.ResponseWriter, r *http.Request) {
@@ -239,7 +253,7 @@ func (s *Service) platformAdminContext(w http.ResponseWriter, r *http.Request) {
 	user.MuseumID = nil
 	if req.MuseumID != "" {
 		var museum json.RawMessage
-		if err = s.loadPlatformAdminData(r.Context(), "/internal/museums/"+url.PathEscape(req.MuseumID), &museum); err != nil {
+		if err = s.loadPlatformAdminData(r.Context(), "/internal/admin/museums/"+url.PathEscape(req.MuseumID), &museum); err != nil {
 			writeServiceError(w, err)
 			return
 		}

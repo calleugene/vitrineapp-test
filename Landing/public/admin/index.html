@@ -8,7 +8,7 @@
   <title>Администратор Витрины</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/admin/admin.css">
-  <script src="/admin/admin.js" defer></script>
+  <script src="/admin/admin.js" type="module"></script>
 </head>
 <body>
   <main>
@@ -35,8 +35,17 @@
       <button type="submit">Сохранить пароль</button>
       <a href="/admin/">Вернуться ко входу</a>
     </form>
+    <nav id="management-nav" class="heading" aria-label="Управление платформой" hidden>
+      <button type="button" id="show-museums">Музеи</button>
+      <button type="button" id="show-exhibits">Экспонаты</button>
+      <button type="button" id="show-users">Пользователи</button>
+      <button type="button" id="logout" class="secondary">Выйти</button>
+    </nav>
+    <section id="users" hidden></section>
+    <section id="exhibits" hidden></section>
     <section id="catalog" hidden>
-      <div class="heading"><h2>Музеи</h2><button type="button" id="logout" class="secondary">Выйти</button></div>
+      <h2>Музеи</h2>
+      <details id="create-museum"></details>
       <form id="select">
         <label>Поиск по названию, коду или ID <input id="search" type="search"></label>
         <label>Музей <select name="museum" required></select></label>
@@ -47,8 +56,11 @@
     <section id="workspace" hidden>
       <div class="heading"><h2 id="museum-name"></h2><button type="button" id="leave" class="secondary">Выйти из музея</button></div>
       <p id="museum-details"></p>
+      <div id="museum-controls"></div>
       <h3>Экспонаты</h3>
+      <details id="create-artifact"></details>
       <ul id="artifacts"></ul>
+      <div id="artifact-editor" hidden></div>
       <div class="heading"><button type="button" id="prev" class="secondary">Назад</button><span id="page"></span><button type="button" id="next" class="secondary">Вперёд</button></div>
     </section>
   </main>

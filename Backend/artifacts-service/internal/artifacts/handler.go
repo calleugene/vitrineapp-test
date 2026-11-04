@@ -55,11 +55,33 @@ func NewHandler(service *Service) http.Handler {
 		}
 		writeJSON(w, 200, map[string]any{"museums": items})
 	}))
+	mux.HandleFunc("GET /api/v1/internal/admin/exhibits", internal(func(w http.ResponseWriter, r *http.Request) {
+		search := strings.TrimSpace(r.URL.Query().Get("q"))
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if len(search) > 254 || page < 0 || page > 100000 {
+			writeServiceError(w, ErrBadRequest)
+			return
+		}
+		items, err := service.repo.ListAdminExhibits(r.Context(), search, page*50)
+		if err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		more := len(items) > 50
+		if more {
+			items = items[:50]
+		}
+		writeJSON(w, 200, map[string]any{"artifacts": items, "more": more})
+	}))
 	mux.HandleFunc("GET /api/v1/internal/admin/museums/{museumId}", internal(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("museumId")
 		museum, err := service.GetMuseumProfile(r.Context(), id)
 		if err != nil {
 			writeServiceError(w, err)
+			return
+		}
+		if museum.AdminState == "deleted" {
+			writeServiceError(w, ErrNotFound)
 			return
 		}
 		page, err := strconv.Atoi(r.URL.Query().Get("page"))
@@ -76,6 +98,35 @@ func NewHandler(service *Service) http.Handler {
 		}
 		writeJSON(w, 200, map[string]any{"museum": museum, "artifacts": items, "pagination": pag})
 	}))
+	mux.HandleFunc("POST /api/v1/internal/admin/museums/{museumId}", internal(func(w http.ResponseWriter, r *http.Request) {
+		var req museumProfileRequest
+		if decodeJSON(r.Body, &req) != nil {
+			writeServiceError(w, ErrBadRequest)
+			return
+		}
+		visible := false
+		req.initialPublic = &visible
+		museum, err := service.CreateMuseumProfile(r.Context(), r.PathValue("museumId"), req)
+		if err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		writeJSON(w, 201, museumProfileResponse{Museum: museum})
+	}))
+	mux.HandleFunc("PUT /api/v1/internal/admin/museums/{museumId}/state", internal(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Action string `json:"action"`
+		}
+		if decodeJSON(r.Body, &req) != nil {
+			writeServiceError(w, ErrBadRequest)
+			return
+		}
+		if err := service.repo.SetAdminMuseumState(r.Context(), r.PathValue("museumId"), req.Action); err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
 	mux.HandleFunc("GET /api/v1/internal/museums/{museumId}", func(w http.ResponseWriter, r *http.Request) {
 		if service.config.TokenSecret == "" || !hmac.Equal([]byte(r.Header.Get("X-Service-Secret")), []byte(service.config.TokenSecret)) {
 			writeError(w, 403, "forbidden")
@@ -84,6 +135,10 @@ func NewHandler(service *Service) http.Handler {
 		profile, err := service.GetMuseumProfile(r.Context(), r.PathValue("museumId"))
 		if err != nil {
 			writeServiceError(w, err)
+			return
+		}
+		if profile.AdminState != "active" {
+			writeServiceError(w, ErrNotFound)
 			return
 		}
 		writeJSON(w, 200, museumProfileResponse{Museum: profile})
@@ -96,6 +151,10 @@ func NewHandler(service *Service) http.Handler {
 				claims, ok := parseAccessClaims(r.Header.Get("Authorization"), service.config.TokenSecret)
 				if !ok || claims.MuseumID == "" || !canManageArtifacts(claims.Role) {
 					writeError(w, http.StatusUnauthorized, "unauthorized")
+					return
+				}
+				if claims.Role == "platform_admin" && service.config.AuthServiceURL == "" {
+					writeError(w, 503, "auth_unavailable")
 					return
 				}
 				if service.config.AuthServiceURL != "" {
@@ -120,6 +179,10 @@ func NewHandler(service *Service) http.Handler {
 			}
 			if strings.TrimSpace(museumID) == "" {
 				writeError(w, http.StatusBadRequest, "museum_id_required")
+				return
+			}
+			if err := service.checkMuseumActive(r.Context(), museumID); err != nil {
+				writeServiceError(w, err)
 				return
 			}
 			if artifactID := r.PathValue("artifactId"); artifactID != "" {
@@ -437,6 +500,10 @@ func NewHandler(service *Service) http.Handler {
 			writeError(w, http.StatusBadRequest, "museum_id_required")
 			return
 		}
+		if err := service.checkMuseumActive(r.Context(), museumID); err != nil {
+			writeServiceError(w, err)
+			return
+		}
 
 		// This is a public catalogue: it deliberately exposes only published
 		// records. Drafts are available exclusively through the curator API.
@@ -455,6 +522,10 @@ func NewHandler(service *Service) http.Handler {
 		profile, err := service.GetMuseumProfile(r.Context(), strings.TrimSpace(r.PathValue("museumId")))
 		if err != nil {
 			writeServiceError(w, err)
+			return
+		}
+		if profile.AdminState != "active" {
+			writeServiceError(w, ErrNotFound)
 			return
 		}
 		w.Header().Set("Cache-Control", "public, max-age=60")
@@ -602,6 +673,13 @@ func NewHandler(service *Service) http.Handler {
 	registerRoute("GET /artifacts/{artifactId}/publication", getPublicationHandler)
 	registerRoute("PATCH /artifacts/{artifactId}/publication", updatePublicationHandler)
 	registerRoute("POST /artifacts/{artifactId}/publish", publishHandler)
+	registerRoute("POST /artifacts/{artifactId}/unpublish", func(w http.ResponseWriter, r *http.Request) {
+		if err := service.UnpublishArtifact(r.Context(), r.PathValue("artifactId")); err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
 	registerRoute("GET /artifacts/{artifactId}/qr.png", qrHandler)
 	registerRoute("GET /artifacts/{artifactId}/screens", listScreensHandler)
 	registerRoute("POST /artifacts/{artifactId}/screens", createScreenHandler)
@@ -669,7 +747,7 @@ func NewHandler(service *Service) http.Handler {
 
 func canManageArtifacts(role string) bool {
 	switch role {
-	case "methodist", "museum_admin", "moderator", "ORG_ADMIN", "EDITOR":
+	case "methodist", "museum_admin", "moderator", "ORG_ADMIN", "EDITOR", "platform_admin":
 		return true
 	default:
 		return false

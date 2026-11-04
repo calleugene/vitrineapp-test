@@ -68,11 +68,19 @@ func (r *SQLiteRepository) FindUserWithPasswordByEmail(ctx context.Context, emai
 }
 
 func (r *SQLiteRepository) UpdateUser(ctx context.Context, user User) error {
+	return r.updateUser(ctx, user, "LOWER(status)='active'")
+}
+
+func (r *SQLiteRepository) UpdateAdminUser(ctx context.Context, user User) error {
+	return r.updateUser(ctx, user, "LOWER(status)<>'deleted' AND role<>'platform_admin'")
+}
+
+func (r *SQLiteRepository) updateUser(ctx context.Context, user User, guard string) error {
 	res, err := r.db.ExecContext(ctx, `
 		UPDATE users SET full_name = ?, phone = ?, position = ?, about = ?, birth_date = ?,
 			gender = ?, timezone = ?, interface_language = ?, extra_languages = ?,
 			note = ?, notifications_enabled = ?, level = ?, is_guest = ?, locale = ?, updated_at = ?
-		WHERE id = ? AND LOWER(status)='active'`,
+		WHERE id = ? AND `+guard,
 		user.FullName, nullableString(user.Phone), nullableString(user.Position),
 		nullableString(user.About), nullableString(user.BirthDate), nullableString(user.Gender),
 		nullableString(user.Timezone), nullableString(user.InterfaceLanguage),
@@ -271,8 +279,8 @@ func (r *SQLiteRepository) ConsumePasswordResetToken(ctx context.Context, tokenH
 	}
 	stamp := now.Format(time.RFC3339)
 	res, err = tx.ExecContext(ctx, `UPDATE users SET password_hash = ?, updated_at = ?,
-		status = CASE WHEN role = 'platform_admin' AND status = 'ADMIN_PENDING' THEN 'ACTIVE' ELSE status END,
-		email_verified_at = CASE WHEN role = 'platform_admin' THEN COALESCE(email_verified_at, ?) ELSE email_verified_at END
+		status = CASE WHEN status IN ('INVITED', 'ADMIN_PENDING') THEN 'ACTIVE' ELSE status END,
+		email_verified_at = CASE WHEN role = 'platform_admin' OR status = 'INVITED' THEN COALESCE(email_verified_at, ?) ELSE email_verified_at END
 		WHERE id = ? AND (role <> 'platform_admin' OR status IN ('ACTIVE', 'ADMIN_PENDING'))`, passwordHash, stamp, stamp, userID)
 	if err != nil {
 		return err

@@ -20,3 +20,11 @@ button:disabled { opacity: .55; cursor: default; }
 #notice:empty { display: none; }
 #notice { padding: .75rem; border-radius: .5rem; background: #eeedff; }
 #artifacts { padding-left: 1.25rem; }
+nav { margin-bottom: 1rem; }
+details { padding: 1rem; border: 1px solid #e2e0f0; border-radius: .75rem; }
+details > :not(summary) { margin-top: 1rem; }
+summary { cursor: pointer; font-weight: 650; }
+textarea { min-height: 5rem; border: 1px solid #9690ae; border-radius: .5rem; padding: .55rem .75rem; font: inherit; }
+#artifact-editor, #museum-controls { display: grid; gap: 1rem; }
+#artifact-editor { border-top: 1px solid #e2e0f0; padding-top: 1rem; }
+li { margin-block: .35rem; overflow-wrap: anywhere; }

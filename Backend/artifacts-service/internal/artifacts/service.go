@@ -3,7 +3,9 @@ package artifacts
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/mail"
 	"strings"
 	"sync"
 )
@@ -39,12 +41,31 @@ func (s *Service) GetMuseumProfile(ctx context.Context, museumID string) (Museum
 	return s.repo.GetMuseumProfile(ctx, museumID)
 }
 
+func (s *Service) checkMuseumActive(ctx context.Context, id string) error {
+	museum, err := s.repo.GetMuseumProfile(ctx, id)
+	if errors.Is(err, ErrNotFound) {
+		return nil // Legacy artifacts and new museum contexts can precede a profile.
+	}
+	if err != nil {
+		return err
+	}
+	if museum.AdminState != "active" {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (s *Service) CreateMuseumProfile(ctx context.Context, museumID string, req museumProfileRequest) (MuseumProfile, error) {
 	if strings.TrimSpace(req.Name) == "" {
 		return MuseumProfile{}, ErrBadRequest
 	}
 	now := s.config.now()
-	return s.repo.CreateMuseumProfile(ctx, MuseumProfile{MuseumID: museumID, Name: strings.TrimSpace(req.Name), ShortDescription: strings.TrimSpace(req.ShortDescription), Description: strings.TrimSpace(req.Description), Website: strings.TrimSpace(req.Website), Address: strings.TrimSpace(req.Address), LogoURL: strings.TrimSpace(req.LogoURL), CreatedAt: now, UpdatedAt: now})
+	profile := MuseumProfile{MuseumID: museumID, Name: strings.TrimSpace(req.Name), ShortDescription: strings.TrimSpace(req.ShortDescription), Description: strings.TrimSpace(req.Description), Website: strings.TrimSpace(req.Website), Address: strings.TrimSpace(req.Address), LogoURL: strings.TrimSpace(req.LogoURL), CreatedAt: now, UpdatedAt: now}
+	profile.initialPublic = req.initialPublic
+	if err := applyMuseumContacts(&profile, req); err != nil {
+		return MuseumProfile{}, err
+	}
+	return s.repo.CreateMuseumProfile(ctx, profile)
 }
 
 func (s *Service) UpdateMuseumProfile(ctx context.Context, museumID string, req museumProfileRequest) (MuseumProfile, error) {
@@ -57,7 +78,31 @@ func (s *Service) UpdateMuseumProfile(ctx context.Context, museumID string, req 
 	}
 	current.Name, current.ShortDescription, current.Description = strings.TrimSpace(req.Name), strings.TrimSpace(req.ShortDescription), strings.TrimSpace(req.Description)
 	current.Website, current.Address, current.LogoURL, current.UpdatedAt = strings.TrimSpace(req.Website), strings.TrimSpace(req.Address), strings.TrimSpace(req.LogoURL), s.config.now()
+	if err := applyMuseumContacts(&current, req); err != nil {
+		return MuseumProfile{}, err
+	}
 	return s.repo.UpdateMuseumProfile(ctx, current)
+}
+
+func applyMuseumContacts(profile *MuseumProfile, req museumProfileRequest) error {
+	if req.ContactEmail != nil {
+		email := strings.TrimSpace(*req.ContactEmail)
+		if email != "" {
+			parsed, err := mail.ParseAddress(email)
+			if err != nil || parsed.Address != email || len(email) > 254 {
+				return ErrBadRequest
+			}
+		}
+		profile.ContactEmail = email
+	}
+	if req.ContactPhone != nil {
+		phone := strings.TrimSpace(*req.ContactPhone)
+		if len(phone) > 60 {
+			return ErrBadRequest
+		}
+		profile.ContactPhone = phone
+	}
+	return nil
 }
 
 func (s *Service) GetSummary(ctx context.Context, museumID *string) (summaryResponse, error) {
@@ -208,6 +253,25 @@ func (s *Service) RestoreArtifact(ctx context.Context, artifactID string) (Artif
 		return Artifact{}, err
 	}
 	return item, nil
+}
+
+func (s *Service) UnpublishArtifact(ctx context.Context, id string) error {
+	s.publishMu.Lock()
+	defer s.publishMu.Unlock()
+	item, err := s.repo.GetArtifact(ctx, id)
+	if err != nil {
+		return err
+	}
+	if item.Status == "archived" {
+		return ErrArchivedArtifact
+	}
+	if item.PublishedRevision == 0 {
+		return nil
+	}
+	item.PublishedRevision, item.PublishedAt, item.Status = 0, nil, "draft"
+	item.DraftRevision++
+	item.UpdatedAt = s.config.now()
+	return s.repo.UpdateArtifact(ctx, item)
 }
 
 func (s *Service) DuplicateArtifact(ctx context.Context, artifactID string) (Artifact, error) {
@@ -402,6 +466,11 @@ func (s *Service) ResolvePublic(ctx context.Context, publicCode string) (Publica
 	}
 	if item.Status == "archived" || item.PublishedRevision == 0 {
 		return Publication{}, ErrNotFound
+	}
+	if item.MuseumID != nil {
+		if err := s.checkMuseumActive(ctx, *item.MuseumID); err != nil {
+			return Publication{}, err
+		}
 	}
 	return s.repo.GetLatestPublication(ctx, publicCode)
 }

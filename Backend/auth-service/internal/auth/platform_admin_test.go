@@ -57,6 +57,14 @@ func TestPlatformAdminActivationAndContextIsolation(t *testing.T) {
 		t.Fatal(err)
 	}
 	museums := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/artifacts" {
+			claims, err := s.parseAccessToken(bearerToken(r.Header.Get("Authorization")))
+			if err != nil || claims.Role != platformAdminRole || claims.MuseumID != "hidden" || r.Header.Get("Cookie") != "" {
+				t.Error("content request did not carry only the scoped administrative token")
+			}
+			w.Write([]byte(`{"artifacts":[]}`))
+			return
+		}
 		if r.Header.Get("X-Service-Secret") != s.config.TokenSecret {
 			t.Error("missing service authentication")
 		}
@@ -104,6 +112,10 @@ func TestPlatformAdminActivationAndContextIsolation(t *testing.T) {
 	request("GET", "/museums", "", "", cookie, 401)
 	request("GET", "/workspace?museum_id=another", "", "", selected, 403)
 	request("GET", "/workspace?museum_id=hidden", "", "", selected, 200)
+	request("GET", "/content/artifacts?museum_id=another", "", "", selected, 403)
+	request("GET", "/content/artifacts?museum_id=hidden", "", "", selected, 200)
+	request("GET", "/users", "", "", nil, 401)
+	request("GET", "/users?q=ordinary", "", "", selected, 200)
 	user, err := repo.FindUserByEmail(ctx, s.config.PlatformAdminEmail)
 	if err != nil || user.MuseumID != nil || user.EmailVerifiedAt == nil {
 		t.Fatalf("bad provisioned user: %+v, %v", user, err)
@@ -112,6 +124,10 @@ func TestPlatformAdminActivationAndContextIsolation(t *testing.T) {
 	if err != nil || len(entries) != 1 || entries[0].Action != "platform_museum_context" {
 		t.Fatalf("missing context audit: %+v, %v", entries, err)
 	}
+	request("PATCH", "/users/"+ordinary.ID, `{"full_name":"Edited by admin"}`, s.config.PlatformAdminOrigin, selected, 200)
+	request("PATCH", "/users/"+user.ID, `{"full_name":"Escalation"}`, s.config.PlatformAdminOrigin, selected, 404)
+	request("PUT", "/team?museum_id=hidden", `{"user_id":"`+ordinary.ID+`","role":"owner","reason":"Owner assignment"}`, s.config.PlatformAdminOrigin, selected, 200)
+	request("PUT", "/team?museum_id=hidden", `{"user_id":"`+ordinary.ID+`","role":"","reason":"Removal"}`, s.config.PlatformAdminOrigin, selected, 403)
 	activate("admin example password 2")
 	request("GET", "/workspace?museum_id=hidden", "", "", selected, 401)
 	request("POST", "/login", login, s.config.PlatformAdminOrigin, nil, 401)

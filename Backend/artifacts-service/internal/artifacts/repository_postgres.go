@@ -23,9 +23,17 @@ func (r *PostgresRepository) ListAdminMuseumProfiles(ctx context.Context) ([]Mus
 	return listAdminMuseumProfiles(ctx, r.db)
 }
 
+func (r *PostgresRepository) SetAdminMuseumState(ctx context.Context, museumID, action string) error {
+	return setAdminMuseumState(ctx, r.db, "$1", museumID, action)
+}
+
+func (r *PostgresRepository) ListAdminExhibits(ctx context.Context, search string, offset int) ([]adminExhibitRow, error) {
+	return listAdminExhibits(ctx, r.db, "$1", "$2", "$3", "$4", search, offset)
+}
+
 func (r *PostgresRepository) GetMuseumProfile(ctx context.Context, museumID string) (MuseumProfile, error) {
 	var item MuseumProfile
-	err := r.db.QueryRowContext(ctx, `SELECT museum_id, code, name, short_description, description, website, address, logo_url, created_at, updated_at FROM museum_profiles WHERE museum_id = $1`, museumID).Scan(&item.MuseumID, &item.Code, &item.Name, &item.ShortDescription, &item.Description, &item.Website, &item.Address, &item.LogoURL, &item.CreatedAt, &item.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, `SELECT museum_id, code, name, short_description, description, website, address, logo_url, created_at, updated_at, is_public, admin_state, contact_email, contact_phone FROM museum_profiles WHERE museum_id = $1`, museumID).Scan(&item.MuseumID, &item.Code, &item.Name, &item.ShortDescription, &item.Description, &item.Website, &item.Address, &item.LogoURL, &item.CreatedAt, &item.UpdatedAt, &item.IsPublic, &item.AdminState, &item.ContactEmail, &item.ContactPhone)
 	if err == sql.ErrNoRows {
 		return MuseumProfile{}, ErrNotFound
 	}
@@ -38,12 +46,15 @@ func (r *PostgresRepository) CreateMuseumProfile(ctx context.Context, profile Mu
 		return MuseumProfile{}, err
 	}
 	profile.Code = fmt.Sprintf("GIM-%04d", number)
-	_, err := r.db.ExecContext(ctx, `INSERT INTO museum_profiles (museum_id, code, name, short_description, description, website, address, logo_url, created_at, updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, profile.MuseumID, profile.Code, profile.Name, profile.ShortDescription, profile.Description, profile.Website, profile.Address, profile.LogoURL, profile.CreatedAt, profile.UpdatedAt)
-	return profile, err
+	_, err := r.db.ExecContext(ctx, `INSERT INTO museum_profiles (museum_id, code, name, short_description, description, website, address, logo_url, created_at, updated_at, contact_email, contact_phone, is_public) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,COALESCE($13,TRUE))`, profile.MuseumID, profile.Code, profile.Name, profile.ShortDescription, profile.Description, profile.Website, profile.Address, profile.LogoURL, profile.CreatedAt, profile.UpdatedAt, profile.ContactEmail, profile.ContactPhone, profile.initialPublic)
+	if err != nil {
+		return MuseumProfile{}, err
+	}
+	return r.GetMuseumProfile(ctx, profile.MuseumID)
 }
 
 func (r *PostgresRepository) UpdateMuseumProfile(ctx context.Context, profile MuseumProfile) (MuseumProfile, error) {
-	res, err := r.db.ExecContext(ctx, `UPDATE museum_profiles SET name=$1, short_description=$2, description=$3, website=$4, address=$5, logo_url=$6, updated_at=$7 WHERE museum_id=$8`, profile.Name, profile.ShortDescription, profile.Description, profile.Website, profile.Address, profile.LogoURL, profile.UpdatedAt, profile.MuseumID)
+	res, err := r.db.ExecContext(ctx, `UPDATE museum_profiles SET name=$1, short_description=$2, description=$3, website=$4, address=$5, logo_url=$6, updated_at=$7, contact_email=$8, contact_phone=$9 WHERE museum_id=$10 AND admin_state='active'`, profile.Name, profile.ShortDescription, profile.Description, profile.Website, profile.Address, profile.LogoURL, profile.UpdatedAt, profile.ContactEmail, profile.ContactPhone, profile.MuseumID)
 	if err != nil {
 		return MuseumProfile{}, err
 	}

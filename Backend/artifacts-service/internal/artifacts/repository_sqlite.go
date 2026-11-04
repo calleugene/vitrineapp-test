@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -23,8 +24,70 @@ func (r *SQLiteRepository) ListAdminMuseumProfiles(ctx context.Context) ([]Museu
 	return listAdminMuseumProfiles(ctx, r.db)
 }
 
+func (r *SQLiteRepository) SetAdminMuseumState(ctx context.Context, museumID, action string) error {
+	return setAdminMuseumState(ctx, r.db, "?", museumID, action)
+}
+
+type adminExhibitRow struct {
+	ID         string `json:"id"`
+	Title      string `json:"title"`
+	Status     string `json:"status"`
+	MuseumID   string `json:"museum_id"`
+	MuseumName string `json:"museum_name"`
+}
+
+func (r *SQLiteRepository) ListAdminExhibits(ctx context.Context, search string, offset int) ([]adminExhibitRow, error) {
+	return listAdminExhibits(ctx, r.db, "?", "?", "?", "?", search, offset)
+}
+
+func listAdminExhibits(ctx context.Context, db *sql.DB, p1, p2, p3, p4, search string, offset int) ([]adminExhibitRow, error) {
+	pattern := "%" + strings.ToLower(search) + "%"
+	query := fmt.Sprintf(`SELECT a.id,a.title,a.status,m.museum_id,m.name FROM artifacts a
+		JOIN museum_profiles m ON m.museum_id=a.museum_id
+		WHERE a.deleted_at IS NULL AND m.admin_state='active'
+		AND (LOWER(a.title) LIKE %s OR LOWER(a.public_code) LIKE %s OR a.id LIKE %s)
+		ORDER BY a.updated_at DESC,a.id LIMIT 51 OFFSET %s`, p1, p2, p3, p4)
+	rows, err := db.QueryContext(ctx, query, pattern, pattern, pattern, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := []adminExhibitRow{}
+	for rows.Next() {
+		var item adminExhibitRow
+		if err := rows.Scan(&item.ID, &item.Title, &item.Status, &item.MuseumID, &item.MuseumName); err != nil {
+			return nil, err
+		}
+		result = append(result, item)
+	}
+	return result, rows.Err()
+}
+
+func setAdminMuseumState(ctx context.Context, db *sql.DB, placeholder, museumID, action string) error {
+	set, expected := "", "active"
+	switch action {
+	case "publish":
+		set = "is_public=TRUE"
+	case "hide":
+		set = "is_public=FALSE"
+	case "archive":
+		set = "admin_state='archived'"
+	case "restore":
+		set, expected = "admin_state='active'", "archived"
+	case "delete":
+		set, expected = "admin_state='deleted', is_public=FALSE", "archived"
+	default:
+		return ErrBadRequest
+	}
+	result, err := db.ExecContext(ctx, "UPDATE museum_profiles SET "+set+" WHERE admin_state='"+expected+"' AND museum_id="+placeholder, museumID)
+	if err != nil {
+		return err
+	}
+	return ensureRows(result)
+}
+
 func listAdminMuseumProfiles(ctx context.Context, db *sql.DB) ([]MuseumProfile, error) {
-	rows, err := db.QueryContext(ctx, `SELECT museum_id, code, name FROM museum_profiles ORDER BY name, museum_id`)
+	rows, err := db.QueryContext(ctx, `SELECT museum_id, code, name, is_public, admin_state FROM museum_profiles WHERE admin_state<>'deleted' ORDER BY name, museum_id`)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +95,7 @@ func listAdminMuseumProfiles(ctx context.Context, db *sql.DB) ([]MuseumProfile, 
 	items := []MuseumProfile{}
 	for rows.Next() {
 		var item MuseumProfile
-		if err := rows.Scan(&item.MuseumID, &item.Code, &item.Name); err != nil {
+		if err := rows.Scan(&item.MuseumID, &item.Code, &item.Name, &item.IsPublic, &item.AdminState); err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -41,7 +104,7 @@ func listAdminMuseumProfiles(ctx context.Context, db *sql.DB) ([]MuseumProfile, 
 }
 
 func listMuseumProfiles(ctx context.Context, db *sql.DB) ([]MuseumProfile, error) {
-	rows, err := db.QueryContext(ctx, `SELECT museum_id, name, short_description, description, website, address, logo_url FROM museum_profiles WHERE is_public = TRUE ORDER BY name, museum_id`)
+	rows, err := db.QueryContext(ctx, `SELECT museum_id, name, short_description, description, website, address, logo_url, contact_email, contact_phone FROM museum_profiles WHERE is_public = TRUE AND admin_state='active' ORDER BY name, museum_id`)
 	if err != nil {
 		return nil, err
 	}
@@ -49,9 +112,10 @@ func listMuseumProfiles(ctx context.Context, db *sql.DB) ([]MuseumProfile, error
 	items := []MuseumProfile{}
 	for rows.Next() {
 		var item MuseumProfile
-		if err := rows.Scan(&item.MuseumID, &item.Name, &item.ShortDescription, &item.Description, &item.Website, &item.Address, &item.LogoURL); err != nil {
+		if err := rows.Scan(&item.MuseumID, &item.Name, &item.ShortDescription, &item.Description, &item.Website, &item.Address, &item.LogoURL, &item.ContactEmail, &item.ContactPhone); err != nil {
 			return nil, err
 		}
+		item.IsPublic = true
 		items = append(items, item)
 	}
 	return items, rows.Err()
@@ -60,7 +124,7 @@ func listMuseumProfiles(ctx context.Context, db *sql.DB) ([]MuseumProfile, error
 func (r *SQLiteRepository) GetMuseumProfile(ctx context.Context, museumID string) (MuseumProfile, error) {
 	var item MuseumProfile
 	var createdAt, updatedAt string
-	err := r.db.QueryRowContext(ctx, `SELECT museum_id, code, name, short_description, description, website, address, logo_url, created_at, updated_at FROM museum_profiles WHERE museum_id = ?`, museumID).Scan(&item.MuseumID, &item.Code, &item.Name, &item.ShortDescription, &item.Description, &item.Website, &item.Address, &item.LogoURL, &createdAt, &updatedAt)
+	err := r.db.QueryRowContext(ctx, `SELECT museum_id, code, name, short_description, description, website, address, logo_url, created_at, updated_at, is_public, admin_state, contact_email, contact_phone FROM museum_profiles WHERE museum_id = ?`, museumID).Scan(&item.MuseumID, &item.Code, &item.Name, &item.ShortDescription, &item.Description, &item.Website, &item.Address, &item.LogoURL, &createdAt, &updatedAt, &item.IsPublic, &item.AdminState, &item.ContactEmail, &item.ContactPhone)
 	if err == sql.ErrNoRows {
 		return MuseumProfile{}, ErrNotFound
 	}
@@ -81,12 +145,15 @@ func (r *SQLiteRepository) CreateMuseumProfile(ctx context.Context, profile Muse
 		return MuseumProfile{}, err
 	}
 	profile.Code = fmt.Sprintf("GIM-%04d", total+1)
-	_, err := r.db.ExecContext(ctx, `INSERT INTO museum_profiles (museum_id, code, name, short_description, description, website, address, logo_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, profile.MuseumID, profile.Code, profile.Name, profile.ShortDescription, profile.Description, profile.Website, profile.Address, profile.LogoURL, profile.CreatedAt.Format(time.RFC3339), profile.UpdatedAt.Format(time.RFC3339))
-	return profile, err
+	_, err := r.db.ExecContext(ctx, `INSERT INTO museum_profiles (museum_id, code, name, short_description, description, website, address, logo_url, created_at, updated_at, contact_email, contact_phone, is_public) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?,TRUE))`, profile.MuseumID, profile.Code, profile.Name, profile.ShortDescription, profile.Description, profile.Website, profile.Address, profile.LogoURL, profile.CreatedAt.Format(time.RFC3339), profile.UpdatedAt.Format(time.RFC3339), profile.ContactEmail, profile.ContactPhone, profile.initialPublic)
+	if err != nil {
+		return MuseumProfile{}, err
+	}
+	return r.GetMuseumProfile(ctx, profile.MuseumID)
 }
 
 func (r *SQLiteRepository) UpdateMuseumProfile(ctx context.Context, profile MuseumProfile) (MuseumProfile, error) {
-	res, err := r.db.ExecContext(ctx, `UPDATE museum_profiles SET name=?, short_description=?, description=?, website=?, address=?, logo_url=?, updated_at=? WHERE museum_id=?`, profile.Name, profile.ShortDescription, profile.Description, profile.Website, profile.Address, profile.LogoURL, profile.UpdatedAt.Format(time.RFC3339), profile.MuseumID)
+	res, err := r.db.ExecContext(ctx, `UPDATE museum_profiles SET name=?, short_description=?, description=?, website=?, address=?, logo_url=?, updated_at=?, contact_email=?, contact_phone=? WHERE museum_id=? AND admin_state='active'`, profile.Name, profile.ShortDescription, profile.Description, profile.Website, profile.Address, profile.LogoURL, profile.UpdatedAt.Format(time.RFC3339), profile.ContactEmail, profile.ContactPhone, profile.MuseumID)
 	if err != nil {
 		return MuseumProfile{}, err
 	}

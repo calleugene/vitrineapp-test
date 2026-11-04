@@ -137,6 +137,9 @@ func (s *Service) login(ctx context.Context, req loginRequest, requiredRole stri
 	if user.Status == "disabled" || user.Status == "DELETED" {
 		return tokenPairResponse{}, ErrUserBlocked
 	}
+	if user.Status == "INVITED" {
+		return tokenPairResponse{}, ErrInvalidCredentials
+	}
 	if passwordNeedsRehash(passwordHash) {
 		hash, err := hashPassword(req.Password)
 		if err != nil {
@@ -372,6 +375,10 @@ func (s *Service) UpdateUser(ctx context.Context, userID string, req updateUserR
 	if !strings.EqualFold(user.Status, "active") {
 		return User{}, ErrForbidden
 	}
+	return s.updateUserProfile(ctx, user, req, false)
+}
+
+func (s *Service) updateUserProfile(ctx context.Context, user User, req updateUserRequest, admin bool) (User, error) {
 	if req.Email != nil && normalizeEmail(*req.Email) != user.Email {
 		return User{}, ErrEmailConfirmationRequired
 	}
@@ -419,7 +426,11 @@ func (s *Service) UpdateUser(ctx context.Context, userID string, req updateUserR
 		user.NotificationsEnabled = *req.NotificationsEnabled
 	}
 	user.UpdatedAt = s.config.now()
-	if err := s.repo.UpdateUser(ctx, user); err != nil {
+	update := s.repo.UpdateUser
+	if admin {
+		update = s.repo.UpdateAdminUser
+	}
+	if err := update(ctx, user); err != nil {
 		return User{}, err
 	}
 	return user, nil

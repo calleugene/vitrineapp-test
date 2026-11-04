@@ -1,4 +1,4 @@
-'use strict';
+import {createManagement} from './management.js';
 
 const root = '/api/auth/api/v1/auth';
 const byId = (id) => document.getElementById(id);
@@ -11,18 +11,28 @@ let currentMuseum = '';
 let page = 1;
 let busy = false;
 
-const show = (id) => forms.forEach((name) => { byId(name).hidden = name !== id; });
+function show(id) {
+  forms.forEach((name) => { byId(name).hidden = name !== id; });
+  byId('management-nav').hidden = id !== 'catalog';
+  byId('users').hidden = true;
+  byId('exhibits').hidden = true;
+}
 const notify = (message) => { byId('notice').textContent = message; };
 const actions = [...document.querySelectorAll('button')];
 
-async function request(path, body) {
-  const options = body === undefined ? {} : {
-    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body),
-  };
-  const response = await fetch(root + path, {...options, cache: 'no-store', signal: AbortSignal.timeout(10000)});
-  if (!response.ok) throw Object.assign(new Error('Request failed'), {
-    status: response.status, retryAfter: Number(response.headers.get('Retry-After')),
-  });
+async function request(path, body, method = body === undefined ? 'GET' : 'POST', reason = '') {
+  const headers = reason ? {'X-Admin-Reason': encodeURIComponent(reason)} : {};
+  const multipart = body instanceof FormData;
+  if (body !== undefined && !multipart) headers['Content-Type'] = 'application/json';
+  const options = {method, headers, body: multipart ? body : JSON.stringify(body)};
+  const response = await fetch(root + path, {...options, cache: 'no-store', signal: AbortSignal.timeout(multipart ? 120000 : 10000)});
+  if (!response.ok) {
+    const error = (await response.json().catch(() => null))?.error;
+    throw Object.assign(new Error('Request failed'), {
+      status: response.status, retryAfter: Number(response.headers.get('Retry-After')),
+      code: typeof error === 'string' ? error : error?.code,
+    });
+  }
   return response.status === 204 ? null : response.json();
 }
 
@@ -34,13 +44,23 @@ async function run(work, failure = 'Не удалось выполнить де�
   try {
     await work();
   } catch (error) {
-    if (error.status === 401 && !byId('catalog').hidden) {
+    if (error.status === 401 && !byId('management-nav').hidden) {
       clearWorkspace();
       show('login');
       notify('Сессия завершена. Войдите снова.');
     } else {
       const delay = error.retryAfter > 0 ? ` Попробуйте через ${Math.ceil(error.retryAfter / 60)} мин.` : ' Попробуйте позже.';
-      notify(error.status === 429 ? 'Слишком много попыток.' + delay : failure);
+      const errors = {
+        email_already_exists: 'Этот email уже занят.',
+        invalid_range: 'Проверьте введённые данные.',
+        cannot_publish_empty: 'Добавьте хотя бы один экран перед публикацией.',
+        screen_content_incomplete: 'Заполните содержимое всех экранов перед публикацией.',
+        archived_artifact: 'Сначала восстановите экспонат из архива.',
+        revision_conflict: 'Экспонат уже изменился. Откройте его заново.',
+        bad_request: 'Проверьте введённые данные.',
+        forbidden: 'Операция недоступна для текущего состояния. Проверьте статус пользователя или музея.',
+      };
+      notify(error.status === 429 ? 'Слишком много попыток.' + delay : errors[error.code] || failure);
     }
   } finally {
     busy = false;
@@ -74,6 +94,9 @@ function clearWorkspace() {
   byId('museum-name').textContent = '';
   byId('museum-details').textContent = '';
   byId('artifacts').replaceChildren();
+  byId('artifact-editor').hidden = true;
+  byId('artifact-editor').replaceChildren();
+  byId('museum-controls').replaceChildren();
 }
 
 async function loadWorkspace(targetPage) {
@@ -81,13 +104,23 @@ async function loadWorkspace(targetPage) {
   const {museum, artifacts, pagination} = await request('/admin/workspace?' + query);
   page = pagination.page;
   byId('museum-name').textContent = museum.name;
-  byId('museum-details').textContent = ['Режим администратора · просмотр', museum.museum_id, museum.address].filter(Boolean).join(' · ');
+  byId('museum-details').textContent = ['Режим администратора', museum.museum_id, museum.address].filter(Boolean).join(' · ');
+  management.renderMuseum(museum);
   const labels = {draft: 'Черновик', published: 'Опубликован', archived: 'В архиве', moderation: 'На модерации'};
   byId('artifacts').replaceChildren(...(artifacts.length ? artifacts.map(({title, status}) => {
     const item = document.createElement('li');
     item.textContent = `${title} · ${labels[status] || status}`;
     return item;
   }) : [Object.assign(document.createElement('li'), {textContent: 'Экспонатов пока нет'})]));
+  artifacts.forEach((artifact, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'secondary';
+    button.textContent = 'Открыть';
+    button.disabled = museum.admin_state === 'archived';
+    button.addEventListener('click', () => void run(() => management.openArtifact(artifact.id)));
+    byId('artifacts').children[index].append(' ', button);
+  });
   const pages = Math.max(1, Math.ceil(pagination.total / pagination.limit));
   byId('page').textContent = `Страница ${page} из ${pages}`;
   byId('prev').dataset.unavailable = String(page <= 1);
@@ -101,7 +134,7 @@ async function loadCatalog() {
   currentMuseum = data.current_museum_id;
   updateOptions();
   show('catalog');
-  if (currentMuseum) await loadWorkspace(1);
+  if (currentMuseum && museums.some(({museum_id}) => museum_id === currentMuseum)) await loadWorkspace(1);
 }
 
 submit('login', async ({email, password}) => {
@@ -144,6 +177,27 @@ byId('logout').addEventListener('click', () => void run(async () => {
 }));
 byId('prev').addEventListener('click', () => void run(() => loadWorkspace(page - 1)));
 byId('next').addEventListener('click', () => void run(() => loadWorkspace(page + 1)));
+byId('show-users').addEventListener('click', () => void run(async () => {
+  byId('catalog').hidden = true;
+  byId('workspace').hidden = true;
+  byId('exhibits').hidden = true;
+  byId('users').hidden = false;
+  await management.loadUsers();
+}));
+byId('show-exhibits').addEventListener('click', () => void run(async () => {
+  byId('catalog').hidden = true;
+  byId('workspace').hidden = true;
+  byId('users').hidden = true;
+  byId('exhibits').hidden = false;
+  await management.loadExhibits();
+}));
+byId('show-museums').addEventListener('click', () => void run(loadCatalog));
+
+const management = createManagement({
+  request, run, notify, byId, getMuseum: () => currentMuseum,
+  getMuseums: () => museums,
+  reloadWorkspace: () => loadWorkspace(page), loadCatalog, clearWorkspace,
+});
 
 if (resetToken) {
   show('reset');
