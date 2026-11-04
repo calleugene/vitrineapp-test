@@ -43,6 +43,9 @@ func (s *Service) RegisterVisitor(ctx context.Context, req visitorRegisterReques
 }
 
 func (s *Service) register(ctx context.Context, req registerRequest, role string) (registerResponse, error) {
+	if normalizeEmail(req.Email) == s.config.PlatformAdminEmail && s.config.PlatformAdminEmail != "" {
+		return registerResponse{}, ErrBadRequest
+	}
 	email := normalizeEmail(req.Email)
 	if !validEmail(email) || strings.TrimSpace(req.Password) == "" || strings.TrimSpace(req.FullName) == "" || (utf8.RuneCountInString(req.Password) < 12 || len(req.Password) > 1024) {
 		return registerResponse{}, ErrBadRequest
@@ -112,6 +115,9 @@ func (s *Service) login(ctx context.Context, req loginRequest, requiredRole stri
 	if email == "" || strings.TrimSpace(req.Password) == "" {
 		return tokenPairResponse{}, ErrBadRequest
 	}
+	if requiredRole != platformAdminRole && email == s.config.PlatformAdminEmail {
+		return tokenPairResponse{}, ErrInvalidCredentials
+	}
 	user, passwordHash, err := s.repo.FindUserWithPasswordByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -123,6 +129,9 @@ func (s *Service) login(ctx context.Context, req loginRequest, requiredRole stri
 		return tokenPairResponse{}, ErrInvalidCredentials
 	}
 	if requiredRole != "" && user.Role != requiredRole {
+		return tokenPairResponse{}, ErrInvalidCredentials
+	}
+	if user.Role == platformAdminRole && (requiredRole != platformAdminRole || user.Email != s.config.PlatformAdminEmail || !strings.EqualFold(user.Status, "active")) {
 		return tokenPairResponse{}, ErrInvalidCredentials
 	}
 	if user.Status == "disabled" || user.Status == "DELETED" {
@@ -185,7 +194,10 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (tokenPairRe
 	if user.Status == "disabled" || user.Status == "DELETED" {
 		return tokenPairResponse{}, ErrUserBlocked
 	}
-	return s.rotateSession(ctx, user, tokenHash)
+	if user.Role == platformAdminRole {
+		return tokenPairResponse{}, ErrUnauthorized
+	}
+	return s.rotateSession(ctx, user, tokenHash, now.Add(s.config.RefreshTokenTTL))
 }
 
 func (s *Service) ForgotPassword(ctx context.Context, email string) (forgotPasswordResponse, error) {
@@ -213,11 +225,23 @@ func (s *Service) ResetPassword(ctx context.Context, token, newPassword string) 
 	if strings.TrimSpace(token) == "" || strings.TrimSpace(newPassword) == "" || (utf8.RuneCountInString(newPassword) < 12 || len(newPassword) > 1024) {
 		return ErrBadRequest
 	}
+	tokenHash := tokenHashString(token)
+	record, err := s.repo.FindPasswordResetToken(ctx, tokenHash)
+	if err != nil || record.UsedAt != nil || !record.ExpiresAt.After(s.config.now()) {
+		return ErrInvalidToken
+	}
+	user, err := s.repo.FindUserByID(ctx, record.UserID)
+	if err != nil {
+		return err
+	}
+	if user.Role == platformAdminRole && (utf8.RuneCountInString(newPassword) < 15 || user.Email != s.config.PlatformAdminEmail) {
+		return ErrBadRequest
+	}
 	hash, err := hashPassword(newPassword)
 	if err != nil {
 		return err
 	}
-	err = s.repo.ConsumePasswordResetToken(ctx, tokenHashString(token), hash, s.config.now())
+	err = s.repo.ConsumePasswordResetToken(ctx, tokenHash, hash, s.config.now())
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrInvalidToken
 	}
@@ -572,6 +596,9 @@ func (s *Service) issueSession(ctx context.Context, user User) (tokenPairRespons
 		RefreshExpiresAt: now.Add(s.config.RefreshTokenTTL),
 		CreatedAt:        now,
 	}
+	if user.Role == platformAdminRole {
+		session.RefreshExpiresAt = now.Add(8 * time.Hour)
+	}
 	if err := s.repo.CreateSession(ctx, session); err != nil {
 		return tokenPairResponse{}, err
 	}
@@ -597,7 +624,7 @@ func (s *Service) issueSession(ctx context.Context, user User) (tokenPairRespons
 	}, nil
 }
 
-func (s *Service) rotateSession(ctx context.Context, user User, oldRefreshHash string) (tokenPairResponse, error) {
+func (s *Service) rotateSession(ctx context.Context, user User, oldRefreshHash string, expiresAt time.Time) (tokenPairResponse, error) {
 	now := s.config.now()
 	refreshToken, refreshHash, err := generateOpaqueToken()
 	if err != nil {
@@ -605,7 +632,7 @@ func (s *Service) rotateSession(ctx context.Context, user User, oldRefreshHash s
 	}
 	session := Session{
 		ID: newID("ses"), UserID: user.ID, RefreshTokenHash: refreshHash,
-		RefreshExpiresAt: now.Add(s.config.RefreshTokenTTL), CreatedAt: now,
+		RefreshExpiresAt: expiresAt, CreatedAt: now,
 	}
 	museumID := ""
 	if user.MuseumID != nil {

@@ -269,7 +269,11 @@ func (r *SQLiteRepository) ConsumePasswordResetToken(ctx context.Context, tokenH
 	if err := ensureRows(res); err != nil {
 		return err
 	}
-	res, err = tx.ExecContext(ctx, `UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?`, passwordHash, now.Format(time.RFC3339), userID)
+	stamp := now.Format(time.RFC3339)
+	res, err = tx.ExecContext(ctx, `UPDATE users SET password_hash = ?, updated_at = ?,
+		status = CASE WHEN role = 'platform_admin' AND status = 'ADMIN_PENDING' THEN 'ACTIVE' ELSE status END,
+		email_verified_at = CASE WHEN role = 'platform_admin' THEN COALESCE(email_verified_at, ?) ELSE email_verified_at END
+		WHERE id = ? AND (role <> 'platform_admin' OR status IN ('ACTIVE', 'ADMIN_PENDING'))`, passwordHash, stamp, stamp, userID)
 	if err != nil {
 		return err
 	}
@@ -277,6 +281,10 @@ func (r *SQLiteRepository) ConsumePasswordResetToken(ctx context.Context, tokenH
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL`, now.Format(time.RFC3339), userID); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE password_reset_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL
+		AND EXISTS (SELECT 1 FROM users WHERE id = ? AND role = 'platform_admin')`, stamp, userID, userID); err != nil {
 		return err
 	}
 	return tx.Commit()

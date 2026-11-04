@@ -45,17 +45,23 @@ func main() {
 		log.Fatal(err)
 	}
 	service := auth.NewService(repo, auth.Config{
-		TrustedProxyCIDRs: strings.Split(os.Getenv("AUTH_TRUSTED_PROXY_CIDRS"), ","),
-		SendEmailChange:   auth.EmailChangeSenderFromEnv(),
-		AccessTokenTTL:    15 * time.Minute,
-		RefreshTokenTTL:   7 * 24 * time.Hour,
-		ResetTokenTTL:     30 * time.Minute,
-		SendPasswordReset: auth.PasswordResetSenderFromEnv(),
-		VerifyTokenTTL:    24 * time.Hour,
-		TokenSecret:       tokenSecret,
-		ExposeDebugTokens: envOr("AUTH_EXPOSE_DEBUG_TOKENS", "false") == "true",
-		MuseumServiceURL:  envOr("MUSEUM_SERVICE_URL", "http://localhost:8081/api/v1"),
+		PlatformAdminEmail:             strings.ToLower(strings.TrimSpace(os.Getenv("AUTH_PLATFORM_ADMIN_EMAIL"))),
+		PlatformAdminOrigin:            strings.TrimRight(os.Getenv("AUTH_PLATFORM_ADMIN_ORIGIN"), "/"),
+		SendPlatformAdminPasswordReset: auth.PlatformAdminPasswordResetSenderFromEnv(),
+		TrustedProxyCIDRs:              strings.Split(os.Getenv("AUTH_TRUSTED_PROXY_CIDRS"), ","),
+		SendEmailChange:                auth.EmailChangeSenderFromEnv(),
+		AccessTokenTTL:                 15 * time.Minute,
+		RefreshTokenTTL:                7 * 24 * time.Hour,
+		ResetTokenTTL:                  30 * time.Minute,
+		SendPasswordReset:              auth.PasswordResetSenderFromEnv(),
+		VerifyTokenTTL:                 24 * time.Hour,
+		TokenSecret:                    tokenSecret,
+		ExposeDebugTokens:              envOr("AUTH_EXPOSE_DEBUG_TOKENS", "false") == "true",
+		MuseumServiceURL:               envOr("MUSEUM_SERVICE_URL", "http://localhost:8081/api/v1"),
 	})
+	if err := service.BootstrapPlatformAdmin(context.Background()); err != nil {
+		log.Printf("platform admin provisioning failed: %v", err)
+	}
 
 	go func() {
 		for {

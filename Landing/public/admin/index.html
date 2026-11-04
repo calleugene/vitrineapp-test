@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Администратор Витрины</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/admin/admin.css">
+  <script src="/admin/admin.js" defer></script>
+</head>
+<body>
+  <main>
+    <a href="/">← На главную</a>
+    <h1>Администратор Витрины</h1>
+    <p id="notice" role="status"></p>
+    <form id="login" hidden>
+      <h2>Вход</h2>
+      <label>Электронная почта <input name="email" type="email" autocomplete="username" required></label>
+      <label>Пароль <input name="password" type="password" autocomplete="current-password" required maxlength="1024"></label>
+      <button type="submit">Войти</button>
+      <button type="button" id="show-forgot" class="secondary">Установить или сменить пароль</button>
+    </form>
+    <form id="forgot" hidden>
+      <h2>Смена пароля по почте</h2>
+      <label>Электронная почта <input name="email" type="email" autocomplete="username" required></label>
+      <button type="submit">Отправить ссылку</button>
+      <a href="/admin/">Вернуться ко входу</a>
+    </form>
+    <form id="reset" hidden>
+      <h2>Новый пароль</h2>
+      <label>Пароль, от 15 символов <input name="password" type="password" autocomplete="new-password" required minlength="15" maxlength="1024"></label>
+      <label>Повторите пароль <input name="confirm" type="password" autocomplete="new-password" required minlength="15" maxlength="1024"></label>
+      <button type="submit">Сохранить пароль</button>
+      <a href="/admin/">Вернуться ко входу</a>
+    </form>
+    <section id="catalog" hidden>
+      <div class="heading"><h2>Музеи</h2><button type="button" id="logout" class="secondary">Выйти</button></div>
+      <form id="select">
+        <label>Поиск по названию, коду или ID <input id="search" type="search"></label>
+        <label>Музей <select name="museum" required></select></label>
+        <label>Основание для входа <input name="reason" required maxlength="300" placeholder="Например, номер обращения"></label>
+        <button type="submit">Открыть музей</button>
+      </form>
+    </section>
+    <section id="workspace" hidden>
+      <div class="heading"><h2 id="museum-name"></h2><button type="button" id="leave" class="secondary">Выйти из музея</button></div>
+      <p id="museum-details"></p>
+      <h3>Экспонаты</h3>
+      <ul id="artifacts"></ul>
+      <div class="heading"><button type="button" id="prev" class="secondary">Назад</button><span id="page"></span><button type="button" id="next" class="secondary">Вперёд</button></div>
+    </section>
+  </main>
+</body>
+</html>

@@ -12,6 +12,7 @@ func NewHandler(service *Service) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/v1/auth/legal-documents", legalHandler)
 	service.profileRoutes(mux)
+	service.platformAdminRoutes(mux)
 	requireTarget := func(next http.HandlerFunc, adminOnly bool) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			if err := service.AuthorizeTarget(r.Context(), bearerToken(r.Header.Get("Authorization")), r.PathValue("userId"), adminOnly); err != nil {

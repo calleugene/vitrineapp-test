@@ -46,6 +46,14 @@ func (s *Service) deliverPasswordReset(ctx context.Context) error {
 		return s.repo.FinishPasswordReset(ctx, job.ID, s.config.now(), true)
 	}
 	if err == nil {
+		sender := s.config.SendPasswordReset
+		if user.Role == platformAdminRole {
+			if s.config.SendPlatformAdminPasswordReset == nil || user.Email != s.config.PlatformAdminEmail ||
+				(user.Status != "ACTIVE" && user.Status != "ADMIN_PENDING") {
+				return s.repo.FinishPasswordReset(ctx, job.ID, s.config.now(), true)
+			}
+			sender = s.config.SendPlatformAdminPasswordReset
+		}
 		token, hash, tokenErr := generateOpaqueToken()
 		err = tokenErr
 		if err == nil {
@@ -55,7 +63,7 @@ func (s *Service) deliverPasswordReset(ctx context.Context) error {
 				err = s.repo.CreatePasswordResetToken(ctx, newID("prt"), user.ID, hash, expiry, s.config.now())
 			}
 			if err == nil {
-				err = s.config.SendPasswordReset(ctx, user.Email, token)
+				err = sender(ctx, user.Email, token)
 				if err == nil {
 					log.Print("password reset message accepted by SMTP")
 				}

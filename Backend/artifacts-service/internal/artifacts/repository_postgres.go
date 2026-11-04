@@ -19,6 +19,10 @@ func (r *PostgresRepository) ListMuseumProfiles(ctx context.Context) ([]MuseumPr
 	return listMuseumProfiles(ctx, r.db)
 }
 
+func (r *PostgresRepository) ListAdminMuseumProfiles(ctx context.Context) ([]MuseumProfile, error) {
+	return listAdminMuseumProfiles(ctx, r.db)
+}
+
 func (r *PostgresRepository) GetMuseumProfile(ctx context.Context, museumID string) (MuseumProfile, error) {
 	var item MuseumProfile
 	err := r.db.QueryRowContext(ctx, `SELECT museum_id, code, name, short_description, description, website, address, logo_url, created_at, updated_at FROM museum_profiles WHERE museum_id = $1`, museumID).Scan(&item.MuseumID, &item.Code, &item.Name, &item.ShortDescription, &item.Description, &item.Website, &item.Address, &item.LogoURL, &item.CreatedAt, &item.UpdatedAt)

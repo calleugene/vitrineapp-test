@@ -38,6 +38,44 @@ const (
 
 func NewHandler(service *Service) http.Handler {
 	mux := http.NewServeMux()
+	internal := func(handler http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			if service.config.TokenSecret == "" || !hmac.Equal([]byte(r.Header.Get("X-Service-Secret")), []byte(service.config.TokenSecret)) {
+				writeError(w, 403, "forbidden")
+				return
+			}
+			handler(w, r)
+		}
+	}
+	mux.HandleFunc("GET /api/v1/internal/admin/museums", internal(func(w http.ResponseWriter, r *http.Request) {
+		items, err := service.repo.ListAdminMuseumProfiles(r.Context())
+		if err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		writeJSON(w, 200, map[string]any{"museums": items})
+	}))
+	mux.HandleFunc("GET /api/v1/internal/admin/museums/{museumId}", internal(func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("museumId")
+		museum, err := service.GetMuseumProfile(r.Context(), id)
+		if err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		page, err := strconv.Atoi(r.URL.Query().Get("page"))
+		if err != nil || page < 1 || page > 100000 {
+			page = 1
+		}
+		items, pag, err := service.ListArtifacts(r.Context(), "", "", "", page, DefaultLimit, &id)
+		if err != nil {
+			writeServiceError(w, err)
+			return
+		}
+		if items == nil {
+			items = []Artifact{}
+		}
+		writeJSON(w, 200, map[string]any{"museum": museum, "artifacts": items, "pagination": pag})
+	}))
 	mux.HandleFunc("GET /api/v1/internal/museums/{museumId}", func(w http.ResponseWriter, r *http.Request) {
 		if service.config.TokenSecret == "" || !hmac.Equal([]byte(r.Header.Get("X-Service-Secret")), []byte(service.config.TokenSecret)) {
 			writeError(w, 403, "forbidden")

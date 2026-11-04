@@ -20,6 +20,7 @@ rm -f -- "$archive"
 test -f "$release/docker-compose.yml"
 test -f "$release/Landing/dist/send-lead.php"
 test -f "$release/Landing/dist/404.html"
+test -f "$release/Landing/dist/admin/index.html"
 test -f "$release/Frontend/MetodistPanel/dist/index.html"
 test -f "$release/Frontend/Visitor/dist/index.html"
 test -f "$release/Frontend/Visitor/dist/embed.html"
@@ -41,6 +42,7 @@ for url in \
   https://vitrineapp.ru/methodist/ \
   https://vitrineapp.ru/visitor/ \
   https://vitrineapp.ru/stats \
+  https://vitrineapp.ru/admin/ \
   https://vitrineapp.ru/api/analytics/api/v1/public/stats \
   https://vitrineapp.ru/embed/exhibits/00000 \
   https://vitrineapp.ru/api/auth/api/v1/auth/legal-documents \
@@ -53,6 +55,10 @@ error_page="$(mktemp)"
 trap 'rm -f -- "$error_page"' EXIT
 test "$(curl --silent --show-error --output "$error_page" --write-out '%{http_code}' "https://vitrineapp.ru/vitrine-release-missing-$revision")" = 404
 cmp -s "$error_page" "$release/Landing/dist/404.html"
+
+test "$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://vitrineapp.ru/api/auth/api/v1/auth/admin/museums)" = 401
+admin_role="$("${compose[@]}" exec -T postgres psql -U viralabs -d viralabs_auth -Atc "SELECT role FROM users WHERE email = 'hello@vitrine.app'")"
+test "$admin_role" = platform_admin
 
 python3 "$release/deploy/verify-embed-release.py" --release "$release"
 

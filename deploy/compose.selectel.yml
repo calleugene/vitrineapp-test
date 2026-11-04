@@ -3,6 +3,8 @@ services:
     ports: ["127.0.0.1:8080:8080"]
     environment:
       AUTH_SMTP_TLS_MAX_VERSION: "1.2"
+      AUTH_PLATFORM_ADMIN_EMAIL: "hello@vitrine.app"
+      AUTH_PLATFORM_ADMIN_ORIGIN: "${PUBLIC_URL:?set PUBLIC_URL}"
   artifacts-service:
     ports: ["127.0.0.1:8081:8081"]
   visitor-service:

@@ -7,18 +7,21 @@ import (
 )
 
 type Config struct {
-	TrustedProxyCIDRs []string
-	SendPasswordReset func(context.Context, string, string) error
-	SendEmailChange   func(context.Context, string, string) error
-	AccessTokenTTL    time.Duration
-	RefreshTokenTTL   time.Duration
-	ResetTokenTTL     time.Duration
-	VerifyTokenTTL    time.Duration
-	TokenSecret       string
-	MuseumServiceURL  string
-	ExposeDebugTokens bool
-	MuseumHTTPClient  *http.Client
-	Now               func() time.Time
+	TrustedProxyCIDRs              []string
+	PlatformAdminEmail             string
+	PlatformAdminOrigin            string
+	SendPasswordReset              func(context.Context, string, string) error
+	SendPlatformAdminPasswordReset func(context.Context, string, string) error
+	SendEmailChange                func(context.Context, string, string) error
+	AccessTokenTTL                 time.Duration
+	RefreshTokenTTL                time.Duration
+	ResetTokenTTL                  time.Duration
+	VerifyTokenTTL                 time.Duration
+	TokenSecret                    string
+	MuseumServiceURL               string
+	ExposeDebugTokens              bool
+	MuseumHTTPClient               *http.Client
+	Now                            func() time.Time
 }
 
 func (c Config) now() time.Time {

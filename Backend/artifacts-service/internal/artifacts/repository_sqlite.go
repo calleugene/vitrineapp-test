@@ -19,6 +19,27 @@ func (r *SQLiteRepository) ListMuseumProfiles(ctx context.Context) ([]MuseumProf
 	return listMuseumProfiles(ctx, r.db)
 }
 
+func (r *SQLiteRepository) ListAdminMuseumProfiles(ctx context.Context) ([]MuseumProfile, error) {
+	return listAdminMuseumProfiles(ctx, r.db)
+}
+
+func listAdminMuseumProfiles(ctx context.Context, db *sql.DB) ([]MuseumProfile, error) {
+	rows, err := db.QueryContext(ctx, `SELECT museum_id, code, name FROM museum_profiles ORDER BY name, museum_id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []MuseumProfile{}
+	for rows.Next() {
+		var item MuseumProfile
+		if err := rows.Scan(&item.MuseumID, &item.Code, &item.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
 func listMuseumProfiles(ctx context.Context, db *sql.DB) ([]MuseumProfile, error) {
 	rows, err := db.QueryContext(ctx, `SELECT museum_id, name, short_description, description, website, address, logo_url FROM museum_profiles WHERE is_public = TRUE ORDER BY name, museum_id`)
 	if err != nil {

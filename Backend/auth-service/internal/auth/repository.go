@@ -42,4 +42,5 @@ type Repository interface {
 	ConsumePasswordResetToken(ctx context.Context, tokenHash, passwordHash string, now time.Time) error
 
 	GetUserActivity(ctx context.Context, userID string) ([]userActivity, error)
+	RecordPlatformContext(ctx context.Context, id, userID, previousMuseum, museumID, reason string, now time.Time) error
 }

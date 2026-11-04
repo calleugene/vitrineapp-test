@@ -263,7 +263,10 @@ func (r *PostgresRepository) ConsumePasswordResetToken(ctx context.Context, toke
 	if err := ensureRows(res); err != nil {
 		return err
 	}
-	res, err = tx.ExecContext(ctx, `UPDATE users SET password_hash = $1, updated_at = $2 WHERE id = $3`, passwordHash, now, userID)
+	res, err = tx.ExecContext(ctx, `UPDATE users SET password_hash = $1, updated_at = $2,
+		status = CASE WHEN role = 'platform_admin' AND status = 'ADMIN_PENDING' THEN 'ACTIVE' ELSE status END,
+		email_verified_at = CASE WHEN role = 'platform_admin' THEN COALESCE(email_verified_at, $2) ELSE email_verified_at END
+		WHERE id = $3 AND (role <> 'platform_admin' OR status IN ('ACTIVE', 'ADMIN_PENDING'))`, passwordHash, now, userID)
 	if err != nil {
 		return err
 	}
@@ -271,6 +274,10 @@ func (r *PostgresRepository) ConsumePasswordResetToken(ctx context.Context, toke
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `UPDATE sessions SET revoked_at = $1 WHERE user_id = $2 AND revoked_at IS NULL`, now, userID); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE password_reset_tokens SET used_at = $1 WHERE user_id = $2 AND used_at IS NULL
+		AND EXISTS (SELECT 1 FROM users WHERE id = $2 AND role = 'platform_admin')`, now, userID); err != nil {
 		return err
 	}
 	return tx.Commit()
