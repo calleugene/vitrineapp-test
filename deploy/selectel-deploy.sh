@@ -70,7 +70,10 @@ for attempt in {1..15}; do
   [[ "$billing_status" = 401 ]] && break
   sleep 2
 done
-test "$billing_status" = 401
+if [[ "$billing_status" != 401 ]]; then
+  echo "Billing smoke check expected HTTP 401, got $billing_status" >&2
+  exit 1
+fi
 test "$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8081/api/v1/internal/admin/museums)" = 403
 admin_email="$("${compose[@]}" exec -T postgres psql -U viralabs -d viralabs_auth -Atc "SELECT email FROM users WHERE role = 'platform_admin' AND email IN ('hello@vitrine.app', 'hello@vitrineapp.ru')")"
 test "$admin_email" = hello@vitrineapp.ru

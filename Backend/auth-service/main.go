@@ -87,6 +87,7 @@ func main() {
 	root := http.NewServeMux()
 	root.Handle("/auth/", authHandler)
 	root.Handle("/api/v1/auth/", authHandler)
+	root.Handle("/api/v1/billing/", authHandler)
 	root.Handle("/users/", authHandler)
 	root.Handle("/api/v1/users/", authHandler)
 	root.Handle("/", web.Handler())
