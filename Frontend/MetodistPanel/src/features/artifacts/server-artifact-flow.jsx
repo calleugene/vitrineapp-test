@@ -18,7 +18,21 @@ function Header({step, flow, onNavigate, screenDirty = false, title = 'Свед�
     if (flow.dirty && !window.confirm('Есть несохранённые изменения. Выйти без сохранения?')) return;
     onNavigate('artifacts');
   };
-	return <><div className="server-flow-header"><h1>{title}</h1><div><span className={dirty ? 'is-dirty' : ''}>{label}</span><Button view="outlined" disabled={flow.loading} onClick={leave}>К экспонатам</Button><Button view="action" disabled={!flow.dirty || flow.loading || screenDirty} loading={flow.loading} onClick={flow.save}>Сохранить изменения</Button></div></div><nav className="server-flow-tabs" aria-label="Разделы экспоната">{[['artifact-basic', 'Основная информация'], ['artifact-content', 'Контент'], ['artifact-publish', 'Публикация']].map(([view, title], index) => <button type="button" key={view} className={step === index ? 'is-active' : ''} disabled={flow.loading} onClick={() => flow.saveAndGo(view)}>{title}</button>)}</nav></>;
+  const publishingStep = step === 2;
+  return <>
+    <div className="server-flow-header">
+      <h1>{title}</h1>
+      <div>
+        {!publishingStep && <span className={dirty ? 'is-dirty' : ''}>{label}</span>}
+        <Button view="outlined" size={publishingStep ? 'l' : undefined} disabled={flow.loading} onClick={leave}>К экспонатам</Button>
+        {(!publishingStep || dirty) && <Button view="action" disabled={!flow.dirty || flow.loading || screenDirty} loading={flow.loading} onClick={flow.save}>Сохранить изменения</Button>}
+      </div>
+    </div>
+    <nav className="server-flow-tabs" aria-label="Разделы экспоната">
+      {[['artifact-basic', 'Основная информация'], ['artifact-content', 'Контент'], ['artifact-publish', 'Публикация']].map(([view, title], index) =>
+        <button type="button" key={view} className={step === index ? 'is-active' : ''} aria-current={step === index ? 'page' : undefined} disabled={flow.loading} onClick={() => {if (step !== index) flow.saveAndGo(view);}}>{title}</button>)}
+    </nav>
+  </>;
 }
 
 function Basic({flow, onNavigate}) {
@@ -34,6 +48,6 @@ export function ServerArtifactFlow({mode, artifacts, artifactsLoading, artifacts
   if (mode === 'selector') return <ArtifactList artifacts={artifacts} artifactsLoading={artifactsLoading} artifactsError={artifactsError} onReload={onReload} flow={flow} message={<FlowMessage flow={flow} />} />;
   if (mode === 'basic') return <Basic flow={flow} onNavigate={onNavigate} />;
   if (mode === 'content') return <ContentWorkspace flow={flow} onNavigate={onNavigate} />;
-  if (mode === 'publish') return <ArtifactPublish flow={flow} onNavigate={onNavigate} header={<Header title="Публикация экспоната" step={2} flow={flow} onNavigate={onNavigate} />} message={<FlowMessage flow={flow} />} />;
+  if (mode === 'publish') return <ArtifactPublish flow={flow} header={<Header title="Публикация экспоната" step={2} flow={flow} onNavigate={onNavigate} />} />;
   return <ArtifactSuccess flow={flow} onNavigate={onNavigate} message={<FlowMessage flow={flow} />} />;
 }

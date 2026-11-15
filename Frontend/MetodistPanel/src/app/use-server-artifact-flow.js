@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {artifactsApi} from '../api';
+import {artifactReadiness} from '../features/artifacts/artifact-publication.js';
 
 const emptyDraft = {title: '', short_description: '', description: '', category: 'other'};
 const payloadFor = (body, imageURL = '', extra = {}) => JSON.stringify({version: 1, content: {...extra, body, image_url: imageURL}, body, image_url: imageURL});
@@ -7,7 +8,7 @@ const payloadFor = (body, imageURL = '', extra = {}) => JSON.stringify({version:
 function messageFor(error) {
   if (error?.code === 'screen_content_incomplete') return 'Проверьте экраны: в тесте нужны варианты и правильный ответ, в 3D-экране — модель.';
   if (error?.code === 'invalid_glb') return 'Не удалось прочитать модель. Нужен GLB 2.0 со встроенными текстурами и ресурсами.';
-  if (error?.code === 'revision_conflict') return 'Экспонат изменился после загрузки. Откройте его заново, проверьте изменения и повторите публикацию.';
+  if (error?.code === 'revision_conflict') return 'Мы загрузили новую версию черновика. Проверьте изменения перед повторной публикацией.';
   if (error?.code === 'no_unpublished_changes') return 'Все изменения уже опубликованы. Новая публикация не требуется.';
   if (error?.code === 'cannot_publish_empty') return 'Добавьте хотя бы один экран в разделе «Контент» перед публикацией.';
   if (error?.code === 'archived_artifact') return 'Сначала восстановите экспонат из архива.';
@@ -28,6 +29,9 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate, onArtifactAdde
   const [notice, setNotice] = useState('');
   const [publication, setPublication] = useState(null);
   const publishing = useRef(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const selecting = useRef(false);
+  const [selectionError, setSelectionError] = useState(null);
 
   useEffect(() => {
     const warnBeforeUnload = (event) => {
@@ -49,19 +53,30 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate, onArtifactAdde
     setArtifact((current) => current?.id === artifactId ? latest.artifact : current);
   }, []);
 
-  const select = useCallback(async (artifactId, nextView = 'artifact-basic') => {
-    setLoading(true); setError('');
+  const select = useCallback(async (artifactId, nextView = 'artifact-basic', navigateAfterLoad = true) => {
+    if (selecting.current) return;
+    selecting.current = true;
+    setLoading(true); setError(''); setNotice(''); setSelectionError(null);
     try {
-      const response = await artifactsApi.get(artifactId);
-      const item = response.artifact;
+      const [{artifact: item}, response] = await Promise.all([
+        artifactsApi.get(artifactId),
+        artifactsApi.listScreens(artifactId),
+      ]);
       setArtifact(item);
+      setScreens((response?.screens || []).filter((screen) => !screen.is_system));
       setDraft({title: item.title || '', short_description: item.short_description || '', description: item.description || '', category: item.category || 'other'});
       setDirty(false); setPublication(null);
-		await loadScreens(item.id);
-		onNavigate(nextView, {artifactId: item.id});
-    } catch (nextError) { setError(messageFor(nextError)); }
-    finally { setLoading(false); }
-  }, [loadScreens, onNavigate]);
+      if (navigateAfterLoad) onNavigate(nextView, {artifactId: item.id});
+      return true;
+    } catch (nextError) {
+      setSelectionError(artifactId);
+      setError(messageFor(nextError));
+      return false;
+    } finally {
+      selecting.current = false;
+      setLoading(false);
+    }
+  }, [onNavigate]);
 
   const start = useCallback(() => {
     creationStartedAt.current = performance.now();
@@ -91,7 +106,13 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate, onArtifactAdde
     finally { setLoading(false); }
   }, [artifact, draft, loadArtifacts, onArtifactAdded]);
 
-	const saveAndGo = useCallback(async (view) => { const item = artifact && !dirty ? artifact : await save(); if (item) onNavigate(view, {artifactId: item.id}); }, [artifact, dirty, onNavigate, save]);
+  const saveAndGo = useCallback(async (view) => {
+    if (loading || publishing.current) return;
+    const item = artifact && !dirty ? artifact : await save();
+    if (!item) return;
+    setError('');
+    onNavigate(view, {artifactId: item.id});
+  }, [artifact, dirty, loading, onNavigate, save]);
   const uploadCover = useCallback(async (file) => {
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024) { setError('Допустимы JPG, PNG или WebP до 10 МБ.'); return; }
@@ -159,7 +180,37 @@ export function useServerArtifactFlow({loadArtifacts, onNavigate, onArtifactAdde
   const archiveArtifact = useCallback((id) => mutateArtifact(artifactsApi.archive, id, 'Экспонат перенесён в архив.'), [mutateArtifact]);
   const restoreArtifact = useCallback((id) => mutateArtifact(artifactsApi.restore, id, 'Экспонат восстановлен в черновики.'), [mutateArtifact]);
   const deleteArtifact = useCallback((id) => mutateArtifact(artifactsApi.remove, id, 'Экспонат удалён.'), [mutateArtifact]);
-  const publish = useCallback(async () => { if (!artifact || publishing.current) return; publishing.current = true; setLoading(true); setError(''); setNotice(''); try { const result = await artifactsApi.publish(artifact.id, artifact.draft_revision); setPublication(result); setArtifact((current) => ({...current, status: 'published', published_revision: result.version, draft_revision: result.version, has_unpublished_changes: false, public_url: result.public_url || current.public_url, public_code: result.public_code || current.public_code})); setDirty(false); await loadArtifacts(); onNavigate('artifact-success'); } catch (nextError) { setError(messageFor(nextError)); } finally { publishing.current = false; setLoading(false); } }, [artifact, loadArtifacts, onNavigate]);
+  const publish = useCallback(async () => {
+    if (loading || publishing.current || !artifactReadiness({artifact, draft, screens, dirty}).canPublish) return;
+    publishing.current = true;
+    setIsPublishing(true);
+    setError('');
+    setNotice('');
+    try {
+      const result = await artifactsApi.publish(artifact.id, artifact.draft_revision);
+      setPublication(result);
+      setArtifact({
+        ...artifact,
+        status: 'published',
+        published_revision: result.version,
+        draft_revision: result.version,
+        has_unpublished_changes: false,
+        public_url: result.public_url || artifact.public_url,
+        public_code: result.public_code || artifact.public_code,
+      });
+      onNavigate('artifact-success', {artifactId: artifact.id});
+      void loadArtifacts();
+    } catch (nextError) {
+      if (['revision_conflict', 'no_unpublished_changes'].includes(nextError?.code)) {
+        const reloaded = await select(artifact.id, 'artifact-publish', false);
+        if (!reloaded) return;
+      }
+      setError(messageFor(nextError));
+    } finally {
+      publishing.current = false;
+      setIsPublishing(false);
+    }
+  }, [artifact, dirty, draft, loading, loadArtifacts, onNavigate, screens, select]);
 
-	return useMemo(() => ({artifact, screens, draft, dirty, loading, error, notice, publication, select, start, change, save, saveAndGo, uploadCover, addTextScreen, updateScreen, uploadScreenImage, removeScreen, duplicateScreen, reorder, duplicateArtifact, archiveArtifact, restoreArtifact, deleteArtifact, listBusy, publish, setError}), [artifact, screens, draft, dirty, loading, error, notice, publication, select, start, change, save, saveAndGo, uploadCover, addTextScreen, updateScreen, uploadScreenImage, removeScreen, duplicateScreen, reorder, duplicateArtifact, archiveArtifact, restoreArtifact, deleteArtifact, listBusy, publish]);
+	return useMemo(() => ({artifact, screens, draft, dirty, loading: loading || isPublishing, isPublishing, selectionError, error, notice, publication, select, start, change, save, saveAndGo, uploadCover, addTextScreen, updateScreen, uploadScreenImage, removeScreen, duplicateScreen, reorder, duplicateArtifact, archiveArtifact, restoreArtifact, deleteArtifact, listBusy, publish, setError}), [artifact, screens, draft, dirty, loading, isPublishing, selectionError, error, notice, publication, select, start, change, save, saveAndGo, uploadCover, addTextScreen, updateScreen, uploadScreenImage, removeScreen, duplicateScreen, reorder, duplicateArtifact, archiveArtifact, restoreArtifact, deleteArtifact, listBusy, publish]);
 }

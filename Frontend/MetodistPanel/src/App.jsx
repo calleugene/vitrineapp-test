@@ -120,9 +120,9 @@ function App() {
 	});
 
 	useEffect(() => {
-		if (!artifactId || !view.startsWith('artifact-') || serverArtifactFlow.artifact?.id === artifactId || serverArtifactFlow.loading) return;
-		serverArtifactFlow.select(artifactId, view);
-	}, [artifactId, serverArtifactFlow, view]);
+		if (!isAuthenticated || !artifactId || !view.startsWith('artifact-') || serverArtifactFlow.artifact?.id === artifactId || serverArtifactFlow.loading || serverArtifactFlow.selectionError === artifactId) return;
+		serverArtifactFlow.select(artifactId, view, false);
+	}, [artifactId, isAuthenticated, serverArtifactFlow, view]);
 
   const {
     routeDraft,
@@ -278,6 +278,7 @@ function App() {
           artifactsError={artifactsError}
           onReloadArtifacts={loadArtifacts}
           serverArtifactFlow={serverArtifactFlow}
+          artifactId={artifactId}
         />}
       </AppShell>
     </>
