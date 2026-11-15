@@ -123,6 +123,7 @@ export function AppShell({
                 (item.id === 'artifacts' &&
                   (view === 'artifacts' || ARTIFACT_WIZARD_VIEWS.includes(view))) ||
                 (item.id === 'museum' && view === 'museum') ||
+                (item.id === 'subscription' && view === 'subscription') ||
                 (item.id === 'visitors' && view === 'visitors') ||
                 (item.id === 'stats' && view === 'stats') ||
                 (item.id === 'feedback' && view === 'feedback') ||

@@ -1,4 +1,4 @@
-# All eight APIs and the web gateway. Each backend owns its PostgreSQL database.
+# Backend APIs and the web gateway.
 # Set secrets and public URLs in .env before starting.
 x-backend: &backend
   restart: unless-stopped
@@ -14,7 +14,7 @@ services:
       POSTGRES_USER: viralabs
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}"
       POSTGRES_DB: viralabs
-      POSTGRES_MULTIPLE_DATABASES: "viralabs_auth viralabs_artifacts viralabs_visitor viralabs_analytics viralabs_route viralabs_feedback viralabs_notification"
+      POSTGRES_MULTIPLE_DATABASES: "viralabs_auth viralabs_artifacts viralabs_visitor viralabs_analytics viralabs_route viralabs_feedback viralabs_notification viralabs_billing"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init-multiple-databases.sh:/docker-entrypoint-initdb.d/10-databases.sh:ro
@@ -32,12 +32,32 @@ services:
       AUTH_TOKEN_SECRET: "${AUTH_TOKEN_SECRET:?set AUTH_TOKEN_SECRET}"
       AUTH_HTTP_ADDR: ":8080"
       MUSEUM_SERVICE_URL: http://artifacts-service:8081/api/v1
+      AUTH_BILLING_URL: http://billing-service:8089
       AUTH_PUBLIC_URL: "${PUBLIC_URL:?set PUBLIC_URL}/methodist/"
       AUTH_TRUSTED_PROXY_CIDRS: "${AUTH_TRUSTED_PROXY_CIDRS:-}"
       AUTH_SMTP_ADDR: "${AUTH_SMTP_ADDR:-}"
       AUTH_SMTP_USER: "${AUTH_SMTP_USER:-}"
       AUTH_SMTP_PASSWORD: "${AUTH_SMTP_PASSWORD:-}"
       AUTH_MAIL_FROM: "${AUTH_MAIL_FROM:-}"
+  billing-service:
+    <<: *backend
+    build: ./Backend/billing-service
+    environment:
+      BILLING_DB_DSN: "postgresql://viralabs:${POSTGRES_PASSWORD}@postgres:5432/viralabs_billing"
+      BILLING_AUTH_URL: http://auth-service:8080/api/v1
+      BILLING_INTERNAL_SECRET: "${AUTH_TOKEN_SECRET:?set AUTH_TOKEN_SECRET}"
+      BILLING_PUBLIC_URL: "${PUBLIC_URL:?set PUBLIC_URL}"
+      BILLING_ENABLED: "${BILLING_ENABLED:-false}"
+      BILLING_TERMS_URL: "${BILLING_TERMS_URL:-}"
+      BILLING_TERMS_VERSION: "${BILLING_TERMS_VERSION:-}"
+      BILLING_PRICE_MONTH_KOPECKS: "${BILLING_PRICE_MONTH_KOPECKS:-}"
+      BILLING_PRICE_YEAR_KOPECKS: "${BILLING_PRICE_YEAR_KOPECKS:-}"
+      TOCHKA_API_TOKEN: "${TOCHKA_API_TOKEN:-}"
+      TOCHKA_CUSTOMER_CODE: "${TOCHKA_CUSTOMER_CODE:-}"
+      TOCHKA_MERCHANT_ID: "${TOCHKA_MERCHANT_ID:-}"
+      TOCHKA_CHECKOUT_HOSTS: "${TOCHKA_CHECKOUT_HOSTS:-}"
+      TOCHKA_RECEIPT_TAX_SYSTEM: "${TOCHKA_RECEIPT_TAX_SYSTEM:-}"
+      TOCHKA_RECEIPT_VAT: "${TOCHKA_RECEIPT_VAT:-}"
   artifacts-service:
     <<: *backend
     build: ./Backend/artifacts-service

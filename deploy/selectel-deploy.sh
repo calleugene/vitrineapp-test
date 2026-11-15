@@ -27,9 +27,14 @@ test -f "$release/Frontend/Visitor/dist/embed.html"
 python3 "$release/deploy/install-embed-nginx.py" --revision "$revision"
 
 compose=(docker compose -p vitrineapp --env-file /opt/vitrineapp/.env -f "$release/docker-compose.yml" -f "$release/deploy/compose.selectel.yml")
-services=(auth-service artifacts-service visitor-service analytics-service route-service feedback-service notification-service dashboard-service)
+services=(auth-service artifacts-service visitor-service analytics-service route-service feedback-service notification-service dashboard-service billing-service)
 "${compose[@]}" config --quiet
 COMPOSE_PARALLEL_LIMIT=1 "${compose[@]}" build "${services[@]}"
+"${compose[@]}" exec -T postgres psql -U viralabs -d viralabs -v ON_ERROR_STOP=1 <<'SQL'
+SELECT 'CREATE DATABASE viralabs_billing'
+WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname='viralabs_billing')
+\gexec
+SQL
 "${compose[@]}" up -d --no-deps --no-build "${services[@]}"
 
 rsync -a --delete --exclude='/.well-known/' --exclude='/config.js' --chmod=D755,F644 "$release/Landing/dist/" /var/www/vitrina/public_html/
@@ -59,6 +64,13 @@ cmp -s "$error_page" "$release/Landing/dist/404.html"
 
 test "$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://vitrineapp.ru/api/auth/api/v1/auth/admin/museums)" = 401
 test "$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://vitrineapp.ru/api/auth/api/v1/auth/admin/users)" = 401
+test "$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://vitrineapp.ru/api/auth/api/v1/auth/admin/billing/payments)" = 401
+for attempt in {1..15}; do
+  billing_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://vitrineapp.ru/api/auth/api/v1/billing/subscription)"
+  [[ "$billing_status" = 401 ]] && break
+  sleep 2
+done
+test "$billing_status" = 401
 test "$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8081/api/v1/internal/admin/museums)" = 403
 admin_email="$("${compose[@]}" exec -T postgres psql -U viralabs -d viralabs_auth -Atc "SELECT email FROM users WHERE role = 'platform_admin' AND email IN ('hello@vitrine.app', 'hello@vitrineapp.ru')")"
 test "$admin_email" = hello@vitrineapp.ru

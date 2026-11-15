@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+	BillingServiceURL              string
 	TrustedProxyCIDRs              []string
 	PlatformAdminEmail             string
 	PlatformAdminPreviousEmail     string

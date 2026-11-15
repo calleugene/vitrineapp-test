@@ -59,6 +59,7 @@ func main() {
 		TokenSecret:                    tokenSecret,
 		ExposeDebugTokens:              envOr("AUTH_EXPOSE_DEBUG_TOKENS", "false") == "true",
 		MuseumServiceURL:               envOr("MUSEUM_SERVICE_URL", "http://localhost:8081/api/v1"),
+		BillingServiceURL:              os.Getenv("AUTH_BILLING_URL"),
 	})
 	if err := service.BootstrapPlatformAdmin(context.Background()); err != nil {
 		log.Printf("platform admin provisioning failed: %v", err)

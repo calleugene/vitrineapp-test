@@ -13,6 +13,7 @@ import {useServerArtifactFlow} from './app/use-server-artifact-flow';
 import {ViewContent} from './app/view-content';
 import {useDashboardData} from './app/use-dashboard-data';
 import {ProfilePage, ReactivationScreen} from './features/users/ProfilePage';
+import {SubscriptionPage} from './features/billing/SubscriptionPage';
 import {mergeRouteTableRows} from './app/route-draft-utils';
 import {useRouteDraft} from './app/use-route-draft';
 import {useSession} from './app/use-session';
@@ -229,7 +230,8 @@ function App() {
         }}
         onLogout={handleAppLogout}
       >
-        {view === 'user-profile' ? <ProfilePage session={session} onSessionRefresh={updateSession} onNavigate={navigate} museums={museums} museumState={museumState} loadMuseums={refreshMuseums} onMuseumsUpdated={applyMuseums} onSelectMuseum={selectMuseum} onDirtyChange={setProfileDirty} /> : <ViewContent
+        {view === 'user-profile' ? <ProfilePage session={session} onSessionRefresh={updateSession} onNavigate={navigate} museums={museums} museumState={museumState} loadMuseums={refreshMuseums} onMuseumsUpdated={applyMuseums} onSelectMuseum={selectMuseum} onDirtyChange={setProfileDirty} /> : view === 'subscription' ?
+          <SubscriptionPage key={currentUser?.museum_id} user={currentUser} isMock={session?.isMock} /> : <ViewContent
           view={view}
           currentUser={currentUser}
           dashboardData={dashboardData}

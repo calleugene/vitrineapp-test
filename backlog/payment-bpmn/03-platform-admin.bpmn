@@ -1,0 +1,211 @@
+<?xml version='1.0' encoding='utf-8'?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions" targetNamespace="urn:vitrine:payment-bpmn:03-platform-admin">
+  <bpmn:collaboration id="Collaboration" name="Контроль платежей администратором «Витрины»">
+    <bpmn:participant id="Participant" name="Платформа «Витрина»" processRef="Process" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process" name="Контроль платежей администратором «Витрины»" isExecutable="false">
+    <bpmn:laneSet id="Lanes">
+      <bpmn:lane id="Admin" name="Администратор платформы">
+        <bpmn:flowNodeRef>Start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Monitor</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Issue</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Done</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Open</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Note</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="System" name="Витрина">
+        <bpmn:flowNodeRef>Query</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Resolve</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Replay</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Processed</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Track</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Tracked</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start" name="Очередь или обращение">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Monitor" name="Открыть платежи и проверить статусы">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Issue" name="Нужна проверка?">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Done" name="Проверка завершена">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:userTask id="Open" name="Открыть операцию и историю">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Query" name="Сверить операцию с Точкой">
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Resolve" name="Данные можно обработать?">
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_7</bpmn:outgoing>
+      <bpmn:outgoing>Flow_9</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Replay" name="Повторить штатную обработку">
+      <bpmn:incoming>Flow_7</bpmn:incoming>
+      <bpmn:outgoing>Flow_8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Processed" name="Результат обновлён">
+      <bpmn:incoming>Flow_8</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:userTask id="Note" name="Зафиксировать вывод и следующий шаг">
+      <bpmn:incoming>Flow_9</bpmn:incoming>
+      <bpmn:outgoing>Flow_10</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Track" name="Сохранить в очереди разбора">
+      <bpmn:incoming>Flow_10</bpmn:incoming>
+      <bpmn:outgoing>Flow_11</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Tracked" name="Разбор продолжается">
+      <bpmn:incoming>Flow_11</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="Monitor" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Monitor" targetRef="Issue" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Issue" targetRef="Done" name="Нет" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Issue" targetRef="Open" name="Да" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Open" targetRef="Query" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Query" targetRef="Resolve" />
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Resolve" targetRef="Replay" name="Да" />
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="Replay" targetRef="Processed" />
+    <bpmn:sequenceFlow id="Flow_9" sourceRef="Resolve" targetRef="Note" name="Нет" />
+    <bpmn:sequenceFlow id="Flow_10" sourceRef="Note" targetRef="Track" />
+    <bpmn:sequenceFlow id="Flow_11" sourceRef="Track" targetRef="Tracked" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram" name="Контроль платежей администратором «Витрины»">
+    <bpmndi:BPMNPlane id="Plane" bpmnElement="Collaboration">
+      <bpmndi:BPMNShape id="Participant_di" bpmnElement="Participant" isHorizontal="true">
+        <dc:Bounds x="20" y="20" width="1340" height="565" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Admin_di" bpmnElement="Admin" isHorizontal="true">
+        <dc:Bounds x="50" y="20" width="1310" height="280" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="System_di" bpmnElement="System" isHorizontal="true">
+        <dc:Bounds x="50" y="300" width="1310" height="285" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_di" bpmnElement="Start">
+        <dc:Bounds x="92" y="123" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="63" y="166" width="94" height="29" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Monitor_di" bpmnElement="Monitor">
+        <dc:Bounds x="181" y="105" width="152" height="72" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Issue_di" bpmnElement="Issue" isMarkerVisible="true">
+        <dc:Bounds x="417" y="116" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="382" y="87" width="120" height="23" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Done_di" bpmnElement="Done">
+        <dc:Bounds x="630" y="123" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="592" y="165" width="112" height="29" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Open_di" bpmnElement="Open">
+        <dc:Bounds x="572" y="207" width="152" height="72" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Query_di" bpmnElement="Query">
+        <dc:Bounds x="764" y="350" width="152" height="72" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Resolve_di" bpmnElement="Resolve" isMarkerVisible="true">
+        <dc:Bounds x="1003" y="361" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="887" y="320" width="132" height="30" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Replay_di" bpmnElement="Replay">
+        <dc:Bounds x="1112" y="350" width="152" height="72" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Processed_di" bpmnElement="Processed">
+        <dc:Bounds x="1306" y="368" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1265" y="412" width="90" height="33" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Note_di" bpmnElement="Note">
+        <dc:Bounds x="952" y="207" width="152" height="72" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Track_di" bpmnElement="Track">
+        <dc:Bounds x="1112" y="470" width="152" height="72" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Tracked_di" bpmnElement="Tracked">
+        <dc:Bounds x="1306" y="488" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1265" y="531" width="90" height="35" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="128" y="141" />
+        <di:waypoint x="181" y="141" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="333" y="141" />
+        <di:waypoint x="417" y="141" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="467" y="141" />
+        <di:waypoint x="630" y="141" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="496" y="118" width="42" height="19" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="442" y="166" />
+        <di:waypoint x="442" y="243" />
+        <di:waypoint x="572" y="243" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="449" y="203" width="40" height="19" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <di:waypoint x="724" y="243" />
+        <di:waypoint x="840" y="243" />
+        <di:waypoint x="840" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6">
+        <di:waypoint x="916" y="386" />
+        <di:waypoint x="1003" y="386" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7">
+        <di:waypoint x="1053" y="386" />
+        <di:waypoint x="1112" y="386" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1057" y="362" width="42" height="19" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8">
+        <di:waypoint x="1264" y="386" />
+        <di:waypoint x="1306" y="386" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_9_di" bpmnElement="Flow_9">
+        <di:waypoint x="1028" y="361" />
+        <di:waypoint x="1028" y="279" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1041" y="306" width="42" height="18" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10_di" bpmnElement="Flow_10">
+        <di:waypoint x="1104" y="243" />
+        <di:waypoint x="1350" y="243" />
+        <di:waypoint x="1350" y="465" />
+        <di:waypoint x="1188" y="465" />
+        <di:waypoint x="1188" y="470" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11_di" bpmnElement="Flow_11">
+        <di:waypoint x="1264" y="506" />
+        <di:waypoint x="1306" y="506" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -3,6 +3,7 @@ export const DEFAULT_VIEW = 'dashboard';
 export const VIEW_ROUTE_MAP = {
   dashboard: '/dashboard',
   museum: '/museum',
+  subscription: '/subscription',
   'user-profile': '/user-profile',
   visitors: '/visitors',
   stats: '/stats',
@@ -22,6 +23,7 @@ export const VIEW_ROUTE_MAP = {
 export const VIEW_TITLE_MAP = {
   dashboard: 'Дашборд',
   museum: 'Профиль музея',
+  subscription: 'Подписка',
   'user-profile': 'Профиль пользователя',
   visitors: 'Посетители',
   stats: 'Статистика',

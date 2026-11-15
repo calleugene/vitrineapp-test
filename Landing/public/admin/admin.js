@@ -1,4 +1,5 @@
 import {createManagement} from './management.js';
+import {createBilling} from './billing.js';
 
 const root = '/api/auth/api/v1/auth';
 const byId = (id) => document.getElementById(id);
@@ -16,6 +17,8 @@ function show(id) {
   byId('management-nav').hidden = id !== 'catalog';
   byId('users').hidden = true;
   byId('exhibits').hidden = true;
+  byId('billing').hidden = true;
+  byId('billing').replaceChildren();
 }
 const notify = (message) => { byId('notice').textContent = message; };
 const actions = [...document.querySelectorAll('button')];
@@ -181,6 +184,7 @@ byId('show-users').addEventListener('click', () => void run(async () => {
   byId('catalog').hidden = true;
   byId('workspace').hidden = true;
   byId('exhibits').hidden = true;
+  byId('billing').hidden = true;
   byId('users').hidden = false;
   await management.loadUsers();
 }));
@@ -188,16 +192,23 @@ byId('show-exhibits').addEventListener('click', () => void run(async () => {
   byId('catalog').hidden = true;
   byId('workspace').hidden = true;
   byId('users').hidden = true;
+  byId('billing').hidden = true;
   byId('exhibits').hidden = false;
   await management.loadExhibits();
 }));
 byId('show-museums').addEventListener('click', () => void run(loadCatalog));
+byId('show-billing').addEventListener('click', () => void run(async () => {
+  for (const id of ['catalog', 'workspace', 'users', 'exhibits']) byId(id).hidden = true;
+  byId('billing').hidden = false;
+  await billing.load();
+}));
 
 const management = createManagement({
   request, run, notify, byId, getMuseum: () => currentMuseum,
   getMuseums: () => museums,
   reloadWorkspace: () => loadWorkspace(page), loadCatalog, clearWorkspace,
 });
+const billing = createBilling({request, run, notify, root: byId('billing')});
 
 if (resetToken) {
   show('reset');

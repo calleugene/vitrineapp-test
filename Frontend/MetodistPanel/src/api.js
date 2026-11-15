@@ -223,6 +223,12 @@ function normalizeTokenPayload(payload) {
   };
 }
 
+export const billingApi = {
+  subscription: (signal) => request(AUTH_API_URL, `${API_PREFIX}/billing/subscription`, {signal}),
+  checkout: (body) => request(AUTH_API_URL, `${API_PREFIX}/billing/orders`, jsonOptions('POST', body)),
+  order: (id, signal) => request(AUTH_API_URL, `${API_PREFIX}/billing/orders/${encodeURIComponent(id)}`, {signal}),
+};
+
 export const authApi = {
   legalDocuments: () => request(AUTH_API_URL, `${API_PREFIX}/auth/legal-documents`),
   forgotPassword: (email) => request(AUTH_API_URL, `${API_PREFIX}/auth/forgot-password`, jsonOptions('POST', {email})),
