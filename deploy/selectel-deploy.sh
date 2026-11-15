@@ -45,7 +45,7 @@ chmod 755 /var/www/vitrina/public_html /var/www/vitrina/methodist /var/www/vitri
 for url in \
   https://vitrineapp.ru/ \
   https://vitrineapp.ru/methodist/ \
-  https://vitrineapp.ru/visitor/ \
+  https://vitrineapp.ru/museums \
   https://vitrineapp.ru/stats \
   https://vitrineapp.ru/admin/ \
   https://vitrineapp.ru/admin/management.js \
@@ -55,6 +55,10 @@ for url in \
   https://vitrineapp.ru/api/artifacts/api/v1/public/museums \
   https://vitrineapp.ru/api/visitor/healthz; do
   curl --fail --silent --show-error --retry 10 --retry-delay 2 --retry-connrefused --retry-all-errors -o /dev/null "$url"
+done
+
+for path in /visitor /visitor/ /museums/; do
+  test "$(curl --fail --silent --show-error -o /dev/null --write-out '%{http_code} %{redirect_url}' "https://vitrineapp.ru${path}?ref=release")" = '308 https://vitrineapp.ru/museums?ref=release'
 done
 
 error_page="$(mktemp)"

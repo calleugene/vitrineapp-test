@@ -35,7 +35,7 @@ const PATH_TO_VIEW = {
 };
 
 function getViewFromPath(path) {
-  if (path === '/' || path === '' || path === '/visitor' || path === '/visitor/') return 'museumSelect';
+  if (path === '/' || path === '') return 'museumSelect';
   if (PATH_TO_VIEW[path]) return PATH_TO_VIEW[path];
   if (path.match(/^\/m\d+/)) return 'museumDetail';
   if (path.match(/^\/a\d+$/)) return 'artifactCard';
@@ -276,7 +276,9 @@ export function useVisitorData() {
       // storage blocked (private mode) — onboarding still completes
       void 0;
     }
-    window.history.replaceState(null, '', '/visitor/');
+    if (window.location.pathname !== VIEW_URLS.museumSelect) {
+      window.history.replaceState(null, '', VIEW_URLS.museumSelect);
+    }
     patch({view: 'museumSelect'});
   }, [patch]);
 

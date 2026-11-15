@@ -154,7 +154,7 @@ function Hero({ onWaitlist }: { onWaitlist: Waitlist }) {
         </p>
         <div className="hero-actions">
           <Button onClick={() => onWaitlist('hero')}>Обсудить запуск</Button>
-          <a className="video-button" href="/visitor/">
+          <a className="video-button" href="/museums">
             Открыть панель посетителя
             <ArrowUpRight aria-hidden="true" size={18} />
           </a>
@@ -342,7 +342,7 @@ function EditorDemo({ open }: { open: OpenModal }) {
             <span className="experience-label">ДЛЯ ПОСЕТИТЕЛЯ</span>
             <h3>Панель посетителя</h3>
             <p>Браузерный интерфейс для знакомства с опубликованным музейным маршрутом.</p>
-            <a className="text-link" href="/visitor/">Открыть панель <ArrowUpRight size={18} aria-hidden="true" /></a>
+            <a className="text-link" href="/museums">Открыть панель <ArrowUpRight size={18} aria-hidden="true" /></a>
           </article>
         </div>
         <figure className="service-photo-wrap">
@@ -642,7 +642,7 @@ function Footer({
           <div className="footer-column">
             <h3>Начать работу</h3>
             <a href="/methodist/">Кабинет методиста</a>
-            <a href="/visitor/">Панель посетителя</a>
+            <a href="/museums">Панель посетителя</a>
             <a href="mailto:hello@vitrineapp.ru">Контакты</a>
           </div>
           <div className="footer-column">
