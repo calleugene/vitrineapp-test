@@ -41,6 +41,7 @@ const nav = [
   ['О продукте', 'product'],
   ['Возможности', 'features'],
   ['Как это работает', 'how-it-works'],
+  ['С чего начать', 'start'],
   ['FAQ', 'faq'],
 ];
 type ModalKind = 'demo' | 'story';
@@ -143,22 +144,21 @@ function Hero({ onWaitlist }: { onWaitlist: Waitlist }) {
       <div className="hero-copy">
         <SectionLabel>МУЗЕЙ БЛИЖЕ, ЧЕМ КАЖЕТСЯ</SectionLabel>
         <h1 id="hero-heading">
-          <span className="hero-title-line">Создавайте</span>{' '}
-          <span className="hero-title-line">музейные маршруты</span>{' '}
-          <em className="hero-title-line">для телефона посетителя</em>
+          Музейные истории<br />
+          <em>в телефоне посетителя</em>
         </h1>
         <p className="hero-description">
-          Подготовьте маршрут в кабинете методиста и опубликуйте его.
-          Посетитель откроет историю музея по ссылке или QR-коду прямо
-          в браузере — без установки приложения.
+          Соберите тексты, фотографии, аудио и видео в маршрут по экспозиции.
+          Методист работает в редакторе без программирования, а посетитель
+          открывает историю по QR-коду в браузере.
         </p>
         <div className="hero-actions">
           <Button onClick={() => onWaitlist('hero')}>Обсудить запуск</Button>
-          <a className="video-button" href="/museums">
-            Открыть панель посетителя
-            <ArrowUpRight aria-hidden="true" size={18} />
+          <a className="video-button" href="#stories">
+            Посмотреть пример истории
           </a>
         </div>
+        <p className="hero-note">Для методистов, кураторов и руководителей музеев</p>
       </div>
       <div className="hero-visual">
         <img
@@ -340,9 +340,9 @@ function EditorDemo({ open }: { open: OpenModal }) {
           </article>
           <article>
             <span className="experience-label">ДЛЯ ПОСЕТИТЕЛЯ</span>
-            <h3>Панель посетителя</h3>
-            <p>Браузерный интерфейс для знакомства с опубликованным музейным маршрутом.</p>
-            <a className="text-link" href="/museums">Открыть панель <ArrowUpRight size={18} aria-hidden="true" /></a>
+            <h3>Каталог музеев</h3>
+            <p>Выберите музей и познакомьтесь с опубликованными материалами. В зале посетитель может открыть историю сразу по QR-коду.</p>
+            <a className="text-link" href="/museums">Открыть каталог <ArrowUpRight size={18} aria-hidden="true" /></a>
           </article>
         </div>
         <figure className="service-photo-wrap">
@@ -403,6 +403,49 @@ function HowItWorks() {
               <p>{text}</p>
             </article>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+function GettingStarted({ onWaitlist }: { onWaitlist: Waitlist }) {
+  return (
+    <section id="start" className="section start-section" aria-labelledby="start-heading">
+      <div className="container reveal">
+        <div className="section-top">
+          <div>
+            <SectionLabel>ПЕРВЫЙ МАРШРУТ</SectionLabel>
+            <h2 id="start-heading">Начните с одной истории</h2>
+            <p>Выберите небольшой фрагмент экспозиции, чтобы проверить формат на своих материалах и телефоне.</p>
+          </div>
+          <Button onClick={() => onWaitlist('getting-started')}>Обсудить первый маршрут</Button>
+        </div>
+        <div className="start-grid">
+          <article>
+            <FileText size={26} aria-hidden="true" />
+            <h3>Что подготовить</h3>
+            <ul>
+              <li>Тему и несколько экспонатов, связанных одной историей.</li>
+              <li>Тексты и фотографии, на публикацию которых у музея есть права.</li>
+              <li>Аудио или видео, если они уже есть. Специально снимать их для знакомства с платформой не нужно.</li>
+            </ul>
+          </article>
+          <article>
+            <UsersRound size={26} aria-hidden="true" />
+            <h3>Кто участвует</h3>
+            <ul>
+              <li>Методист или куратор выбирает материалы и собирает историю.</li>
+              <li>Команда музея проверяет содержание перед публикацией.</li>
+              <li>Посетитель сканирует QR-код и открывает историю в браузере. Для загрузки нужен интернет.</li>
+            </ul>
+          </article>
+          <article className="start-next">
+            <Mail size={26} aria-hidden="true" />
+            <h3>Что будет после заявки</h3>
+            <p>Свяжемся по e-mail и договоримся о демонстрации. Обсудим вашу экспозицию, готовые материалы и задачу первого маршрута.</p>
+            <p>Условия подключения и стоимость обсудим применительно к вашему музею.</p>
+            <a href="mailto:hello@vitrineapp.ru">hello@vitrineapp.ru</a>
+          </article>
         </div>
       </div>
     </section>
@@ -480,6 +523,7 @@ function ExhibitStories({ open }: { open: OpenModal }) {
             Смотреть пример
             <ArrowRight size={18} />
           </button>
+          <p className="example-note">Демонстрационные истории с иллюстрациями. Это примеры содержания, а не кейсы музеев.</p>
         </div>
         <div className="image-stack">
           {exhibits.map((item, i) => (
@@ -492,12 +536,16 @@ function ExhibitStories({ open }: { open: OpenModal }) {
 }
 const faqs = [
   [
+    'Сколько стоит подключение?',
+    'Чтобы обсудить стоимость и условия подключения, оставьте заявку или напишите на hello@vitrineapp.ru. Укажите музей и задачу: например, маршрут для постоянной экспозиции или временной выставки.',
+  ],
+  [
     'Что подготовить для первого маршрута?',
     'Выберите тему, составьте список точек и соберите материалы, которые раскрывают историю экспозиции. На встрече обсудим вашу задачу и подходящий первый маршрут.',
   ],
   [
     'Нужно ли приложение или специальное оборудование?',
-    'Нет. Базовый маршрут открывается по ссылке или QR-коду в современном мобильном браузере. Устанавливать приложение и использовать AR или VR для его прохождения не требуется.',
+    'Достаточно смартфона с современным браузером и доступом в интернет. Маршрут открывается по ссылке или QR-коду. Устанавливать приложение и использовать AR или VR для его прохождения не требуется.',
   ],
   [
     'Нужны ли разработчики для работы с платформой?',
@@ -510,6 +558,14 @@ const faqs = [
   [
     'Как публикуется контент для посетителей?',
     'Музей публикует историю или маршрут и размещает QR-код рядом с экспонатом. Посетитель сканирует его камерой смартфона и открывает контент в браузере.',
+  ],
+  [
+    'Можно ли разместить историю на сайте музея?',
+    'Да. Для опубликованного экспоната в кабинете доступен пункт «Встроить на сайт». Скопируйте код вставки и передайте сотруднику, который поддерживает сайт музея.',
+  ],
+  [
+    'Кто готовит содержание маршрута?',
+    'Тему, тексты и медиаматериалы готовит команда музея. Витрина помогает собрать их в цифровую историю и опубликовать. На демонстрации можно обсудить, как использовать уже готовые материалы вашей экспозиции.',
   ],
   [
     'Можно ли перенести уже существующий контент?',
@@ -642,7 +698,8 @@ function Footer({
           <div className="footer-column">
             <h3>Начать работу</h3>
             <a href="/methodist/">Кабинет методиста</a>
-            <a href="/museums">Панель посетителя</a>
+            <a href="/museums">Каталог музеев</a>
+            <a href="#start">С чего начать</a>
             <a href="mailto:hello@vitrineapp.ru">Контакты</a>
           </div>
           <div className="footer-column">
@@ -791,6 +848,7 @@ export default function App() {
         <EditorDemo open={open} />
         <HowItWorks />
         <ExhibitStories open={open} />
+        <GettingStarted onWaitlist={waitlist} />
         <FAQ />
         <FinalCTA onWaitlist={waitlist} />
       </main>
@@ -816,12 +874,12 @@ export default function App() {
           </SectionLabel>
           <DialogTitle className="dialog-heading">
             {modal === 'demo'
-              ? 'Записаться на демо'
+              ? 'Обсудим ваш первый маршрут'
               : 'У каждого экспоната — история'}
           </DialogTitle>
           <DialogDescription className="dialog-description">
             {modal === 'demo'
-              ? 'Оставьте контакты. Покажем, как Витрина может работать в вашем музее.'
+              ? 'Оставьте e-mail: свяжемся и договоримся о демонстрации. Обсудим материалы, условия подключения и стоимость для вашего музея.'
               : 'Демонстрационный пример содержания. Так дополнительные материалы помогают посетителю увидеть больше.'}
           </DialogDescription>
           {modal === 'demo' && <LeadForm intent="demo" source={leadContext.source} />}
