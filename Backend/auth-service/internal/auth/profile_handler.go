@@ -46,6 +46,11 @@ func (s *Service) profileRoutes(mux *http.ServeMux) {
 				writeServiceError(w, ErrForbidden)
 				return
 			}
+			if user.Role == platformAdminRole && claims.Role == platformAdminRole && user.Email == s.config.PlatformAdminEmail && claims.MuseumID != "" {
+				user.MuseumID = &claims.MuseumID
+				writeJSON(w, 200, meResponse{User: user})
+				return
+			}
 			if _, err = s.repo.MuseumRole(r.Context(), user.ID, claims.MuseumID); err != nil {
 				writeServiceError(w, ErrForbidden)
 				return
@@ -256,7 +261,11 @@ func (s *Service) requestEmailChange(w http.ResponseWriter, r *http.Request) {
 		writeServiceError(w, ErrBadRequest)
 		return
 	}
-	email := normalizeEmail(req.Email)
+	s.sendEmailChange(w, r, user, req.Email, s.config.ExposeDebugTokens)
+}
+
+func (s *Service) sendEmailChange(w http.ResponseWriter, r *http.Request, user User, address string, debug bool) {
+	email := normalizeEmail(address)
 	parsed, err := mail.ParseAddress(email)
 	if err != nil || parsed.Address != email || len(email) > 254 || email == user.Email {
 		writeServiceError(w, ErrBadRequest)
@@ -280,7 +289,7 @@ func (s *Service) requestEmailChange(w http.ResponseWriter, r *http.Request) {
 		writeServiceError(w, err)
 		return
 	}
-	if s.config.SendEmailChange == nil && !s.config.ExposeDebugTokens {
+	if s.config.SendEmailChange == nil && !debug {
 		writeServiceError(w, ErrServiceUnavailable)
 		return
 	}
@@ -295,7 +304,7 @@ func (s *Service) requestEmailChange(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	result := map[string]string{"message": "email_confirmation_sent"}
-	if s.config.ExposeDebugTokens {
+	if debug {
 		result["debug_token"] = token
 	}
 	writeJSON(w, 200, result)

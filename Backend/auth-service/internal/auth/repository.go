@@ -11,11 +11,14 @@ type Repository interface {
 	FinishPasswordReset(context.Context, string, time.Time, bool) error
 	ProfileRepository
 	AllowPasswordReset(context.Context, string, time.Time) (bool, error)
+	AllowPlatformAdminLogin(context.Context, string, time.Time) (bool, error)
+	ClearPlatformAdminLogin(context.Context, string) error
 	CreateUser(ctx context.Context, user User, passwordHash string) error
 	FindUserByEmail(ctx context.Context, email string) (User, error)
 	FindUserByID(ctx context.Context, userID string) (User, error)
 	FindUserWithPasswordByEmail(ctx context.Context, email string) (User, string, error)
 	UpdateUser(ctx context.Context, user User) error
+	UpdateAdminUser(ctx context.Context, user User) error
 	UpdateUserPassword(ctx context.Context, userID, passwordHash string, now time.Time) error
 	UpdateUserAvatar(ctx context.Context, userID, avatarURL string, now time.Time) error
 	UpdateUserRole(ctx context.Context, userID, role string, now time.Time) error
@@ -42,4 +45,10 @@ type Repository interface {
 	ConsumePasswordResetToken(ctx context.Context, tokenHash, passwordHash string, now time.Time) error
 
 	GetUserActivity(ctx context.Context, userID string) ([]userActivity, error)
+	RecordPlatformContext(ctx context.Context, id, userID, previousMuseum, museumID, reason string, now time.Time) error
+	MovePlatformAdminEmail(ctx context.Context, userID, previousEmail, email string, now time.Time) error
+	ListAdminUsers(context.Context, string, int) ([]adminUserRow, error)
+	RecordAdminAction(context.Context, string, string, string, string, time.Time) error
+	AdminUserState(context.Context, string, string, time.Time) error
+	AdminMuseumMembership(context.Context, string, string, string, time.Time) error
 }

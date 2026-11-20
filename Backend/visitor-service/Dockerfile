@@ -5,7 +5,10 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/visitor-service .
 
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM alpine:3.22
+RUN apk add --no-cache ca-certificates tzdata \
+    && addgroup -g 65532 nonroot \
+    && adduser -D -H -u 65532 -G nonroot nonroot
 COPY --from=build /out/visitor-service /visitor-service
 USER nonroot:nonroot
 EXPOSE 8088

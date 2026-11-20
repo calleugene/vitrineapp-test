@@ -6,6 +6,7 @@ import {useVisitorData} from './app/use-visitor-data.js';
 import {useUrlSync} from './app/routes-router.jsx';
 import {PublicArtifactStory} from './features/public-artifact/PublicArtifactStory.jsx';
 import {PublicRoute} from './features/public-artifact/PublicServices.jsx';
+import {PublicStats} from './features/stats/PublicStats.jsx';
 
 function LoadingScreen() {
   return (
@@ -56,6 +57,7 @@ function DataLayer() {
 }
 
 export function App() {
+  if (/^\/stats\/?$/.test(window.location.pathname)) return <PublicStats />;
   const publicRouteId = window.location.pathname.match(/^\/routes\/(rte_[a-f0-9]{32})\/?$/)?.[1];
   if (publicRouteId) return <PublicRoute routeId={publicRouteId} />;
   const publicCode = window.location.pathname.match(/^\/exhibits\/((?:[A-Z0-9]{5}|[A-F0-9]{10}))\/?$/i)?.[1];

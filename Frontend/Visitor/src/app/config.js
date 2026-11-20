@@ -4,6 +4,7 @@ const defaultConfig = {
 	authApiUrl: import.meta.env?.VITE_AUTH_API_URL || '/api/auth/api/v1',
   artifactsApiUrl: import.meta.env?.VITE_ARTIFACTS_API_URL || '/api/artifacts/api/v1',
   analyticsEventsUrl: import.meta.env?.VITE_ANALYTICS_EVENTS_URL || '/api/analytics/api/v1/analytics/events',
+  publicStatsUrl: '/api/analytics/api/v1/public/stats',
 };
 
 export const appConfig = {

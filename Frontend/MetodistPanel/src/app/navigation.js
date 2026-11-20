@@ -1,6 +1,7 @@
 import {
   BookOpen,
   Boxes3,
+  CreditCard,
   House,
   Megaphone,
   Persons,
@@ -11,6 +12,7 @@ import {
 export const NAV_ITEMS = [
   {id: 'dashboard', label: 'Главная', icon: House},
   {id: 'museum', label: 'Профиль музея', icon: BookOpen},
+  {id: 'subscription', label: 'Подписка', icon: CreditCard},
   {id: 'routes', label: 'Маршруты', icon: RouteIcon},
   {id: 'visitors', label: 'Посетители', icon: Persons},
   {id: 'stats', label: 'Статистика', icon: SquareChartBar},

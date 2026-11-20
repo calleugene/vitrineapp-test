@@ -39,6 +39,12 @@ The event `id` is unique. A replay of the same ID returns `duplicate: true`; a d
 
 Dashboard summary's `visitors_per_month` always requests the current museum-local calendar month (UTC until a museum timezone is supplied). `meta` describes the requested dashboard range; `visitors_per_month_meta` describes the monthly card range. Route metrics and museum rating are read from route-service and feedback-service over all time; unavailable dependencies remain explicit and empty rating/duration is null. Attendance and recent activity are projections of the same event table. Popular routes and feedback now read their dedicated sources after authentication; source errors remain explicit. The `stats` content, stories and artifacts tabs all use the published artifact screen events; they do not imply distinct server story and artifact entities. Breakdown counts event types; bars show each artifact's share of screen views.
 
+## Public statistics
+
+`GET /api/v1/public/stats` exposes all-time totals without authentication. Museum and artifact totals include all profiles and artifact statuses. Visitor and methodist totals count registered accounts by role and require `ANALYTICS_AUTH_DB_DSN`. Viewed artifacts are distinct IDs with a screen view. Average view time uses active time per measured browser session and artifact. The device ranking counts one view per device, browser session and artifact, and excludes historical views without a classified device.
+
+Methodist session time measures visible time in the signed-in panel, per tab session. Hiding the tab for 30 minutes ends that session. Adding an artifact is timed from opening the creation flow to the first successful draft save. Both methodist durations are based on samples received after deployment.
+
 ## Running locally
 
 Set `AUTH_TOKEN_SECRET` and `ARTIFACTS_PUBLIC_BASE_URL`, then run the repository compose stack. `analytics-service` uses `viralabs_analytics`, reads `viralabs_artifacts` via `ANALYTICS_ARTIFACTS_DB_DSN`, and exposes `/healthz` and `/readyz`; `dashboard-service` reads analytics and exposes the same probes. Visitor posts to the same-origin `/api/analytics/api/v1/analytics/events` proxy. For Vite development, the proxy targets `127.0.0.1:8085`, overridable by `VITE_ANALYTICS_DEV_TARGET`. Windows Build.ps1 builds analytics-service and dashboard-service. Start.ps1 creates vitrine_analytics for existing installations and starts both services on 18085/18084. Status.ps1 and Check.ps1 probe readiness through Caddy and the service ports; Backup.ps1 includes the analytics database.

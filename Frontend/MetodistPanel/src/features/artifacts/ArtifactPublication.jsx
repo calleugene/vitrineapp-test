@@ -1,6 +1,6 @@
-import {useCallback, useEffect, useRef} from 'react';
+import {useCallback, useEffect, useId, useRef} from 'react';
 import {Button, Card, Icon} from '@gravity-ui/uikit';
-import {CircleInfo} from '@gravity-ui/icons';
+import {ArrowLeft, CircleCheck, CircleExclamation, Globe} from '@gravity-ui/icons';
 import {artifactsApi} from '../../api';
 import {PublicationChecks, PublicationDelivery, PublicationIdentity} from '../../components/PublicationDelivery.jsx';
 import {artifactPublicUrl} from '../../components/publication-utils.js';
@@ -14,19 +14,51 @@ function Delivery({flow}) {
   return <PublicationDelivery key={publicUrl} publicUrl={publicUrl} loadQr={loadQr} fileName={`vitrina-exhibit-${artifactId}-qr.png`} emptyMessage="Ссылка и QR-код появятся после успешной публикации экспоната." linkNote="Ссылка и QR-код остаются постоянными. Изменения черновика станут видны посетителям только после публикации." />;
 }
 
-export function ArtifactPublish({flow, onNavigate, header, message}) {
+export function ArtifactPublish({flow, header}) {
   const readiness = artifactReadiness(flow);
   const {artifact} = flow;
+  const publicUrl = artifactPublicUrl(artifact, flow.publication, window.location.origin);
+  const statusId = useId();
+  const applied = readiness.published && !readiness.hasChanges && !flow.dirty;
+  const status = flow.isPublishing ? 'Публикуем экспонат…'
+    : readiness.blocker ? 'Требуется подготовка'
+    : applied ? 'Все изменения опубликованы'
+    : readiness.published ? 'Изменения готовы к публикации' : 'Готов к публикации';
+  const description = readiness.blocker || (applied ? 'Ссылка и QR-код для посетителей доступны ниже.'
+    : readiness.published ? 'Новая версия появится по той же ссылке и QR-коду.'
+    : 'После публикации посетители смогут открыть экспонат по ссылке или QR-коду.');
+  const statusIcon = flow.isPublishing ? Globe : readiness.blocker ? CircleExclamation : applied ? CircleCheck : Globe;
+  const publishLabel = readiness.published ? 'Опубликовать изменения' : 'Опубликовать экспонат';
+
   return <section className="page server-artifact-flow publication-page">
     {header}
-    <p className="publication-intro">{readiness.published ? 'Проверьте изменения перед обновлением опубликованной истории.' : 'Проверьте материалы и опубликуйте историю, чтобы открыть её посетителям.'}</p>
-    <PublicationIdentity title={flow.draft.title} description={flow.draft.short_description} coverUrl={artifact?.cover_url} meta={`Экранов: ${flow.screens.length}`} status={readiness.published ? 'Есть опубликованная версия' : 'Черновик'} statusTheme={readiness.published ? 'success' : 'neutral'} />
-    <div className={`publication-review-grid ${readiness.published ? 'has-publication' : ''}`}><Card className="publication-review" view="filled"><h2>Проверьте перед публикацией</h2><PublicationChecks items={readiness.items} /><p className="publication-note"><Icon data={CircleInfo} size={18} />{readiness.published ? 'Посетителям доступна последняя опубликованная версия. Правки черновика пока видны только в кабинете.' : 'До публикации история недоступна посетителям. QR-код будет создан для опубликованной версии.'}</p></Card>{!readiness.published && <PublicationDelivery emptyMessage="Опубликуйте историю — здесь появятся ссылка и QR-код для посетителей." />}</div>
-    {readiness.published && <Delivery flow={flow} />}
-    <ExhibitEmbed key={`${artifact?.id}:${artifact?.published_revision}`} artifactId={artifact?.id} publicUrl={artifactPublicUrl(artifact, flow.publication, window.location.origin)} />
-    {message}
-    {readiness.published && !readiness.hasChanges && !flow.dirty && <p className="publication-note" role="status">Если изменения уже опубликованы, повторная публикация не нужна.</p>}
-    <footer className="publication-actions"><Button disabled={flow.loading} view="outlined" size="l" onClick={() => onNavigate('artifact-content', {artifactId:artifact?.id})}>К контенту</Button><Button disabled={flow.loading || !readiness.canPublish} loading={flow.loading} view="action" size="l" onClick={flow.publish}>{flow.loading ? 'Публикуем…' : readiness.published ? 'Опубликовать изменения' : 'Опубликовать экспонат'}</Button></footer>
+    <PublicationIdentity title={flow.draft.title} description={flow.draft.short_description} coverUrl={artifact.cover_url} meta={`Экранов: ${flow.screens.length}`} status={artifact.status === 'archived' ? 'В архиве' : readiness.published ? 'Есть опубликованная версия' : 'Черновик'} statusTheme={readiness.published ? 'success' : 'neutral'} />
+    <div className="exhibit-publication-grid">
+      <Card className="publication-review exhibit-publication-checks" view="filled">
+        <h2>Проверка перед публикацией</h2>
+        <PublicationChecks items={readiness.items} />
+      </Card>
+      <section className="exhibit-publication-action" aria-labelledby={statusId}>
+        <span className="exhibit-publication-icon"><Icon data={statusIcon} size={22} aria-hidden="true" /></span>
+        <div className="exhibit-publication-status" role="status">
+          <h2 id={statusId}>{status}</h2>
+          <p>{description}</p>
+        </div>
+        {flow.error && <p className="exhibit-publication-error" role="alert">{flow.error}</p>}
+        <div className="exhibit-publication-buttons">
+          <Button disabled={flow.loading} view="outlined" size="l" onClick={() => flow.saveAndGo('artifact-content')}>
+            <Icon data={ArrowLeft} size={16} aria-hidden="true" />К контенту
+          </Button>
+          {(!applied || readiness.blocker) && <Button disabled={flow.loading || !readiness.canPublish} loading={flow.isPublishing} view="action" size="l" onClick={flow.publish}>
+            {flow.isPublishing ? 'Публикуем…' : publishLabel}
+          </Button>}
+        </div>
+      </section>
+    </div>
+    {publicUrl && <>
+      <Delivery flow={flow} />
+      <ExhibitEmbed key={`${artifact.id}:${artifact.published_revision}`} artifactId={artifact.id} publicUrl={publicUrl} />
+    </>}
   </section>;
 }
 

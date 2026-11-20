@@ -67,6 +67,48 @@ func TestArchiveRestoreDuplicateArtifact(t *testing.T) {
 	}
 }
 
+func TestAdminMuseumLifecycleAndUnpublish(t *testing.T) {
+	env := newTestEnv(t)
+	ctx := context.Background()
+	repo := NewSQLiteRepository(env.db)
+	s := NewService(repo, Config{})
+	if _, err := s.CreateMuseumProfile(ctx, "mus_001", museumProfileRequest{Name: "Archive test"}); err != nil {
+		t.Fatal(err)
+	}
+	museumID := "mus_001"
+	item, err := s.CreateArtifact(ctx, createArtifactRequest{Title: "Draft to publish"}, &museumID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CreateScreen(ctx, item.ID, createScreenRequest{Type: "text", Title: "Page", Payload: `{"body":"Text"}`}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Publish(ctx, item.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.UnpublishArtifact(ctx, item.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.ResolvePublic(ctx, item.PublicCode); err != ErrNotFound {
+		t.Fatalf("unpublished artifact still accessible: %v", err)
+	}
+	if _, err := s.Publish(ctx, item.ID); err != nil {
+		t.Fatalf("republishing failed: %v", err)
+	}
+	if err := repo.SetAdminMuseumState(ctx, "mus_001", "archive"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.ResolvePublic(ctx, item.PublicCode); err != ErrNotFound {
+		t.Fatalf("archived museum's artifact still public: %v", err)
+	}
+	if err := repo.SetAdminMuseumState(ctx, "mus_001", "restore"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.ResolvePublic(ctx, item.PublicCode); err != nil {
+		t.Fatalf("restored museum's publication unavailable: %v", err)
+	}
+}
+
 func TestScreensFlow(t *testing.T) {
 	env := newTestEnv(t)
 

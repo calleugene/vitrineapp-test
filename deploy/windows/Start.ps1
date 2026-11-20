@@ -60,6 +60,7 @@ $env:ANALYTICS_AUTH_URL = 'http://127.0.0.1:18080/api/v1'
 $env:DASHBOARD_HTTP_ADDR = '127.0.0.1:18084'
 $env:DASHBOARD_ANALYTICS_URL = 'http://127.0.0.1:18085'
 $env:AUTH_DB_DSN = "postgresql://vitrine:$($config.databasePassword)@127.0.0.1:55432/vitrine_auth?sslmode=disable"
+$env:ANALYTICS_AUTH_DB_DSN = $env:AUTH_DB_DSN
 $env:AUTH_HTTP_ADDR = '127.0.0.1:18080'
 if (-not $env:AUTH_TRUSTED_PROXY_CIDRS) { $env:AUTH_TRUSTED_PROXY_CIDRS = '127.0.0.1/32,::1/128' }
 $env:MUSEUM_SERVICE_URL = 'http://127.0.0.1:18081/api/v1'

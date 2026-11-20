@@ -62,4 +62,4 @@ jobs:
           release_id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           scp -o StrictHostKeyChecking=yes release.tgz root@135.106.175.94:"/opt/vitrineapp/incoming/${release_id}.tgz"
           ssh -o StrictHostKeyChecking=yes root@135.106.175.94 \
-            "bash -s -- '${release_id}' '${GITHUB_SHA}'" < deploy/selectel-deploy.sh
+            "bash -c 'set -e; script=\$(mktemp); trap \"rm -f -- \$script\" EXIT; cat > \"\$script\"; bash \"\$script\" \"\$@\"' _ '${release_id}' '${GITHUB_SHA}'" < deploy/selectel-deploy.sh

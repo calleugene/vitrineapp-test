@@ -53,6 +53,7 @@ func main() {
 	root.Handle("/api/v1/artifacts/", apiHandler)
 	root.Handle("/api/v1/artifacts", apiHandler)
 	root.Handle("/api/v1/internal/museums/", apiHandler)
+	root.Handle("/api/v1/internal/admin/", apiHandler)
 	root.Handle("/api/v1/museums/", apiHandler)
 	root.Handle("/api/v1/museums", apiHandler)
 	root.Handle("/api/v1/public/", apiHandler)

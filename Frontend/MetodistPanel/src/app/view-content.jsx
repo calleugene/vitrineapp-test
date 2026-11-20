@@ -1,4 +1,5 @@
 import React from 'react';
+import {Button} from '@gravity-ui/uikit';
 import {ServerArtifactFlow} from '../features/artifacts/server-artifact-flow';
 import {DashboardView, AttendanceChart} from '../features/dashboard/views';
 import {FeedbackView} from '../features/feedback/views';
@@ -54,6 +55,7 @@ export function ViewContent({
   artifactsError,
   onReloadArtifacts,
   serverArtifactFlow,
+  artifactId,
 }) {
   if (view === 'dashboard') {
     return <DashboardView setView={setView} userName={currentUser?.full_name} dashboardData={dashboardData} dashboardStates={dashboardStates} retryDashboardBlock={retryDashboardBlock} />;
@@ -143,6 +145,18 @@ export function ViewContent({
     return <ServerArtifactFlow mode="selector" artifacts={artifacts} artifactsLoading={artifactsLoading} artifactsError={artifactsError} onReload={onReloadArtifacts} flow={serverArtifactFlow} onNavigate={setView} />;
   }
 
+  if (view.startsWith('artifact-') && artifactId && (serverArtifactFlow.artifact?.id !== artifactId || serverArtifactFlow.selectionError === artifactId)) {
+    const failed = serverArtifactFlow.selectionError === artifactId;
+    return <section className="page server-artifact-flow">
+      <div className="server-flow-header"><h1>{failed ? 'Не удалось загрузить экспонат' : 'Загружаем экспонат…'}</h1></div>
+      {failed && <div className="server-flow-message is-error" role="alert">{serverArtifactFlow.error}</div>}
+      <div className="publication-actions">
+        <Button size="l" view="outlined" onClick={() => setView('artifacts')}>К экспонатам</Button>
+        {failed && <Button size="l" view="action" onClick={() => serverArtifactFlow.select(artifactId, view, false)}>Повторить загрузку</Button>}
+      </div>
+    </section>;
+  }
+
   if (view === 'artifact-basic') {
     return <ServerArtifactFlow mode="basic" flow={serverArtifactFlow} onNavigate={setView} />;
   }
@@ -152,6 +166,10 @@ export function ViewContent({
   }
 
   if (view === 'artifact-publish') {
+    if (!artifactId) return <section className="page server-artifact-flow">
+      <div className="server-flow-header"><h1>Выберите экспонат для публикации</h1></div>
+      <div><Button size="l" view="action" onClick={() => setView('artifacts')}>К экспонатам</Button></div>
+    </section>;
     return <ServerArtifactFlow mode="publish" flow={serverArtifactFlow} onNavigate={setView} />;
   }
 

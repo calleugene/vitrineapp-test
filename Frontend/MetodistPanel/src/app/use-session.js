@@ -95,7 +95,8 @@ export function useSession({setView}) {
       };
 
       updateSession(loginSession);
-      setView(DEFAULT_VIEW, {replace: true});
+      const returnFromCheckout = window.location.pathname.replace(/\/$/, '').endsWith('/subscription');
+      setView(returnFromCheckout ? 'subscription' : DEFAULT_VIEW, {replace: true});
       setAuthForm((prev) => ({...prev, loginEmail: email, loginPassword: ''}));
     } catch (error) {
       const email = (credentials?.email ?? authForm.loginEmail).trim();

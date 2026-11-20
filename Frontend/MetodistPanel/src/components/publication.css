@@ -11,7 +11,6 @@
 .publication-identity p { margin: 6px 0 0; color: var(--publication-text-secondary, #667085); line-height: 1.5; overflow-wrap: anywhere; }
 .publication-identity small { display: block; margin-top: 6px; color: var(--publication-text-secondary, #667085); }
 .publication-status { display: inline-flex; align-items: center; flex-shrink: 0; gap: 6px; padding: 8px 12px; border-radius: var(--ui-radius-control); background: var(--vl-color-bg); color: var(--publication-text-secondary, #667085); font-size: 13px; font-weight: 500; }
-.publication-review-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr); gap: var(--vl-space-6); align-items: start; }
 .publication-review { padding: var(--vl-space-7); border: 1px solid var(--g-color-line-generic); border-radius: var(--ui-radius-card); min-width: 0; }
 .publication-review h2, .publication-delivery h2, .publication-empty h2 { margin: 0; font-size: 18px; line-height: 1.4; }
 .publication-checks { display: grid; gap: var(--vl-space-6); list-style: none; margin: 24px 0; padding: 0; }
@@ -54,7 +53,7 @@
  .publication-link-row input { flex-basis: 100%; }
 }
 @media (max-width: 800px) {
- .publication-review-grid, .publication-delivery { grid-template-columns: minmax(0, 1fr); }
+ .publication-delivery { grid-template-columns: minmax(0, 1fr); }
  .publication-qr-block { padding: 24px 0 0; border-left: 0; border-top: 1px solid var(--g-color-line-generic); }
  .publication-qr-block > .g-button { width: 100%; max-width: 300px; align-self: center; }
  .publication-identity { flex-wrap: wrap; padding: 20px; }
@@ -68,11 +67,8 @@
  .publication-actions { padding: 16px; align-items: stretch; }
  .publication-actions, .publication-actions > div { flex-direction: column; }
  .publication-actions .g-button { width: 100%; }
- .publication-review-grid { gap: 16px; }
 }
 
 .publication-status.is-published { background: var(--g-color-base-positive-light); color: var(--publication-text-success, #18794e); }
-.publication-intro { margin: -8px 0 0; color: var(--publication-text-secondary, #667085); line-height: 1.6; }
-.publication-review-grid.has-publication { grid-template-columns: minmax(0, 1fr); }
 .publication-identity.g-card, .publication-review.g-card, .publication-empty.g-card, .publication-delivery.g-card { background: var(--vl-color-surface); }
 :is(.publication-page, .route-publication) .g-button_view_action { --g-button-background-color: var(--vl-color-brand); --g-button-background-color-hover: var(--vl-color-brand-hover); --g-button-background-color-active: var(--vl-color-brand-active); --g-button-text-color: #fff; --g-button-text-color-hover: #fff; }

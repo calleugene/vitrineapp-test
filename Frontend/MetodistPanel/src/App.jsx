@@ -13,11 +13,13 @@ import {useServerArtifactFlow} from './app/use-server-artifact-flow';
 import {ViewContent} from './app/view-content';
 import {useDashboardData} from './app/use-dashboard-data';
 import {ProfilePage, ReactivationScreen} from './features/users/ProfilePage';
+import {SubscriptionPage} from './features/billing/SubscriptionPage';
 import {mergeRouteTableRows} from './app/route-draft-utils';
 import {useRouteDraft} from './app/use-route-draft';
 import {useSession} from './app/use-session';
 import {useViewRouting} from './app/use-view-routing';
 import {useStatsData} from './features/stats/use-stats-data';
+import {useMethodistMetrics} from './app/use-methodist-metrics';
 
 function App() {
   const {add:showToast} = useToaster();
@@ -58,6 +60,9 @@ function App() {
   });
 
 	const {view, artifactId, setView} = useViewRouting({isAuthenticated});
+  const trackMethodist = isAuthenticated && !session?.isMock && !sessionChecking &&
+    !sessionCheckError && currentUser?.status?.toUpperCase() === 'ACTIVE';
+  const recordMetric = useMethodistMetrics(trackMethodist, currentUser?.id);
 
   const navigate = (nextView, options) => {
     setUserMenuOpen(false);
@@ -111,12 +116,13 @@ function App() {
 	const serverArtifactFlow = useServerArtifactFlow({
     loadArtifacts,
     onNavigate: navigate,
+    onArtifactAdded: (id, duration) => recordMetric('artifact', id, duration),
 	});
 
 	useEffect(() => {
-		if (!artifactId || !view.startsWith('artifact-') || serverArtifactFlow.artifact?.id === artifactId || serverArtifactFlow.loading) return;
-		serverArtifactFlow.select(artifactId, view);
-	}, [artifactId, serverArtifactFlow, view]);
+		if (!isAuthenticated || !artifactId || !view.startsWith('artifact-') || serverArtifactFlow.artifact?.id === artifactId || serverArtifactFlow.loading || serverArtifactFlow.selectionError === artifactId) return;
+		serverArtifactFlow.select(artifactId, view, false);
+	}, [artifactId, isAuthenticated, serverArtifactFlow, view]);
 
   const {
     routeDraft,
@@ -224,7 +230,8 @@ function App() {
         }}
         onLogout={handleAppLogout}
       >
-        {view === 'user-profile' ? <ProfilePage session={session} onSessionRefresh={updateSession} onNavigate={navigate} museums={museums} museumState={museumState} loadMuseums={refreshMuseums} onMuseumsUpdated={applyMuseums} onSelectMuseum={selectMuseum} onDirtyChange={setProfileDirty} /> : <ViewContent
+        {view === 'user-profile' ? <ProfilePage session={session} onSessionRefresh={updateSession} onNavigate={navigate} museums={museums} museumState={museumState} loadMuseums={refreshMuseums} onMuseumsUpdated={applyMuseums} onSelectMuseum={selectMuseum} onDirtyChange={setProfileDirty} /> : view === 'subscription' ?
+          <SubscriptionPage key={currentUser?.museum_id} user={currentUser} isMock={session?.isMock} /> : <ViewContent
           view={view}
           currentUser={currentUser}
           dashboardData={dashboardData}
@@ -271,6 +278,7 @@ function App() {
           artifactsError={artifactsError}
           onReloadArtifacts={loadArtifacts}
           serverArtifactFlow={serverArtifactFlow}
+          artifactId={artifactId}
         />}
       </AppShell>
     </>
